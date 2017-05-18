@@ -1,0 +1,32 @@
+{
+  "name": "photohub-client",
+  "version": "0.1.0",
+  "authors": [
+    "Artem Belyaev <Artem.Belyaev@gmail.com>"
+  ],
+  "description": "Photohub client app",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "src/libs",
+    "src/test",
+    "src/tests"
+  ],
+  "devDependencies": {
+    "requirejs": "~2.1.20",
+    "backbone": "~1.2.3",
+    "jquery": "~2",
+    "bootstrap": "~3.3.5",
+    "dropzone": "~4.2.0",
+    "IE8": "ie8#~0.3.0",
+    "moment": "^2.17.1",
+    "underscore": "^1.8.3",
+    "pikaday": "^1.5.1",
+    "font-awesome": "^4.7.0"
+  },
+  "dependencies": {
+    "moment": "^2.16.0"
+  }
+}

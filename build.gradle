@@ -1,0 +1,477 @@
+plugins {
+    id "org.springframework.boot" version '1.5.2.RELEASE'
+}
+//import org.apache.tools.ant.filters.ReplaceTokens
+import org.apache.tools.ant.filters.*
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'idea'
+apply plugin: 'war'
+
+evaluationDependsOn(":data")
+evaluationDependsOn(":connectors:connector-interface")
+evaluationDependsOn(":connectors:connector-local")
+evaluationDependsOn(":connectors:connector-google")
+evaluationDependsOn(":services")
+
+
+def propFile = new File("${rootProject.projectDir}/project.properties");
+Properties props = new Properties()
+props.load(new FileInputStream(propFile))
+
+ext {
+    userHome      = System.getProperty('user.home')
+    appClass      = "home.abel.photohub.webconfig.standalone.AppInit"
+    appHome       = "${userHome}/Developing/photohub-root/app"
+    appConfigFile  = "photohub-standalone.properties"
+    appConfigPath = "config"
+    appLogFile    = "logback.xml"
+    apiUrl        = "api"
+    jsApiSrc      = "../photohub2-client2/build"
+    localPhotoPath = ""
+
+    tmpDir           = System.getProperty('java.io.tmpdir')
+
+    dbDriver         = 'org.hsqldb.jdbc.JDBCDriver'
+    dbVendorPlatform = 'org.eclipse.persistence.platform.database.HSQLPlatform'
+    dbVendorName     = 'HSQL'
+    dbGenerate       = 'false'
+    dbUrl            = 'jdbc:hsqldb:file:'
+    //dbParams         = ';hsqldb.write_delay=false;hsqldb.tx=mvcc'
+    dbParams         = ';hsqldb.tx=mvcc'
+    dbName           =  "${userHome}/Developing/photohub-root/hsqldb/photohub"
+    dbUserName       =  'photohub'
+    dbUserPasswd     =  'photohub'
+    dbType           =  'hsqldb'   //  Нужно проверить
+
+    //   Install
+    staticDir = project.buildDir.toString() + "classes/main/static"
+
+    projectRootStr =   project.rootDir.getAbsolutePath(); //new File(projectRootStr + '/install')
+    distsDirStr = distsDir.getAbsolutePath()
+    distribDirStr = distsDir.getAbsolutePath()
+
+    interfaceDistrDir = "${project.rootDir}" + '/interface/build'
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+    apply plugin: 'idea'
+
+    ext {
+        group = 'home.abel.photohub'
+        version = '0.1.0'
+        testdbDriver = 'org.hsqldb.jdbc.JDBCDriver'
+        testdbVendorPlatform = 'org.eclipse.persistence.platform.database.HSQLPlatform'
+        testdbVendorName = 'HSQL'
+        testdbUrl = 'jdbc:hsqldb:file:'
+
+        //testdbParams = ';hsqldb.tx=mvcc'
+        //testdbParams = ';hsqldb.tx=mvcc;hsqldb.write_delay=false'
+        //testdbParams = ';hsqldb.tx=MVLOCKS;hsqldb.write_delay=false'
+        testdbParams = ';hsqldb.tx=LOCKS'
+        //testdbParams = ''
+
+        testdbGenerate = 'false'
+        testdbName = System.getProperty('java.io.tmpdir') + "/ph-data/tb/photohub"
+        testdbUserName = 'photohub'
+        testdbUserPasswd = 'photohub'
+    }
+	//----------------------------------------------------------
+	//   Dependent artifacts version
+	//----------------------------------------------------------
+
+    compileJava {
+        doFirst {
+            println "... Compile project ${project.name} ..."
+        }
+    }
+
+    compileTestJava {
+        doFirst {
+            println "... Compile TEST for project ${project.name} ..."
+        }
+    }
+}
+
+//----------------------------------------------------------
+//
+//  Spring boot package
+//
+//----------------------------------------------------------
+//sourceSets.main.output.resourcesDir = distribDirStr + "/config"
+
+task install {
+    dependsOn 'bootRepackage'
+    doLast {
+        println "Copy distribution package to $appHome"
+        copy  {
+            from distribDirStr
+            into appHome
+        }
+    }
+
+}
+
+
+springBoot {
+    backupSource = false
+}
+
+bootRepackage {
+    dependsOn 'prepareDistribution'
+    mainClass = appClass
+    executable = false
+    withJarTask = jar
+    //customConfiguration =
+    //backupSource=false
+}
+
+//
+//  Сборка всех необходимых файлов которые нужно включить в конечнй JAR
+//
+jar {
+    doFirst {
+        println "interfaceDistrDir="+interfaceDistrDir
+    }
+    destinationDir = new File(distribDirStr+'/bin')
+    archiveName = project.name + ".jar"
+
+    exclude("**/photohub-standalone.properties")
+    exclude("**/logback.xml")
+
+    into('static') {
+        from interfaceDistrDir
+    }
+}
+
+//
+//     Подготовка файлов ресурсов для repackage
+//     Эти файлы не должны попавть внутр JAR файла
+//
+task prepareDistribution {
+    dependsOn 'processResources'
+    inputs.dir project.sourceSets.main.java.srcDirs
+    outputs.dir distribDirStr+"/bin"
+    outputs.dir distribDirStr+"/config"
+
+    doLast {
+        def logFolder = new File(distribDirStr+"/log")
+        logFolder.mkdirs()
+
+        copy {
+            into(distribDirStr+"/bin")
+            from( project.sourceSets.main.resources.srcDirs ) {
+                include 'startup.sh'
+                filter(ReplaceTokens, tokens: [
+                        "app.home"       : appHome.toString(),
+                        "archive.name"   : project.name,
+                        "app.config.path": appConfigPath,
+                        "app.config.file": appConfigFile,
+                        "app.log.config" : appLogFile
+                ])
+            }
+        }
+        copy {
+            into(distribDirStr+"/config")
+            from( project.sourceSets.main.resources.srcDirs ) {
+                include 'photohub-standalone.properties'
+                include 'logback.xml'
+                filter(ReplaceTokens, tokens: [
+                        "app.home"          : appHome.toString(),
+                        "user.home"         : userHome,
+                        "db.driver"         : dbDriver,
+                        "db.vendor.platform": dbVendorPlatform,
+                        "db.vendor.dbname"  : dbVendorName,
+                        "db.url"            : dbUrl.toString(),
+                        "db.params"         : dbParams,
+                        'db.generate'       : dbGenerate,
+                        "db.name"           : dbName.toString(),
+                        "db.username"       : dbUserName,
+                        "db.password"       : dbUserPasswd,
+                        "database.type"     : dbType
+                ])
+            }
+        }
+    }
+}
+
+
+
+//----------------------------------------------------------
+//
+//  Spring boot RUN
+//
+//----------------------------------------------------------
+
+bootRun {
+    addResources = false  //  неиспорльзовать ресурсы из исходников
+}
+
+//
+//  bootRun будет использовать файлы ресурсов для конфигурации
+//
+processResources {
+    include 'photohub-standalone.properties'
+    include 'logback.xml'
+    filter ReplaceTokens, tokens: [
+        "app.home"          : appHome.toString(),
+        "user.home"         : userHome,
+        "db.driver"         : dbDriver,
+        "db.vendor.platform": dbVendorPlatform,
+        "db.vendor.dbname"  : dbVendorName,
+        "db.url"            : dbUrl.toString(),
+        "db.params"         : dbParams,
+        'db.generate'       : dbGenerate,
+        "db.name"           : dbName.toString(),
+        "db.username"       : dbUserName,
+        "db.password"       : dbUserPasswd,
+        "database.type"     : dbType
+    ]
+}
+
+
+//----------------------------------------------------------
+//   REST API Testing
+//----------------------------------------------------------
+
+task cleanDB {
+    doFirst {
+        println "... Check and clean test DB = " + testdbName
+        def testDBDir = new File(testdbName)
+        testDBDir.getParentFile().deleteDir()
+    }
+}
+
+test {
+//    mustRunAfter(':data:test')
+//    mustRunAfter(':image-processing:test')
+//    mustRunAfter(':connectors:connector-interface:test')
+//    mustRunAfter(':connectors:connector-local:test')
+//    mustRunAfter(':services:test')
+
+    //testLogging.showStandardStreams = true
+
+    dependsOn cleanDB
+    dependsOn ':data:test'
+    dependsOn ':image-processing:test'
+    dependsOn ':connectors:connector-interface:test'
+    dependsOn ':connectors:connector-local:test'
+    dependsOn ':services:test'
+
+    filter {
+        includeTestsMatching "*SiteTest"
+    }
+}
+
+task testApi(type: Test, dependsOn:cleanDB) {
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test: $descriptor.className")
+    }
+
+    //testLogging.showStandardStreams = true   //  Используетмся для вывода debag логов инициализации Spring'a
+
+    filter {
+        includeTestsMatching "*SiteTest"
+    }
+}
+
+//----------------------------------------------------------
+//
+//   Взаимосвязи между модулями
+//
+//----------------------------------------------------------
+project(':services') {
+    dependencies {
+        compile project(':data')
+        compile project(':image-processing')
+        compile project(':connectors:connector-interface')
+        compile project(':connectors:connector-local')
+        compile project(':connectors:connector-google')
+    }
+}
+
+project(':connectors:connector-local') {
+    dependencies {
+        compile project(':image-processing')
+        compile project(':connectors:connector-interface')
+    }
+}
+
+project(":image-processing") {
+    dependencies {
+        compile project(':connectors:connector-interface')
+    }
+}
+
+project(':connectors:connector-google') {
+    dependencies {
+        compile project(':connectors:connector-interface')
+    }
+}
+
+//----------------------------------------------------------
+//   Substitute test resources variables
+//----------------------------------------------------------
+processTestResources {
+    inputs.file new File('build.gradle')
+    filesMatching('**/*.properties') {
+        //println "   Test resources matched  \n1.  " + projectDir +"   \n2.   " + tmpDir
+        filter ReplaceTokens, tokens: [
+                "db.driver"         : testdbDriver,
+                "db.vendor.platform": testdbVendorPlatform,
+                "db.vendor.dbname"  : testdbVendorName,
+                "db.url"            : testdbUrl,
+                "db.name"           : testdbName,
+                "db.params"         : testdbParams,
+                "db.username"       : testdbUserName,
+                "db.password"       : testdbUserPasswd,
+                "db.generate"       : testdbGenerate,
+                "database.type"     : dbType,
+                "project.basedir"   : projectDir.toString(),
+                "java.io.tmpdir"    : tmpDir
+        ]
+    }
+}
+
+//----------------------------------------------------------
+//   Java compile options
+//----------------------------------------------------------
+
+sourceSets.main.java {
+    exclude "**/server/*"
+}
+
+sourceSets.test.java {
+    exclude "**/server/*"
+}
+
+//----------------------------------------------------------
+//   External libs
+//----------------------------------------------------------
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "http://repo.spring.io/libs-snapshot" }
+}
+
+dependencies {
+    compile project(':data')
+	compile project(':connectors:connector-interface')
+	compile project(':connectors:connector-local')
+	compile project(':connectors:connector-google')
+	compile project(':services')
+
+    //   Special cases
+    compile group: 'org.flywaydb', name: 'flyway-core', version: '4.1.2', force:true
+
+
+	//	Springframework
+
+    compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-context', version: "${props.springFrameworkVersion}"
+
+    //compile group: 'org.springframework', name: 'spring-context', version: "${springFrameworkVersion}" {
+    //    exclude group:'commons-logging ',module:'commons-logging' }
+    compile group: 'org.springframework', name: 'spring-webmvc', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-beans', version: "${props.springFrameworkVersion}"
+
+    //	Spring  boot
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: props.springBootVersion
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version: props.springBootVersion
+
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-aop', version: props.springBootVersion
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-integration', version: props.springBootVersion
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
+
+    //	Spring  security
+    compile group: 'org.springframework.security', name: 'spring-security-core', version: "${props.springSecurityVersion}"
+    compile group: 'org.springframework.security', name: 'spring-security-web', version: "${props.springSecurityVersion}"
+    compile group: 'org.springframework.security', name: 'spring-security-config', version: "${props.springSecurityVersion}"
+
+    //	JSON Processing
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${props.jacksonVersion}"
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${props.jacksonVersion}"
+
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
+    compile group: 'org.springframework.hateoas', name: 'spring-hateoas', version: '0.23.0.RELEASE'
+
+    //  HSQL DB
+    compile group: 'org.hsqldb', name: 'hsqldb', version: '2.3.4'
+
+    compile group: 'cglib', name: 'cglib', version: '3.2.5'
+
+    compile group: 'jstl', name: 'jstl', version: '1.2'
+
+    //  Auto REST documentation servlet - swager2
+    compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.6.1'
+    compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.6.1'
+
+
+    //	Logging
+	compile group: 'org.slf4j', name: 'slf4j-api', version: "${props.slf4jVersion}"
+	compile group: 'org.slf4j', name: 'jcl-over-slf4j', version: "${props.slf4jVersion}"
+	compile group: 'org.slf4j', name: 'log4j-over-slf4j', version: "${props.slf4jVersion}"
+	compile group: 'ch.qos.logback', name: 'logback-classic', version: "${props.logbackVersion}"
+
+	//	Testing
+    compile group: 'com.jayway.jsonpath', name: 'json-path', version: '2.2.0'
+
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: props.springBootVersion
+	testCompile group: 'org.springframework', name: 'spring-test', version: "${props.springFrameworkVersion}"
+	testCompile group: 'junit', name: 'junit', version: "${props.junitVersion}"
+	testCompile group: 'org.assertj', name: 'assertj-core', version: '3.6.2'
+	testCompile (group: 'org.dbunit', name: 'dbunit', version: "${props.dbunitVersion}") {
+		exclude group:'junit',module:'junit' }
+	testCompile group: 'com.github.springtestdbunit', name: 'spring-test-dbunit', version: '1.2.1'
+}
+
+//----------------------------------------------------------
+//   Utils
+//----------------------------------------------------------
+
+subprojects.each { project ->
+//
+//    def projDepth =  project.configurations.compile.allDependencies.withType(ExternalDependency)
+//    for ( projDep in  projDepth) {
+//        println "${projDep.group} ${projDep.name}  ${projDep.version}"
+//        //compile(group: projDep.getGroup(), name: projDep.getName(), version: projDep.getVersion())
+//        //compile project(group: projDep.getGroup(), name: projDep.getGroup() configuration: 'schema')
+//    }
+//
+
+
+//    def deps = project.configurations.compile.allDependencies.withType(ProjectDependency)
+//    for ( dep in deps ) {
+//        def projDepth =  dep.getDependencyProject().configurations.compile.allDependencies.withType(ExternalDependency)
+//
+//        for ( projDep in  projDepth) {
+//            println "${projDep.group} ${projDep.name}  ${projDep.version}"
+//            //compile(group: projDep.getGroup(), name: projDep.getName(), version: projDep.getVersion())
+//            //compile project(group: projDep.getGroup(), name: projDep.getGroup() configuration: 'schema')
+//        }
+//    }
+
+
+
+//    configure(project) {
+//        task copyToLib {
+//
+//            def deps = project.configurations.compile.allDependencies.withType(ProjectDependency)
+//            for ( dep in deps ) {
+//                def projDepth =  dep.getDependencyProject().configurations.compile.allDependencies.withType(ExternalDependency)
+//
+//                for ( projDep in  projDepth) {
+//                    println "${projDep.group} ${projDep.name}  ${projDep.version}"
+//                    //compile(group: projDep.getGroup(), name: projDep.getName(), version: projDep.getVersion())
+//                    //compile project(group: projDep.getGroup(), name: projDep.getGroup() configuration: 'schema')
+//                }
+//            }
+//        }
+//        //p.build.dependsOn(copyToLib)
+//    }
+}
+
+

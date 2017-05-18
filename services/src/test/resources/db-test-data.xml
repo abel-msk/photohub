@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+
+	<AUTH_TOKEN/>
+	<CONFIG NAME="defualtFolderThumb" VALUE="/Volumes/Dual-B/Users/abel/Developing/git/photohub2/photohub2-svc/src/test/data/folder.png"/>
+	<CONFIG NAME="localPhotoPath" VALUE="/var/folders/m2/mjr14d2136gf788sys6c6gj00000gn/T//ph/photo-root"/>
+	<CONFIG NAME="localThumbFormat" VALUE="png"/>
+	<CONFIG NAME="localThumbPath" VALUE="/var/folders/m2/mjr14d2136gf788sys6c6gj00000gn/T//ph/photo-thumbnail"/>
+	<GROUPS/>
+	<GROUP_AUTHORITIES/>
+	<GROUP_MEMBERS/>
+
+
+	
+	<SITES ID="2" CONNECTORSTATE="CONNECT" CONNECTORTYPE="Local" NAME="TEST1" ROOT="/tmp/photohub_test" SITEUSER="admin"/>
+	<SITE_PROPERTIES NAME="root" VALUE="/tmp/photohub_test" ID="2"/>
+	<USERS/>
+	<USER_AUTHORITIES/>
+ 	<SCHEDULES/>
+ 	
+	<TASK_RECORDS ID="6" MESSAGE="Start execution" NAME="TNAME_SCAN" STARTTIME="2017-03-25 21:12:40.696" STATUS="RUN" STOPTIME="2017-03-25 21:12:40.704" SITE="2"/>
+	<TASK_RECORDS ID="7" MESSAGE="Execution complete." NAME="TNAME_SCAN" STARTTIME="2017-03-25 21:12:41.697" STATUS="FIN" STOPTIME="2017-03-25 21:12:41.63" SITE="2"/>
+
+	<PHOTOS ID="2" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="foldertest" ONSITEID="/tmp/photohub_test/foldertest" TYPE="2" UPDATETIME="2017-03-25 21:12:40.989" SITE="2"/>
+	<PHOTOS ID="3" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="photo1.JPG" ONSITEID="/tmp/photohub_test/foldertest/photo1.JPG" TYPE="1" UPDATETIME="2017-03-25 21:12:41.074" SITE="2"/>
+	<PHOTOS ID="4" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="photo1.JPG" ONSITEID="/tmp/photohub_test/photo1.JPG" TYPE="1" UPDATETIME="2017-03-25 21:12:41.43" SITE="2"/>
+	<PHOTOS ID="5" DESCR="Next test folder" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="testFolder" ONSITEID="/tmp/photohub_test/foldertest/testFolder" TYPE="2" UPDATETIME="2017-03-25 21:12:42.802" SITE="2"/>
+	
+	<MEDIAS ID="2" ACCESSTYPE="22" HEIGHT="509" MIMETYPE="image/jpeg" SIZE="146024" TYPE="12" WIDTH="681" PHOTOID="3"/>
+	<MEDIAS ID="3" ACCESSTYPE="22" HEIGHT="186" MIMETYPE="image/png" PATH="/var/folders/m2/mjr14d2136gf788sys6c6gj00000gn/T/ph/photo-thumbnail/03/3.png" SIZE="113121" TYPE="11" WIDTH="250" PHOTOID="3"/>
+	<MEDIAS ID="4" ACCESSTYPE="22" HEIGHT="509" MIMETYPE="image/jpeg" SIZE="146024" TYPE="12" WIDTH="681" PHOTOID="4"/>
+	<MEDIAS ID="5" ACCESSTYPE="22" HEIGHT="186" MIMETYPE="image/png" PATH="/var/folders/m2/mjr14d2136gf788sys6c6gj00000gn/T/ph/photo-thumbnail/04/4.png" SIZE="113121" TYPE="11" WIDTH="250" PHOTOID="4"/>
+	
+	<NODES ID="2" PHOTO_ID="2"/>
+	<NODES ID="3" PARENT="2" PHOTO_ID="3"/>
+	<NODES ID="4" PHOTO_ID="4"/>
+	<NODES ID="5" PARENT="2" PHOTO_ID="5"/>
+
+
+		
+	<SEQUENCE SEQ_NAME="MEDIA_ID" SEQ_COUNT="6"/>
+	<SEQUENCE SEQ_NAME="NODE_ID" SEQ_COUNT="6"/>
+	<SEQUENCE SEQ_NAME="PHOTO_ID" SEQ_COUNT="6"/>
+	<SEQUENCE SEQ_NAME="SCHED_ID" SEQ_COUNT="1"/>
+	<SEQUENCE SEQ_NAME="SEQ_GEN" SEQ_COUNT="1"/>
+	<SEQUENCE SEQ_NAME="SITE_ID" SEQ_COUNT="6"/>
+	<SEQUENCE SEQ_NAME="TASK_REC_ID" SEQ_COUNT="10"/>
+		
+</dataset>

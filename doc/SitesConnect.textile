@@ -1,0 +1,49 @@
+  #Окно Sites# workflow
+  
+   1. Пользователь выбирает существующий сайт в списке.
+   
+   2. Для сайта выводится список свойств и текущий статус соединения  ( Connected или Disconnected )
+      Рисуем кнопки [Connect] или [Disconnect]
+      
+   3. По кнопке [Connect].   Клиент вызывает метод
+        SiteService.connectSite -> SiteService.getOrLoadConnector ->  ConnectorFactory.getConnector 
+   		Если Connector еще не загружен то вызывает loadConnector. 
+   		loadConnector загружает соответствующий Connector b
+   		Предает ему:
+   		  siteUser, 
+   		  connectorId, 
+   		  localStore, 
+   		  inputPropertiesMap 
+   		После чего вызывает Conector.doConect
+   		Если метод doConect срабатывает бкз ошибок  то сайт считается присоединеным
+   		Иначе а в  Conector  устанавливается свойство DISCONNECT
+   		
+   		SiteService.connectSite после вызова еще раз вызывает  connector.doConect
+   		и получает из него (SiteCredentialInt)AuthCred
+   		
+   		
+   4. В ответ получаем объект Credential в котором есть:
+      - Connector (Site)
+      - State  Может быть AUTH_WAIT или CONNECT
+      - Usermessage
+      - Список AuthPropertyes
+      
+   5. Если полученный State = AUTH_WAIT, то открываем модальное окно с сообщением Usermessage
+      и полями ввода для AuthPropertyes. 
+      В окне есть кнопка [Auth] и [Cansel]
+  
+   6. По кнопке [Auth]  вызываем метод Auth.  
+      SiteService.authSite -> connector.doAuth(auth) -> GoogleOAuth2.doAuth;
+
+    Передаем на сервер:
+   		- AuthPropertyes
+   		- SiteId
+      Метод Auth вызывет метод Connecotr.Auth
+      
+   7. В ответ получаем объект Credential в котором есть:
+      - Connector (Site)
+      - State  Может быть AUTH_WAIT или CONNECT
+      - Usermessage
+      
+   8. Если State != CONNECT  возвращаемся к пункту 5
+      

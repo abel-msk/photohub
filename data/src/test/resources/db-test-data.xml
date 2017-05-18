@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+
+    <sites id="1"
+    	  connectorstate="CONNECT"
+    	  connectortype="Local"
+    	  LASTSCANDATE="2017-01-21 18:29:35"
+    	  name="Test Local Name"
+    	  root="/tmp"
+    	  siteuser="admin"
+    	  />
+	<site_properties
+		name="Local Path"
+		description ="nest description"
+		value = "/tmp" 
+		id ="1"
+		/>
+		
+	<task_records	
+		id="1"
+		message="TaskRecord 1"
+		name="scan"
+		starttime="2017-01-21 18:29:35"
+		status="ERR"
+		stoptime="2017-01-21 18:29:36"
+		site="1"
+		/>
+	<task_records	
+		id="2"
+		message="TaskRecord 2"
+		name="scan"
+		starttime="2017-01-22 18:29:35"
+		status="OK"
+		stoptime="2017-01-22 18:29:36"
+		site="1"
+		/>
+		
+	<task_records	
+		id="3"
+		message="TaskRecord 3 Last"
+		name="scan"
+		starttime="2017-02-10 18:29:35"
+		status="OK"
+		stoptime="2017-02-10 18:29:36"
+		site="1"
+		/>
+
+	<task_records
+			id="4"
+			message="TaskRecord 1"
+			name="clean"
+			starttime="2017-01-21 18:29:35"
+			status="ERR"
+			stoptime="2017-01-21 18:29:36"
+			site="1"
+	/>
+	<task_records
+			id="5"
+			message="TaskRecord 2"
+			name="clean"
+			starttime="2017-01-22 18:29:35"
+			status="OK"
+			stoptime="2017-01-22 18:29:36"
+			site="1"
+	/>
+
+	<task_records
+			id="6"
+			message="TaskRecord 3 Last"
+			name="clean"
+			starttime="2017-02-10 18:29:35"
+			status="OK"
+			stoptime="2017-02-10 18:29:36"
+			site="1"
+	/>
+
+
+
+
+		
+		
+	<sequence SEQ_NAME="MEDIA_ID"  SEQ_COUNT = "10" />
+	<sequence SEQ_NAME="NODE_ID"  SEQ_COUNT = "10" />
+	<sequence SEQ_NAME="PHOTO_ID"  SEQ_COUNT = "10" />
+	<sequence SEQ_NAME="SEQ_GEN"  SEQ_COUNT = "50" />
+	<sequence SEQ_NAME="SITE_ID"  SEQ_COUNT = "10" />
+	<sequence SEQ_NAME="TASK_REC_ID"  SEQ_COUNT = "10" />
+	<sequence SEQ_NAME="SCHED_ID"  SEQ_COUNT = "10" />
+		
+</dataset>

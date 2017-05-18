@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="false">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+        	<charset>UTF-8</charset>
+            <pattern>%-42(%d{HH:mm:ss.SSS} %-5level %logger{60}) - %message %n</pattern>
+        </encoder>
+    </appender>
+ 
+
+ 
+    <logger name="org.springframework">
+        <level value="WARN" />
+    </logger>
+   
+    <logger name="org.springframework.core">
+        <level value="WARN" />
+    </logger>
+     <logger name="org.springframework.beans">
+        <level value="WARN" />
+    </logger>  
+    <logger name="org.springframework.test">
+        <level value="WARN" />
+    </logger>  
+    <logger name="org.springframework.context">
+        <level value="WARN" />
+    </logger>  
+    <logger name="org.springframework.data">
+        <level value="DEBUG" />
+    </logger>
+     <logger name="org.springframework.jpa">
+        <level value="DEBUG" />
+    </logger>
+    
+        
+     
+    <logger name="home.abel.photohub">
+        <level value="TRACE" />
+    </logger>
+     
+     
+    <root>
+        <level value="WARN" />
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

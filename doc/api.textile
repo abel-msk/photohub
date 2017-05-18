@@ -1,0 +1,263 @@
+LOGIN
+=====
+
+POST /api/login/login
+
+Параметры:
+	username
+	password
+	rememberMe
+
+Возвращает:
+
+Set-Cookie: x-auth-token="auth-token"
+
+{
+	"message":"OK",
+	"rc":0
+}
+
+Пример:
+curl -c ./cookie -i  -X POST -d "username=admin&password=admin" http://localhost:8081/api/login/login
+
+
+
+
+SITES
+=====
+
+GET /api/site
+GET /api/site/{id}
+
+Параметры
+{id}    Идентифиатор сайта
+
+Возвращает:
+	Список объектов Site или конкретный объект для заданного id
+
+	{
+	"message":"OK",
+	"rc":0,
+	"object":
+		[
+			{
+			"id":"51",
+			"name":"Test",
+			"root":"/tmp",
+			"connectorType":"Local",
+			"connectorState":"DISCONNECT",
+			"properties":
+				[
+					{
+					"name":"siteRootPath",
+					"value":"",
+					"description":null
+					}
+				],
+			"lastScanDate":null,
+			"siteUser":"admin"
+			}
+		]
+	}
+	
+Пример:
+curl -b ./cookie -i -H "Content-Type: application/json" -X GET  http://localhost:8081/api/site
+	
+****
+	
+PUT /site/{id}   Обновляет значения свойств объекта  Site в базе данных
+
+
+	Метод ожидет что в теле запроса в формате JSON будут переданы те переменные объекта Site, 
+	которые необходимо изменить.
+	Поддерживается изменение свойства "name" и содержимое списка "properties".
+	Другие переданные свойста справдливые для oбъекта Site игнорируютсяю Ошибки не вызывают.
+	Идентификатор сайта берется из пути запроса.
+	
+Параметры:	
+	
+	{id}    Идентифиатор сайта
+	
+Request body:
+			{
+			"name":"Test",
+			"root":"/tmp",
+			"properties":
+				[
+					{
+					"name":"siteRootPath",
+					"value":"",
+					"description":null
+					}
+				],
+			"siteUser":"admin"
+			}
+	
+Возвращает: 
+	Объект Site с обновленными свойствами.
+	{
+	"message":"OK",
+	"rc":0,
+	"object":
+		{
+		"id":"51",
+		"name":"Test",
+		"root":"/tmp",
+		"connectorType":"Local",
+		"connectorState":"DISCONNECT",
+		"properties":
+			[
+				{
+				"name":"siteRootPath",
+				"value":"",
+				"description":null
+				}
+			],
+		"lastScanDate":null,
+		"siteUser":"admin"
+		}
+	}
+
+Пример:	
+	
+	curl -b ./cookie -i -H "Content-Type: application/json" -d '{"id":"1","name":"Gsite"}' -X PUT http://localhost:8081/api/site/1/
+	
+	
+****
+GET /site/{id}/connect
+
+Параметры:
+{id}    -  Идентифиатор сайта
+caller  -  Url  страницы клиентского приложения куда переводить запрос после успешной авторизации
+			
+Возвращает:
+	{
+	"message":"OK",
+	"rc":0,
+	"object":
+		{
+		"userLoginFormUrl":null,
+		"accessToken":null,
+		"userMessage":null,
+		"properties":{},
+		"state":"CONNECT",
+		"authReceiveType":"AUTH_TYPE_NET"
+		}
+	}
+
+Пример:
+curl -b ./cookie -i -H "Content-Type: application/json" -X GET  http://localhost:8081/api/site/51/connect
+
+****
+
+GET /site/{id}/redirector
+	Вызывается  для передачи текущего auth токена в систему и перевода вызова на страницу приложения.
+	Стриница приложения сохраннена из вызова метода connect.
+
+Параметры:
+{id}    -  Идентификатор сайта
+code    -  Авторизационный токен
+			
+Возвращает:
+	302  Redirect
+	Location - url взятый из параметра caller запроса GET /site/{id}/connect
+	
+	
+Пример:
+curl -b ./cookie -i  -X GET   "http://localhost:8081/api/site/51/redirector?code=1234
+
+****
+
+GET /site/{id}/disconnect
+
+Метод переводт сайт в состояни дисконнект. Стирает все сессионные токены (если используются)
+при любом последующем обращении к коннектору  требуется пройти полный цикл авторизации.
+
+
+****
+
+GET /site/{id}/auth
+
+Метод аналогичен вызову метода redirect, но вместо  перевода на страницу приложения этот метод возвращает 
+объект SiteCredentialInt
+
+Параметры:
+	{id}    Идентифиатор сайта
+	
+Request body:
+	
+	
+Возвращает:
+
+Пример:
+
+****
+	
+POST  /site/add
+
+Добавляет новый сайт в список.  В качестве параметра принимает объект site в формате json.
+Свойство id принимается но игнорируется. Свойство "connectorType"  является обязательным.
+
+Request body:
+		{
+		"name":"Test",
+		"root":"/tmp",
+		"connectorType":"Local",
+		"connectorState":"DISCONNECT",
+		"properties":
+			[
+				{
+				"name":"siteRootPath",
+				"value":"",
+				"description":null
+				}
+			],
+		"lastScanDate":null,
+		"siteUser":"admin"
+		}
+
+Возвращает:
+	Добавленный d базу объект Site.
+	{
+	"message":"OK",
+	"rc":0,
+	"object":
+		{
+		"id":"51",
+		"name":"Test",
+		"root":"/tmp",
+		"connectorType":"Local",
+		"connectorState":"DISCONNECT",
+		"properties":
+			[
+				{
+				"name":"siteRootPath",
+				"value":"",
+				"description":null
+				}
+			],
+		"lastScanDate":null,
+		"siteUser":"admin"
+		}
+	}
+
+
+
+PHOTO
+=====
+	
+GET	/list
+Возвращает список объектов photo 
+
+Параметры:
+		minDate  
+		maxDate
+		siteList  - список  ID объектов Site переданный единой строкой и разделенными запятой. 
+		            Если этот параметр присутствует то поиск будет вестимь только среди объктов 
+		            привязанных сатам с id из списка в параметре.
+		            
+		limit     - Количество записе в выводе.  По умолчанию = 70
+		offset    - Смещение начала вывода относительно начала списка. По умолчанию 0
+	
+	
+	

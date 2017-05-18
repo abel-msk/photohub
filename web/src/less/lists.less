@@ -1,0 +1,63 @@
+//--------------------------------------------------------------
+//    DropDown
+//--------------------------------------------------------------
+.dropdown-menu {
+    .normal-font();
+    border: inherit;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .15);
+    padding: 0;
+    left: 0;
+    right: 0;
+
+    li > a {
+        padding-bottom: 10px;
+        padding-top: 10px;
+        color:  @base-gray;
+        &:focus {
+          .hover-lighting-none(@base-gray);
+        }
+    }
+
+    li > a:hover,
+    .active > a,
+    .active > a:hover,
+    .active > a:focus {
+        background-color: @list-hover-bg;
+        background-image: none;
+        .hover-lighting(@base-blue);
+    }
+}
+
+
+.list-group {
+    .normal-font();
+    border: none;
+
+    .list-group-item,
+    a.list-group-item,
+    button.list-group-item,
+    .list-group-item:focus,
+    a.list-group-item:focus,
+    button.list-group-item:focus {
+        .set-text-shadow-trans();
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+        color: @base-gray;
+        &.active,
+        &.active:focus {
+            .bold-font();
+            color: @base-blue;
+            border-radius: 0;
+            background-color: #F6FAFF;
+            border: 2px solid #C1D9F1;
+        }
+        .on-hover({
+            //.hover-lighting(@base-blue);
+            .hover-lighting(lighten(@base-blue,5%),30%);
+            background-color: @list-hover-bg;
+        });
+
+    }
+
+}

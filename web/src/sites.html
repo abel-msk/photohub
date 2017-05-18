@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Photohub/Sites</title>
+
+    <!-- build:css css/photohub-client.min.css  -->
+        <link href="css/font-awesome.css" rel="stylesheet">
+        <link href="css/photohub-fonts.css" rel="stylesheet">
+        <link href="css/bootstrap.css" rel="stylesheet">
+        <link href="css/photohub.css" rel="stylesheet">
+    <!-- endbuild -->
+
+    <!-- build:js js/lib/ie8Evt.js  -->
+    <!--[if IE 8]><script src="js/lib/ie8.max.js"></script><![endif]-->
+    <!--[if IE 8]><script src="js/lib/IE8customEvent.js"></script><![endif]-->
+    <!-- endbuild -->
+
+    <script data-main="js/sites" src="js/lib/require.js"></script>
+
+</head>
+<body class="formpage" role="document">
+<!-- TOP  NAVBAR -->
+<nav id="header" class="navbar navbar-fixed-top">
+
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#top-navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html">Photo<span class="color">H</span>ub</a>
+        </div>
+        <div id="top-navbar" class=" navbar-collapse collapse"> <!--navbar-default-->
+            <ul class="nav-icons nav navbar-nav nav-main">
+            </ul>
+
+            <ul class="nav navbar-nav animated-nav navbar-right nav-main">
+                <li data-toggle="modal" data-target="#login-panel"><a>Login</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+
+    <div id="subheader" class="invers-bg">
+        <div id="subheader-menu" class="navbar-inverse container">
+            <div class="navbar-header">
+                <!--<a class="navbar-brand" href="#">Photo<span class="color">H</span>ub</a>-->
+                <span class="page-title">Source sites list</span>
+            </div>
+
+            <ul class="nav navbar-nav navbar-right  condense">
+                <li>
+                    <a id="menu_back">
+                        <span class="border">Back
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </div> <!--  subheader-menu -->
+    </div>
+</nav>
+
+
+
+<!-- ADD SITE DIALOG -->
+<div id="add_site_dialog" class="modal fade col-md-offset-2 col-md-8" role="dialog" tabindex="-1" style="padding-top: 110px;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Add new site</h4>
+            </div>
+            <div class="modal-body">
+                    <form class="form-horizontal ">
+                        <div id="site_name_group" class="form-group">
+                            <label for="site_name" class="col-sm-3 control-label">Site name</label>
+                            <div class="col-sm-9">
+                                <input id="new_site_name" type="text" class="form-control"  placeholder="Enter name for new site">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="site_type" class="col-sm-3 control-label">Site type</label>
+                            <div class="col-sm-9">
+                                <select id="site_type" class="form-control">
+                                    <option>Local</option>
+                                    <option>Google</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="add_site_error_frame" class="inline-error text-center" style="display: none;">
+                        <div id="add_site_error_title" class="title"></div>
+                        <div id="add_site_error_msg" class="message"></div>
+                    </div>
+
+            </div>
+            <div class="modal-footer">
+                <button id="save_new_site_btn" type="button" class="btn btn-primary">Add site</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!--   FORM PAGE -->
+<div class="container site-bar-page">
+    <!--<div id="site-list-pane" class="left-site-bar  left-site-bar">-->
+    <div id="site-list-pane" class="left-site-bar col-md-4 col-sm-4 col-lg-3 left-site-bar">
+        <div class="panel left-side-panel">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="pull-left"> Connected sites </div>
+                    <div class="pull-right">
+                        <button id="cmd-add-class" class="btn btn-primary  btn-xs">Add</button>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div id="sites-list" class="row list-group">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--<div id="site-content-pane" class="page-content pull-right">-->
+    <div id="site-content-pane" class="page-content col-md-8 col-sm-8 col-lg-9  pull-right">
+
+
+
+        <!--SITE ATTRS-->
+
+        <div class="panel panel-default">
+            <div class="panel-heading styled-header-1">
+                <div class="row">
+                    <div class="pull-left">
+                        <span class="in-header-txt">Site name:</span>
+                        <span id="site_name" class="in-header-var"></span>
+                        <button type="button" class="in-header-btn" ><span aria-hidden="true" class="glyphicon glyphicon-pencil"></span></button>
+                    </div>
+                    <!--<div class="pull-left col-md-10 col-sm-10">-->
+                        <!--<span class="in-header-txt">Site name:</span> <span id="site_name" class="in-header-var"></span>-->
+                        <!--<button type="button" class="in-header-btn" ><span aria-hidden="true" class="glyphicon glyphicon-pencil"></span></button>-->
+                    <!--</div>-->
+                </div>
+            </div>
+
+
+            <div class="panel-body">
+
+                <div class="row panel-body-row">
+                    <span class="text-right  row-label">Connector type</span>
+                    <span id="site_connector_type" class="row-data"></span>
+                </div>
+
+                <div class="row panel-body-row">
+                    <span class="text-right row-label">Connect Status</span>
+                    <span id="site_connect_state" class="row-data"></span>
+                    <span class="row-cmd pull-right">
+                        <a id="connect_btn"  site="" data-state="" class="link text-right">Connect</a>
+                    </span>
+                </div>
+
+                <!--<div class="row panel-body-row with-cmd-column">-->
+                    <!--<span class="text-right  row-label">Connector type</span>-->
+                    <!--<span id="site_connector_type" class="row-data"></span>-->
+                <!--</div>-->
+
+                <!--<div class="row panel-body-row with-cmd-column">-->
+                    <!--<div class="text-right row-label">Connect Status</div>-->
+                    <!--<div id="site_connect_state" class="row-data">&nbsp;</div>-->
+                    <!--<div class="text-right row-cmd">-->
+                        <!--<div id="connect_btn" site="" data-state="" class="btn btn-default btn-xs fixed-width">Connect</div>-->
+                    <!--</div>-->
+                <!--</div>-->
+
+                <!--OLD SITES ATTRS-->
+
+                <!--&lt;!&ndash;  Task list &ndash;&gt;-->
+                <!--<div class="row panel-body-row with-cmd-column">-->
+                    <!--<span class="text-right row-label">Last scanned</span>-->
+                    <!--<div id="site_scann_info" class="row-data"    style="width:50%;cursor: pointer" data-toggle="collapse" data-target="#sub_site_scan">-->
+                        <!--<div id="scan_date" class="pull-left">&nbsp;</div>-->
+                        <!--<div id="scan_status" class="pull-left">&nbsp;</div>-->
+                    <!--</div>-->
+                    <!--<div class="text-right row-cmd" style="width:30%">-->
+                        <!--<div id="site_clean_btn" class="btn btn-default btn-xs ">Clean</div>-->
+                        <!--<div id="site_scan_btn" class="btn btn-default btn-xs fixed-width">Scann</div>-->
+                    <!--</div>-->
+                    <!--<div id="sub_site_scan" class="collapse">-->
+                        <!--&lt;!&ndash;<div class="text-right row-label"></div>&ndash;&gt;-->
+                        <!--<div style="margin-left: 20%" class="row-data"></div>-->
+                    <!--</div>-->
+
+                <!--</div>-->
+
+            </div>
+        </div>
+
+        <!--SITE PROPERTIES-->
+
+        <div class="panel panel-default">
+            <div class="panel-heading styled-header-2">
+                <div class="row">
+                    <span class="in-header-txt pull-left">Site properties list:</span>
+                    <span id="property_edit_btn" data-state="view" class="link pull-right text-right" style="padding-right: 15px">Edit</span>
+                </div>
+            </div>
+
+            <div class="panel-body">
+                <div id="site_properties_list">
+                    <div class="row panel-body-row">
+                        <span class="row-label text-right"> Local store path</span>
+                        <div id="prop1" class="col-md-8 col-sm-8">/tmp/usr/local</div>
+                    </div>
+                    <div class="row panel-body-row">
+                        <span class="row-label text-right">Sites account ID</span>
+                        <div id="prop2" class="col-md-8 col-sm-8">artem.belyaev@gmail.com</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+
+        <!--OLD PROPERIES-->
+
+        <!--<div class="panel panel-default">-->
+            <!--<div class="panel-heading styled-header-1">-->
+                <!--<div class="row">-->
+                    <!--<div class="col-md-4 col-sm-4">Site properties list</div>-->
+                    <!--<div class="col-md-8 col-sm-8"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+
+            <!--<div class="panel-body">-->
+                <!--<div id="site_properties_list">-->
+                    <!--&lt;!&ndash;<div class="row panel-body-row">&ndash;&gt;-->
+                        <!--&lt;!&ndash;<span class="col-md-4 col-sm-4">Local store path</span>&ndash;&gt;-->
+                        <!--&lt;!&ndash;<div id="prop1" class="col-md-8 col-sm-8"></div>&ndash;&gt;-->
+                    <!--&lt;!&ndash;</div>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<div class="row panel-body-row">&ndash;&gt;-->
+                        <!--&lt;!&ndash;<span class="col-md-4 col-sm-4">Sites account ID</span>&ndash;&gt;-->
+                        <!--&lt;!&ndash;<div id="prop2" class="col-md-8 col-sm-8"></div>&ndash;&gt;-->
+                    <!--&lt;!&ndash;</div>&ndash;&gt;-->
+                <!--</div>-->
+                <!--<div class="row panel-body-row">-->
+                    <!--<div class="col-md-offset-10  col-sm-offset-10 row-label text-right">-->
+                        <!--<div id="property_edit_btn" data-state="view" class="btn btn-default btn-xs fixed-width">Edit</div>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+
+        <!--</div>-->
+
+
+        <!--SITE TASKS-->
+
+        <div class="panel panel-default">
+            <div class="panel-heading styled-header-1">
+                <div class="row">
+                    <div class="">Site tasks</div>
+                </div>
+            </div>
+            <div id="task-list" class="panel-body">
+                <!--<div class="row panel-body-row">-->
+                    <!--<span class="text-right row-label">SCAN</span>-->
+                    <!--<span class="row-data">FIN</span>-->
+                    <!--<span class="row-data">10.04.17 13:23</span>-->
+                    <!--<span class="row-cmd pull-right">-->
+                        <!--<a  site="" data-state="" class="link text-right">Run task</a>-->
+                    <!--</span>-->
+                    <!--<span class="row-cmd pull-right">-->
+                        <!--<a  site="" data-state="" class="link text-right">Show logs</a>-->
+                    <!--</span>-->
+                <!--</div>-->
+                <!--<div class="row panel-body-row">-->
+                    <!--<span class="text-right row-label">CLEAN</span>-->
+                    <!--<span  class="row-data">FIN</span>-->
+                    <!--<span  class="row-data">10.04.17 13:23</span>-->
+                    <!--<span class="row-cmd pull-right">-->
+                        <!--<a  site="" data-state="" class="link text-right">Run task</a>-->
+                    <!--</span>-->
+                    <!--<span class="row-cmd pull-right">-->
+                        <!--<a  site="" data-state="" class="link text-right">Show logs</a>-->
+                    <!--</span>-->
+                <!--</div>-->
+            </div>
+        </div>
+
+        <!--SITE SCHEDULE-->
+
+        <div class="panel panel-default">
+            <div class="panel-heading styled-header-2">
+                <div class="row">
+                    <div class="">Site schedules</div>
+                </div>
+            </div>
+
+            <div id="sched-list" class="panel-body">
+
+                <!--<div class="row panel-body-row">-->
+                    <!--<span class="text-right row-label">SCAN</span>-->
+                    <!--<span  class="row-data"><span>Scheduled: </span><span>10:37 every day</span></span>-->
+                    <!--<span  class="row-data"><span>Next: </span><span>Today at 5:00 PM</span></span>-->
+                    <!--<span class="row-cmd pull-right">-->
+                        <!--<a class="link text-right">Edit</a>-->
+                    <!--</span>-->
+                <!--</div>-->
+
+            </div>
+
+        </div>
+
+
+
+
+
+        <!--<div class="form-pane-footer text-left">-->
+        <div class="form-pane-footer text-left" style="border: none">
+            <div id="delete_site" class="btn btn-default btn-sm">Remove site</div>
+        </div>
+
+    </div>
+</div>
+
+
+
+
+</body>
+</html>

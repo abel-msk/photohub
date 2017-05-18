@@ -1,0 +1,111 @@
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'idea'
+
+//  Contact:  https://github.com/ewerk/gradle-plugins/issues
+//       Alernate: https://gist.github.com/EdwardBeckett/5377401
+
+group = "home.abel.photohub"
+version = "0.1.0"
+
+def propFile = new File("${rootProject.projectDir}/project.properties");
+Properties props = new Properties()
+props.load(new FileInputStream(propFile))
+
+defaultTasks 'clean', 'build'
+
+
+
+//----------------------------------------------------------
+//   Dependent project definition
+//----------------------------------------------------------
+//task compileInterface(type: Exec) {
+//	inputs.files(fileTree(dir: '../connectors/connector-interface/build/libs', include: '*.jar'))
+//	executable "gradle"
+//	args "jar"
+//}
+
+//compileJava.dependsOn('compileInterface')
+
+
+//----------------------------------------------------------
+//   Tasks
+//----------------------------------------------------------
+
+task moduleJar(type: Jar) {
+    from "${buildDir}/classes/main"
+    from "${buildDir}/resources/main"
+}
+
+artifacts {
+    archives moduleJar
+}
+
+test {
+    inputs.dir project.sourceSets.main.java.srcDirs
+    inputs.dir project.sourceSets.test.java.srcDirs
+    inputs.dir project.sourceSets.test.resources.srcDirs
+
+    filter {
+        includeTestsMatching "*GoogleConnectorTest"
+    }
+}
+
+//----------------------------------------------------------
+//   Dependent artifacts version
+//----------------------------------------------------------
+ext {
+    //  Google API      //v1-rev13-1.20.0 //v1-rev512-1.22.0 //v1-rev512-1.22.0/
+    googleAPIServicesVersion = 'v1-rev512-1.22.0'
+    googleAPIClientVersion = '1.22.0'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+
+dependencies {
+
+    //	Connetor interface
+    if ( rootProject == null) {
+        compile fileTree(dir: '../connectors/connector-interface/build/libs', include: '*.jar')
+    }
+
+    //  Spring
+    compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}"
+
+    //compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: "${jacksonVersion}"
+
+    //  Google libs
+    compile group: 'com.google.gdata',  name: 'core', version: '1.47.1'
+    compile group: 'javax.mail',  name: 'mail', version: '1.4'
+    //compile group: 'com.google.guava',  name: 'guava', version: '13.0.1'
+    //compile group: 'com.google.oauth-client',  name: 'google-oauth-client', version: "${googleAPIClientVersion}"
+    //compile group: 'com.google.oauth-client',  name: 'google-oauth-client-jetty', version: "${googleAPIClientVersion}"
+    //compile group: 'com.google.http-client',  name: 'google-http-client-jackson2', version: "${googleAPIClientVersion}"
+    //compile (group: 'com.google.oauth-client',  name: 'google-oauth-client-servlet', version: "${googleAPIClientVersion}")
+    //        { exclude group:'javax.servlet',module:'servlet-api' }
+
+    compile group: 'com.google.api-client',  name: 'google-api-client', version: "${googleAPIClientVersion}"
+    compile group: 'com.google.apis',  name: 'google-api-services-plus', version: "${googleAPIServicesVersion}"
+    //google-oauth-client-jetty
+    //compile group: 'com.google.apis',  name: 'google-api-services-appsactivity', version: "${googleAPIServicesVersion}"
+
+
+    //	Logging
+    compile group: 'org.slf4j', name: 'slf4j-api', version: "${props.slf4jVersion}"
+    compile group: 'org.slf4j', name: 'jcl-over-slf4j', version: "${props.slf4jVersion}"
+    compile group: 'org.slf4j', name: 'log4j-over-slf4j', version: "${props.slf4jVersion}"
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: "${props.logbackVersion}"
+
+    //	Testing
+    testCompile group: 'org.springframework', name: 'spring-test', version: "${props.springFrameworkVersion}"
+    testCompile group: 'junit', name: 'junit', version: "${props.junitVersion}"
+    testCompile group: 'org.assertj', name: 'assertj-core', version: '3.6.2'
+}
+
+
+
+

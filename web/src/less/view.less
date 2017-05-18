@@ -1,0 +1,116 @@
+.mainview {
+    z-index: 1100;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 0;
+    width: 0;
+    overflow: hidden;
+    background-color: rgb(32,32,32);
+    -webkit-transition: opacity .2s linear;
+    transition: opacity .2s linear;
+    opacity: 0;
+    
+    .view-inner-spc {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        position:relative;
+        
+        .view-menu {
+            background-image: -webkit-linear-gradient(0deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
+            background-image: linear-gradient(0deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
+            position: absolute;
+            right: 0;
+            left: 0;
+            top: 0;
+            z-index: 1120;
+        
+            a {
+                cursor: pointer;
+                color: @base-white;
+            }
+        
+            .navbar-right {
+                margin-right: 0;
+            }
+            
+            .big-size {
+                font-size: 18px;
+            }
+        }
+        
+        .slider {
+            background: rgba(66,66,66,0.54);
+            -webkit-border-radius: 28px;
+            border-radius: 28px;
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            margin-top: -28px;
+            height: 56px;
+            width: 56px;
+            z-index: 1130;
+        
+            svg {
+                fill: white;
+                position: absolute;
+                left: 10px;
+                top: 10px;
+            }
+        
+            &.left {
+                left: 28px;
+            }
+            &.right {
+                right: 28px;
+            }
+        }
+    }
+    
+    .img-frame {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+    }
+    .img-object {
+        z-index: 1101;
+        //top:0;
+        //left:0;
+        //position: absolute;
+        //overflow: hidden;
+        margin-right: auto;
+        margin-left: auto;
+        margin-top: auto;
+        margin-bottom: auto;
+        display: block;
+        
+        &.full-height {
+            width: auto;
+            height:100%;
+        }
+        &.full-width {
+            height: auto;
+            width: 100%;
+        }
+        
+        //img {
+        //    border: none;
+        //    transform: translate3d(0px, 0px, 0px) rotate(0deg);
+        //}
+    }
+    
+    .opacity {
+        -webkit-transition: opacity .4s linear;
+        transition: opacity .4s linear;
+        opacity: 1;
+    }
+    
+
+}
+
+//svg[Attributes Style] {
+//    width: 36px;
+//    height: 36px;
+//}

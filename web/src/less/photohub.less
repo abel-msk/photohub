@@ -1,0 +1,287 @@
+//-----------------------------------------------------------------------------
+//   Define Colors
+//-----------------------------------------------------------------------------
+@base-blue:  #337ab7;
+@base-blue-light:  rgba(52, 138, 200, 1);
+@base-gray:    #505A65;
+@base-gray-light: lighten(@base-gray,40);
+@page-header: @base-gray;
+
+@error-color: #bd1317;
+@success-color: #499b16;
+@warn-color: #c5620a;
+@normal-color: #1a2484;
+@error-bg: #f3d2d4;
+
+@list-hover-bg: #E5F1FF;
+@header-bg: #F6FAFF;
+@header-border-color: #C1D9F1;
+@base-white: #F5F5F5;
+@white: #FFFFFF;
+
+
+//-----------------------------------------------------------------------------
+//   Some status coloring
+//-----------------------------------------------------------------------------
+
+.status-succ {
+  .bold-font();
+  color: @success-color;
+}
+.status-err {
+  .bold-font();
+  color: @error-color;
+}
+.status-warn {
+  .bold-font();
+  color: @warn-color;
+}
+.status-norm {
+  .bold-font();
+  color: @normal-color;
+}
+
+.placeholder-color(@color) {
+  &::-webkit-input-placeholder {color:@color;}
+  &::-moz-placeholder          {color:@color;}/* Firefox 19+ */
+  &:-moz-placeholder           {color:@color;}/* Firefox 18- */
+  &:-ms-input-placeholder      {color:@color;}
+  &:focus::-webkit-input-placeholder {color:@color;}
+  &:focus::-moz-placeholder          {color:@color;}/* Firefox 19+ */
+  &:focus:-moz-placeholder           {color:@color;}/* Firefox 18- */
+  &:focus:-ms-input-placeholder      {color:@color;}
+}
+
+//-----------------------------------------------------------------------------
+//   Define fonts
+//-----------------------------------------------------------------------------
+
+
+//@font-face {
+//    font-family: 'GothamProRegular';
+//    src: url('../fonts/GothamProRegular/GothamProRegular.eot');
+//    src: url('../fonts/GothamProRegular/GothamProRegular.eot?#iefix') format('embedded-opentype'),url('../fonts/GothamProRegular/GothamProRegular.woff') format('woff'), url('../fonts/GothamProRegular/GothamProRegular.ttf') format('truetype');
+//}
+//@font-face {
+//    font-family: 'GothamProMedium';
+//    src: url('../fonts/GothamProMedium/GothamProMedium.eot');
+//    src: url('../fonts/GothamProMedium/GothamProMedium.eot?#iefix') format('embedded-opentype'),url('../fonts/GothamProMedium/GothamProMedium.woff') format('woff'), url('../fonts/GothamProMedium/GothamProMedium.ttf') format('truetype');
+//}
+//@font-face {
+//    font-family: 'GothamProBold';
+//    src: url('../fonts/GothamProBold/GothamProBold.eot');
+//    src: url('../fonts/GothamProBold/GothamProBold.eot?#iefix') format('embedded-opentype'),url('../fonts/GothamProBold/GothamProBold.woff') format('woff'), url('../fonts/GothamProBold/GothamProBold.ttf') format('truetype');
+//}
+
+.text-font() {
+  //font-family: 'GothamProRegular', arial, helvetica, sans-serif;
+  font-family: "Open Sans","lucida grande","Segoe UI",arial,verdana,"lucida sans unicode",tahoma,sans-serif;
+  font-size: 13px;
+}
+
+//color: #505A65;
+//font-family: "Open Sans", "lucida grande", "Segoe UI", arial, verdana, "lucida sans unicode", tahoma, sans-serif;
+
+
+.header-font() {
+  //font-size: 14px;
+  font-family: 'GothamProRegular', arial, helvetica, sans-serif;
+}
+
+.normal-font() {
+  font-family: 'GothamProRegular', arial, helvetica, sans-serif;
+  font-size: 14px;
+  //font-family: "Open Sans","lucida grande","Segoe UI",arial,verdana,"lucida sans unicode",tahoma,sans-serif;
+}
+.bold-font() {
+  font-family: 'GothamProMedium', arial, helvetica, sans-serif;
+  font-weight: 400;
+}
+.boldest-font() {
+  font-family: "GothamProBold", arial, helvetica, sans-serif;
+  font-weight: 800;
+}
+
+.bold {
+  .bold-font();
+}
+
+//--------------------------------------------------------------
+//    Effects
+//--------------------------------------------------------------
+//ease-out
+.set-rotate-trans() {
+    -webkit-transition: rotate 0.5s linear;
+    -moz-transition: rotate 0.5s linear;
+    -o-transition: rotate 0.5s linear;
+    transition: rotate 0.5s linear;
+}
+
+
+.set-text-shadow-trans () {
+  text-shadow: none;
+  -webkit-transition: text-shadow 0.2s linear;
+  -moz-transition: text-shadow 0.2s linear;
+  -o-transition: text-shadow 0.2s linear;
+  transition: text-shadow 0.2s linear;
+}
+
+.set-border-shadow-trans() {
+  -webkit-transition: box-shadow 0.2s linear;
+  -moz-transition: box-shadow 0.2s linear;
+  -o-transition: box-shadow 0.2s linear;
+  transition: box-shadow 0.2s linear;
+}
+.set-border-trans() {
+  -webkit-transition: border-color 0.2s linear;
+  -moz-transition: border-color 0.2s linear;
+  -o-transition: border-color 0.2s linear;
+  transition: border-color 0.2s linear;
+}
+
+.hover-lighting(@color:white,@transparent:60%) {
+  color: @color;
+  text-shadow: 0 0 5px fade(@color, @transparent);
+}
+
+.hover-lighting-none() {
+  text-shadow: none;
+}
+.hover-lighting-none(@color) {
+  text-shadow: none;
+  color: @color;
+}
+
+.rounded-border() {
+  border: solid 2px;
+  border-radius: 14px;
+  padding: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.rounded-text-border() {
+  .border {
+    .rounded-border();
+  }
+}
+
+//--------------------------------------------------------------
+//    Function
+//--------------------------------------------------------------
+
+.on-list-hover(@rules){
+  li > a:hover,
+  li > a:hover:focus {
+      cursor: pointer;
+      @rules();
+  }
+};
+
+.on-link-hover(@rules) {
+    &:hover,
+    &:hover:focus {
+        cursor: pointer;
+        @rules();
+    }
+};
+
+.on-list-select(@rules) {
+  li > a:hover,
+  li > a:hover:focus,
+  li.active > a,
+  li.open > a,
+  .active > a:focus
+  .active > a:hover,
+  .open > a:hover {
+    @rules();
+  }
+}
+
+
+.on-link-select(@rules) {
+    &:hover,
+    &:hover:focus,
+    .active > &,
+    .open > &,
+    .active > &:focus
+    .active > &:hover,
+    .open > &:hover {
+        @rules();
+    }
+}
+
+
+
+.on-click(@rules) {
+  &:active,
+  &:active:focus,
+  &.active,
+  &.active:focus,
+  &:active:hover {
+    @rules();
+  }
+}
+
+.on-hover(@rules) {
+  &:hover,
+  &:focus:hover{
+    @rules();
+  }
+}
+
+
+a:focus, a:hover {
+  color: @base-blue;
+}
+
+
+//--------------------------------------------------------------
+//    Headres
+//--------------------------------------------------------------
+
+.panel-header-style1() {
+    .header-font();
+    border: 2px solid #C1D9F1;
+    color: @base-blue;
+    background-color: @header-bg;
+    font-size: 16px;
+}
+
+.panel-header-style2() {
+    .header-font();
+    
+    //border: 2px solid #C1D9F1;
+    border-bottom: 1px solid rgba(80, 90, 101, 0.30);
+    //border-bottom: none;
+    color: @base-blue;
+    background-color: @white;
+    font-size: 16px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+
+//--------------------------------------------------------------
+//    Links
+//--------------------------------------------------------------
+
+
+//hover-lighting
+
+
+@import "header";
+@import "buttons";
+@import "panels";
+@import "panels2";
+@import "upload";
+@import "pages";
+@import "lists";
+@import "forms";
+@import "catalog";
+@import "datarange";
+@import "view";
+
+//--------------------------------------------------------------
+//    Main images flow
+//--------------------------------------------------------------

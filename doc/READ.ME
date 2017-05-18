@@ -1,0 +1,32 @@
+
+
+Install types 
+
+standaone  
+   Устанавливается на локальном компьютере.    
+   	useAuth
+   	
+   	
+   	
+curl -c ./cookie -i -H "Content-Type: application/json" -X POST -d '{"username":"admin","password":"admin"}' http://localhost:8081/api/login   	
+   	
+curl -b ./cookie -i -H "Content-Type: application/json" -X GET  http://localhost:8081/api/site/751
+   	
+{
+	"id":"751",
+	"name":"Main",
+	"root":"/Volumes/Dual-B/Users/abel/Developing/photohub-root/photo-root",
+	"defaultSite":false,
+	"connectorType":null,
+	"connectorState":null,
+	"properties":[],
+	"siteUser":null
+}
+
+
+
+
+curl -c ./cookie -i  -X POST -d "username=admin&password=admin" http://localhost:8081/api/login/login
+
+
+

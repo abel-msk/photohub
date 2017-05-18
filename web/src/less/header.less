@@ -1,0 +1,269 @@
+.rounded-input() {
+    & {
+        height: 25px;
+        border-radius: 11px;
+        z-index: 0;
+        font-style: italic;
+        font-size: 12px;
+    }
+    & ~ div .glyphicon  {                        //   Search icon place inside search area
+        display: inline-block;
+        margin-left: -25px;
+        margin-top: 4px;
+    }
+}
+
+.nav > li > a {
+    .set-text-shadow-trans();
+    &:hover, &:focus {
+        color: #FFFFFF;
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.6);
+        background: inherit;
+    }
+}
+
+#header {
+    
+    .header-font();
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .15);
+    border: none;
+    color: @base-gray;
+    min-height: 60px;
+    background-color: @white;
+    margin-bottom: 0;
+
+    .navbar-brand,
+    .navbar-brand:active {
+        .boldest-font;
+        color: @base-blue;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        font-size: 24px;
+    }
+
+    .page-title {
+        .bold-font;
+        color: @white;
+        font-size: 20px;
+        margin-top: 10px;
+        display: inline-block;
+    }
+
+    //--------------------------------------------------------------
+    //    Effects fo any navbar in header
+    //--------------------------------------------------------------
+    .navbar-nav  {
+        span.glyphicon {
+            padding-right: 0.3em;
+            top: 2px;
+        }
+        li > a {
+            .set-text-shadow-trans();
+            .border {
+                .set-border-shadow-trans();
+            }
+        }
+
+        input.short-date {
+            width: 8em;
+        }
+
+        form {
+            &.input-xsm {
+                padding-top: 5px;
+            }
+            .input-xsm {
+                height: 24px;
+                padding: 2px 10px;
+                font-size: 12px;
+                line-height: 1.5;
+                padding-top: 4px;
+                //        border-radius: 3px;
+            }
+            .input-group-addon.input-xsm {
+                padding: 2px 10px;
+                font-size: 12px;
+                //        border-radius: 3px;
+                padding-top: 3px;
+                padding-bottom: 1px;
+            }
+            #range-selector {
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+            }
+
+            .input-group-addon:last-of-type {
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+            }
+
+        }
+    }
+
+    //--------------------------------------------------------------
+    //    Main navigation bar
+    //--------------------------------------------------------------
+    #top-navbar {
+        background-color: #FFFFFF;
+        li > a {
+            &:focus {                         // Drop lightings when only focused
+                .hover-lighting-none(@page-header);
+            }
+            text-shadow: none;
+            text-transform: uppercase;
+            padding-top: 20px;
+            padding-bottom: 20px;
+            padding-right: 15px;
+            padding-left: 15px;
+            color: @page-header;
+            height: 60px;
+        }
+
+        .on-list-select({
+          .hover-lighting(lighten(@base-blue,10%));
+        });
+        
+        .on-list-hover({
+            .hover-lighting(lighten(@base-blue,10%));
+        });
+        
+        form[role=search] {           //   Search area
+            padding-top: 15px;
+            #search-input {
+                .rounded-input();
+            }
+        } // end of search input
+
+        li:last-of-type form {
+            margin-right: -10px;
+        }
+        
+    }  // end pf nav-main
+
+
+//    input.date {
+//        width: 150px;
+//    }
+
+
+    //--------------------------------------------------------------
+    //    Subsidary navigation bar or Menu
+    //--------------------------------------------------------------
+
+    .invers-bg {
+        background-color: @base-blue;
+    }
+
+
+    .navbar-inverse  {
+        .invers-bg;
+        
+        li span {
+            color: @base-white;
+        }
+
+        li > a {
+            color: @base-white;
+        }
+        
+        
+        .navbar-nav > .open {
+            & > a {
+                //&:hover {
+                //    background-color: lighten(@base-blue,10%);
+                //}
+                //background-color: @base-blue;
+                background-color: lighten(@base-blue,10%);
+                color: @white;
+            }
+            
+            ul.dropdown-menu  {
+                & > li > a:hover {
+                    //background-color: darken(#FFFFFF,5%);
+                    background-color: @white;
+                    text-shadow: 0 0 5px rgba(79, 147, 206, 0.4);
+                }
+                background-color: @base-white;
+                & > li > a {
+                    & span {
+                        color: @base-blue;
+                    }
+                    color: @base-blue;
+                }
+            }
+        }
+        
+        .navbar-text {
+            font-size: 15px;
+        }
+        ul.nav.navbar-nav:first-of-type li:first-of-type a {
+            margin-left: -20px;
+        }
+
+        ul:first-of-type.nav.navbar-nav {
+            &.condense  li > a {
+                padding-right: 10px;
+                padding-left: 10px;
+            }
+            .glyphicon {
+                top: 2px;
+            }
+            li > a {
+                text-transform: none;
+                padding-right: 20px;
+                padding-left: 20px;
+                //color: @base-white;
+                .border {
+                    .set-border-shadow-trans();
+                    .rounded-border();
+                }
+                //.rounded-text-border;
+            }
+
+            .on-list-select({
+                .hover-lighting(@white);
+                .border {
+                    box-shadow: 0 0 15px rgba(255,255,255,0.6);
+                }
+            });
+
+            .on-list-hover({
+                .hover-lighting(@white);
+                .border {
+                    box-shadow: 0 0 15px rgba(255,255,255,0.6);
+                }
+            });
+
+
+            // inverted form form
+            form {
+                background-color: @base-blue;
+                color: @white;
+                .input-group-addon {
+                    background-color: @base-blue;
+                    color: @white;
+                }
+                .input-group {
+                    .set-border-shadow-trans();
+                    .on-hover({
+                        box-shadow: 0 0 15px rgba(255,255,255,0.6);
+                    });
+                }
+                input.invers {
+                    //.set-border-shadow-trans();
+                    .set-border-trans();
+                    background-color: lighten(@base-blue,20%);
+                    //lighten(#337ab7,10%)
+                    //background-color: #337ab7;
+                    color: @white;
+                    .placeholder-color(darken(@white, 20%));
+                    &:focus {
+                        border-color: @white;
+                    }
+                }
+            }
+
+
+        }    // End of navbar item
+    } //   End of navbar-inverse
+}  //  End of header

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Photohub</title>
+
+
+    <!-- build:css css/pikaday.min.css -->
+        <link href="css/pikaday.css" rel="stylesheet">
+    <!-- endbuild -->
+
+    <!-- build:css css/photohub-client.min.css -->
+        <link href="css/font-awesome.css" rel="stylesheet">
+        <link href="css/photohub-fonts.css" rel="stylesheet">
+        <link href="css/bootstrap.css" rel="stylesheet">
+        <link href="css/photohub.css" rel="stylesheet">
+    <!-- endbuild -->
+
+    <!-- build:js js/lib/ie8compt.js  -->
+    <!--[if IE 8]><script src="js/lib/ie8.max.js"></script><![endif]-->
+    <!--[if IE 8]><script src="js/lib/IE8customEvent.js"></script><![endif]-->
+    <!-- endbuild -->
+
+    <script data-main="js/init" src="js/lib/require.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDL6LKzAVtkqM8JzTGYX02aerq6iIcKdEE&"></script>
+
+</head>
+
+<body role="document">
+    <!--<script type="text/javascript">-->
+    <!--</script>-->
+
+    <!-- TOP  NAVBAR -->
+    <!--<nav id="header" class="navbar navbar-fixed-top">-->
+    <nav id="header" class="navbar" style="z-index: 100">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#top-navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Photo<span class="color">H</span>ub</a>
+            </div>
+
+            <div id="top-navbar" class="navbar-default navbar-collapse collapse">
+                <ul class="nav-icons nav navbar-nav nav-main">
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                    <!--<form class="navbar-form navbar-right" role="search">-->
+                        <form class="" role="search">
+                            <div class="input-group">
+                                <input id="search-input" type="text" class="form-control"  aria-hidden="true" placeholder="Search ...">
+                                <div><span class="glyphicon glyphicon-search"></span></div>
+                            </div>
+                        </form>
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav animated-nav navbar-right nav-main">
+                    <!--<li data-toggle="collapse" data-target="#base-submenu">-->
+                    <li>
+                        <a id="base-menu-toggle"><span class="glyphicon glyphicon-menu-hamburger"></span>Menu</a>
+                    </li>
+                    <li>
+                        <a id="filter-menu-toggle">Filter</a>
+                    </li>
+                    <li data-toggle="modal" data-target="#login-panel"><a>Login</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+
+
+        <!--   SUBMENU NAV BAR -->
+        <div id="submenu-bg" class="invers-bg">
+
+            <!--   BASE SUBMENU -->
+            <div id="base-submenu" class="navbar-inverse container collapse">
+                <ul class="nav navbar-nav">
+                    <li data-toggle="modal" data-target="#upload-panel">
+                        <a id="upload" href="#">
+                        <span class="border">
+                            <span class="glyphicon glyphicon-upload"></span>Upload photos
+                        </span>
+                        </a>
+                    </li>
+                    <li id="add-folder"> <a href="#">Add Folder </a></li>
+                    <li id="add-site"> <a  href="#">Add Site </a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right ">
+                    <li class="dropdown dropdown-toggle">
+                        <a href="#"  data-toggle="dropdown"><span class="glyphicon glyphicon-th"></span>View<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#"><span class="glyphicon glyphicon-th-large"></span>Normal</a></li>
+                            <li><a href="#"><span class="glyphicon glyphicon-th"></span>Condense</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown dropdown-toggle">
+                        <a href="#" data-toggle="dropdown"> <span class="glyphicon glyphicon-cog"></span>Settings<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a><span class="glyphicon glyphicon-th-list"></span>Params</a></li>
+                            <li><a id="load-sites"><span class="glyphicon glyphicon-cloud"></span>Sites</a></li>
+                            <li><a><span class="glyphicon glyphicon-user"></span>Users</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <!--   ON SELECTION SUBMENU  -->
+            <div id="selection-submenu" class="navbar-inverse container collapse">
+                <ul class="nav navbar-nav">
+                    <li> <a id="sel-hide">Hide</a></li>
+                    <li> <a id="sel-merge">Merge</a></li>
+                    <li data-toggle="modal" data-target="#select-folder"> <a id="sel-folder">Add to folder</a></li>
+                </ul>
+                <ul class="nav navbar-nav animated-nav navbar-right nav-main">
+                    <li><a id="sel-clear">Clear</a></li>
+                </ul>
+            </div>
+
+
+            <!--   ON FILTER SUBMENU  -->
+            <div id="filter-submenu" class="navbar-inverse container collapse ">
+                <ul class="nav navbar-nav animated-nav navbar-right nav-main">
+                    <li>
+                        <span class="navbar-text">
+                            Filter:
+                        </span>
+                    </li>
+
+                    <li>
+                        <!--<div class="navbar-form">-->
+                            <!--<form class="navbar-form form-inline navbar-left">-->
+                        <form class="navbar-form  navbar-left input-xsm">
+                                <div class="input-group">
+                                    <div class="input-group-addon input-xsm">Date range:</div>
+                                    <input id="from-date-input" type="text" class="invers form-control input-xsm short-date"  aria-hidden="true" placeholder="From ...">
+                                <!--</div>-->
+                                <!--<div class="input-group">-->
+                                    <!--<div class="input-group-addon input-xsm">To:</div>-->
+                                    <input id="to-date-input" type="text" class="invers form-control input-xsm short-date"  aria-hidden="true" placeholder="To ...">
+                                    <div id="range-selector" class="input-group-addon input-xsm"><span class="glyphicon  glyphicon-calendar"></span></div>
+                                    <!--<div><span class="glyphicon  glyphicon-calendar"></span></div>-->
+                                </div>
+                            </form>
+                        <!--</div>-->
+                    </li>
+
+                    <li>
+                        <a id="apply-filter" href="#">
+                            <span class="border">
+                                <!--<span class="glyphicon glyphicon-filter"></span>-->
+                                Apply
+                            </span>
+                        </a>
+                    </li>
+
+                </ul>
+                <!--<ul class="nav navbar-nav">-->
+                    <!--<li> <a id="filter-hide">Hide</a></li>-->
+                    <!--<li> <a id="filter-merge">Merge</a></li>-->
+                <!--</ul>-->
+            </div>
+
+        </div>
+
+        <!--<div id="filter-submenu" class="container navbar-white collapse in">-->
+            <!--<ul class="nav navbar-nav">-->
+                <!--<li> <a id="filter-hide">Hide</a></li>-->
+                <!--<li> <a id="filter-merge">Merge</a></li>-->
+            <!--</ul>-->
+        <!--</div>-->
+    </nav>
+
+
+    <!-- SELECT FOLDER DIALOG -->
+    <div id="select-folder" class="modal fade col-md-offset-2 col-md-8" role="dialog" tabindex="-1" style="padding-top: 80px;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div style="padding: 40px 100px 40px 100px;">
+                        <h4>Select folder to add selected images</h4>
+                        <form class="form">
+
+
+
+                            <button type="submit" class="btn btn-primary center-block">Move</button> <!--center-block-->
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- LOIGN DIALOG -->
+    <div id="login-panel" class="modal fade col-md-offset-2 col-md-8" role="dialog" tabindex="-1" style="padding-top: 80px;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div style="padding: 40px 100px 40px 100px;">
+                    <h4>Enter you user name and password</h4>
+                        <form class="form ">
+                            <div class="form-group ">
+                                <label for="login">Login</label>
+                                <input type="text" class="form-control" id="login" placeholder="Login">
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" class="form-control" id="password" placeholder="Password">
+                            </div>
+                            <button type="submit" class="btn btn-primary center-block">Login</button> <!--center-block-->
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- UPLOAD DIALOG -->
+    <!--<div id="upload-panel" class="container collapse theme-showcase col-md-offset-2 col-md-8"  style="padding-top: 80px;" >-->
+    <div id="upload-panel" class="modal fade col-md-offset-2 col-md-8" role="dialog" tabindex="-1" style="padding-top: 80px;">
+        <div class="panel panel-default">
+            <div class="panel-heading"> </div>
+            <div class="panel-body">
+                <!--  SITE Selector -->
+                <div>
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label  for="site-upload-list" class="col-sm-4 control-label"  style="padding-top:7px;">Select site for upload to</label>
+                            <div class="col-sm-7">
+                                <select id="site-upload-list" class="form-control">
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <!--  Drop Zone -->
+                <!-- <div id="drop-zone" class="pull-right drop-upload-zone"> -->
+                <div id="drop-zone" class="drop-upload-zone" style="height: 320px;">
+                    <div class="text-center"><i class="glyphicon glyphicon-picture glyphicon-align-center"></i></div>
+                    <div class="text-center">Drop your image files here. Or click to add.</div>
+                </div>
+                <div  id="previews" class="files">
+                </div>
+            </div>
+            <div class="panel-footer">
+                <button class="btn btn-primary fileinput-button">
+                    <!--<i class="glyphicon glyphicon-plus"></i>-->
+                    <span>Add files</span>
+                </button>
+                <button type="button" class="pull-right btn btn-default" data-dismiss="modal">
+                    <span>Close</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!--  DATA RANGE PICKER -->
+    <!--<div id="date-range-picker" class="modal-dialog white-backdrop fixed fade" data-backdrop="static" role="dialog" tabindex="-1">-->
+
+        <!--<div class="modal-header">-->
+
+        <!--</div>-->
+        <!--<div class="modal-body container">-->
+            <!--<div class="row-block row">-->
+                <!--<div id="from-date-frame" class="col-md-4"></div>-->
+                <!--<div id="to-date-frame" class="col-md-4"></div>-->
+                <!--<div id="custom-date-frame" class="col-md-4"></div> &lt;!&ndash;pull-left clearfix&ndash;&gt;-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
+
+
+    <!-- PHOTO INFO -->
+    <div id="photo_info" class="modal white-backdrop fixed fade" data-backdrop="static" role="dialog" tabindex="-1">
+        <div id="dialog-arrow" class="panel-arrow" style="">
+            <i class="fa fa-caret-up fa-rotate-270"></i>
+        </div>
+
+        <div id="image_info_dialog" class="modal-content info-panel">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+
+                <h4 style="margin-top: 2px;margin-bottom: 0px;">
+                    <!--<i class="fa fa-info-circle" style="font-size: 22px;line-height: 22px;vertical-align: middle;"></i>-->
+                    <span style="line-height: 22px;vertical-align: middle;">Image info</span>
+                </h4>
+            </div>
+
+            <div id="acc_frame" class="modal-body condensed scrolled">
+
+                <a data-toggle="collapse" data-parent="acc_frame" href="#acc-name">
+                    <!--<a data-toggle="collapse" data-target="#acc-name">-->
+                    <!--<div id="info_image_name" class="modal-body-row header styled-header-1">-->
+                    <div id="info_image_name" class="modal-body-row header">
+                        <span class="accordion-selector"> <i class="glyphicon glyphicon-play fa-rotate-90"></i> </span>
+                        <span id="info_image_name_pos"></span>
+                        <!--<span class="row-label"> Name: </span>-->
+                        <!--<span class="row-data">Loading ...</span>-->
+                    </div>
+                </a>
+
+                <div id="acc-name" class="accordion-block panel-collapse collapse in">
+                    <div  id="info_image_descr" class="modal-body-row">
+                        <!--<span class="row-label">Description:</span>-->
+                        <!--<span class="row-data">Loading ...</span>-->
+                        <!--<div  class="modal-body-row">-->
+                            <!--<span class="row-data full-width">Loading ...</span>-->
+                        <!--</div>-->
+                    </div>
+
+                    <div id="info_image_created" class="modal-body-row">
+                        <span class="row-label">Creation date:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+                    <div id="info_image_changed" class="modal-body-row">
+                        <span class="row-label">Changed date:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+                    <div id="info_image_site" class="modal-body-row">
+                        <span class="row-label">Located on site:</span>
+                        <span class="row-data"><a href=""></a></span>
+                    </div>
+
+                    <div id="info_image_url" class="modal-body-row">
+                        <span class="row-label">Original url:</span>
+                        <span class="row-data"><a href="">Click here</a></span>
+                    </div>
+
+                    <div class="modal-body-row text-center">
+                        <button id="info_edit_btn" data-state="view" class="btn btn-default btn-xs">Edit</button>
+                    </div>
+                </div>
+
+                <!--<div style="border-bottom: solid 1px rgba(0,0,0,0.1);"></div>-->
+
+                <a data-toggle="collapse" data-parent="acc_frame" href="#acc-loc">
+                    <!--<div id="info_image_loc" class="modal-body-row header styled-header-1">-->
+                    <div id="info_image_loc" class="modal-body-row header">
+                    <span class="row-label">
+                        <span class="accordion-selector"> <i class="glyphicon glyphicon-play"></i>  </span>
+                        <!--<span class="accordion-selector"> <i class="fa fa-play"></i> </span>-->
+                        Location
+                    </span>
+                    </div>
+                </a>
+
+                <div id="acc-loc" class="accordion-block panel-collapse collapse">
+                    <div id="info_image_location" class="modal-body-row">
+                        <div  class="modal-body-row" >
+                            <span class="row-label" style="width:10%">Lat:</span>
+                            <span id="info_image_lat" class="row-data" style="width:30%">Loading ...</span>
+                            <span class="row-label" style="width:10%">Lon:</span>
+                            <span id="info_image_lon" class="row-data" style="width:30%">Loading ...</span>
+                        </div>
+
+                    </div>
+                    <div id="info_image_loc_map" class="modal-body-row" style="margin-bottom: 5px">
+                        <div id="map_view" class="gmap-frame" style="width: 100%;height: 250px;"></div>
+                    </div>
+                </div>
+
+                <!--<div style="border-bottom: solid 1px rgba(0,0,0,0.1);"></div>-->
+
+                <a data-toggle="collapse" data-parent="#acc_frame" href="#acc-extif">
+                    <!--<div id="info_image_extif" class="modal-body-row header styled-header-1">-->
+                    <div id="info_image_extif" class="modal-body-row header">
+                    <span class="row-label">
+                        <span class="accordion-selector"> <i class="glyphicon glyphicon-play"></i>  </span>
+                        <!--<span class="accordion-selector"> <i class="fa fa-play"></i> </span>-->
+                        ExIF tags
+                    </span>
+                    </div>
+                </a>
+
+                <div id="acc-extif" class="accordion-block panel-collapse collapse">
+                    <div id="info_image_UUID" class="modal-body-row">
+                        <span class="row-label">UUID:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+
+                    <div id="info_image_onSiteId" class="modal-body-row">
+                        <span class="row-label">On the site:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+
+                    <div id="info_image_camera" class="modal-body-row">
+                        <span class="row-label">Camera:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+
+                    <div id="info_image_cam_model" class="modal-body-row">
+                        <span class="row-label">Camera model:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+
+                    <!--<div id="info_image_dpi" class="modal-body-row">-->
+                        <!--<span class="row-label">Image density:</span>-->
+                        <!--<span class="row-data"><span class="ins-point">Loading ...</span></span>-->
+                    <!--</div>-->
+                    <!--<div id="info_image_expmode" class="modal-body-row">-->
+                        <!--<span class="row-label">Exposition:</span>-->
+                        <!--<span class="row-data">Loading ...</span>-->
+                    <!--</div>-->
+                    <div id="info_image_exptime" class="modal-body-row">
+                        <span class="row-label">Exposition time:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+                    <div id="info_image_focallen" class="modal-body-row">
+                        <span class="row-label">Focal length:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+                    <!--<div id="info_image_focaldist" class="modal-body-row">-->
+                        <!--<span class="row-label">Focal distance:</span>-->
+                        <!--<span class="row-data">Loading ...</span>-->
+                    <!--</div>-->
+                    <div id="info_image_aperture" class="modal-body-row">
+                        <span class="row-label">Aperture:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+                    <div id="info_image_iso" class="modal-body-row">
+                        <span class="row-label">ISO speed:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+                    <div id="info_image_flash" class="modal-body-row">
+                        <span class="row-label">Flash used:</span>
+                        <span class="row-data">Loading ...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!--<div class="modal-footer">-->
+            <!--<button type="submit" class="btn btn-primary center-block">Login</button>-->
+            <!--</div>-->
+        </div>
+    </div>
+
+    <!-- INFO DIALOG -->
+    <!--<div id="dialog" class="modal fade col-md-offset-2 col-md-8 in" role="dialog" tabindex="-1" style="padding-top: 80px; display: block;">-->
+        <!--<div class="modal-dialog">-->
+            <!--<div class="modal-content">-->
+                <!--<div class="modal-header">-->
+                    <!--<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>-->
+                    <!--Title-->
+                <!--</div>-->
+                <!--<div class="modal-body">-->
+                    <!--<div style="padding: 40px 100px 40px 100px;">-->
+                        <!--<h4>Enter you user name and password</h4>-->
+
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="modal-footer">-->
+                    <!--<button type="button" class="pull-right btn btn-default local-btn local-btn-default" data-dismiss="modal">-->
+                        <!--<span>Close</span>-->
+                    <!--</button>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
+
+    <div id="scroller-catalog" class="infinite-scroller">
+    </div>
+
+    <!--  IMAGE VIEW PANEL -->
+    <div id="view-panel" class="mainview">
+        <div class="view-inner-spc">
+            <div class="view-menu opacity">
+                <!--<div id="view-menu" class="navbar-default navbar-collapse collapse">-->
+                <div class="container-fluid">
+                    <ul class="nav navbar-nav navbar-left">
+                        <li>
+                            <a id="close-view-pane">Close</a>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav  navbar-right">
+                        <li>
+                            <a id="z-in">
+                                <!--<span class="glyphicon glyphicon-zoom-in big-size"></span>-->
+                                <i class="fa fa-search-plus big-size" title="Zoom-in" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a id="z-out">
+                                <!--<span class="glyphicon glyphicon-zoom-out big-size"></span>-->
+                                <i class="fa fa-search-minus big-size" title="Zoom-out" aria-hidden="true"></i>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a id="fscreen">
+                                <!--<span class="glyphicon glyphicon-zoom-out big-size"></span>-->
+                                <i class="fa fa-arrows-alt big-size" title="Toggle full screen view" aria-hidden="true"></i>
+                            </a>
+                        </li>
+
+
+                        <li>
+                            <a id="info">
+                                <!--<span class="glyphicon glyphicon-zoom-out big-size"></span>-->
+                                <i class="glyphicon glyphicon-info-sign big-size" title="Image info" aria-hidden="true"></i>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a id="downl">
+                                <!--<span class="fa fa-download"></span>-->
+                                <!--<i class="glyphicon glyphicon-save big-size" aria-hidden="true"></i>-->
+                                <i class="fa fa-download big-size" title="Download image" aria-hidden="true"></i>
+                            </a>
+                        </li>
+
+                        <!--<li>-->
+                        <!--<a id="close">-->
+                        <!--&lt;!&ndash;<span class="glyphicon glyphicon-remove-circle big-size"></span>&ndash;&gt;-->
+                        <!--<i class="fa fa-times big-size" aria-hidden="true"></i>-->
+                        <!--</a>-->
+                        <!--</li>-->
+                    </ul>
+                </div>
+            </div>
+
+            <div id="viewPrev" class="slider left opacity" aria-label="Следующая фотография." role="button">
+                <svg width="36px" height="36px" class="JUQOtc yjarQe" viewBox="0 0 24 24">
+                    <path d="M15.41 16.09l-4.58-4.59 4.58-4.59L14 5.5l-6 6 6 6z"></path>
+                </svg>
+            </div>
+
+            <div id="viewNext"  class="slider right opacity" aria-label="Предыдущая фотография." role="button">
+                <svg width="36px" height="36px" class="JUQOtc yjarQe" viewBox="0 0 24 24">
+                    <path d="M8.59 16.34l4.58-4.59-4.58-4.59L10 5.75l6 6-6 6z"></path>
+                </svg>
+            </div>
+            <div class="img-frame">
+                <img id="img-view-frame" class="img-object">
+            </div>
+
+
+        </div>
+    </div>
+</body>
+</html>

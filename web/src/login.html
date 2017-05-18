@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Photohub</title>
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="css/photohub-fonts.css" rel="stylesheet">
+    <link href="css/photohub-page.css" rel="stylesheet">
+
+
+    <script data-main="js/init" src="js/lib/requirejs/require.js"></script>
+</head>
+
+<body role="document">
+    <!-- Fixed navbar -->
+    <nav id="header" class="navbar navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#top-navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Photo<span class="color">H</span>ub</a>
+            </div>
+
+            <div id="top-navbar" class="navbar-collapse collapse">
+
+                <ul class="nav-icons nav navbar-nav animated-nav nav-main">
+                    <!--<li data-toggle="collapse" data-target="#submenu-container">-->
+                    <!--<a href="#"><span class="glyphicon glyphicon-menu-hamburger"></span>Menu</a>-->
+                    <!--</li>-->
+                </ul>
+
+                <form class="navbar-form navbar-right" role="search">
+                    <div class="input-group">
+                        <input id="search-input" type="text" class="form-control"  aria-hidden="true" placeholder="Search ...">
+                        <div><span class="glyphicon glyphicon-search"></span></div>
+                    </div>
+                </form>
+
+                <ul class="nav navbar-nav animated-nav navbar-right nav-main">
+                    <li data-toggle="collapse" data-target="#submenu-container">
+                        <a href="#"><span class="glyphicon glyphicon-menu-hamburger"></span>Menu</a>
+                    </li>
+                    <li><a href="#filter">Filter</a></li>
+                    <li><a href="#login">Login</a></li>
+
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </nav>
+
+    <div class="container" style="padding-top: 100px" role="main">
+        <div class="panel col-md-offset-3 col-md-6" style="padding-bottom: 30px; padding-top: 30px;">
+            <!--<div class="panel-heading"></div>-->
+            <div class="panel-body col-md-offset-1 col-md-10">
+                <h4>Enter you user name and password</h4>
+                <form>
+                    <div class="form-group">
+                        <label for="login">Login</label>
+                        <input type="text" class="form-control" id="login" placeholder="Login">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" id="password" placeholder="Password">
+                    </div>
+                    <button type="submit" class="btn btn-primary center-block">Login</button> <!--center-block-->
+                </form>
+            </div>
+            <!--<div class="panel-footer"></div>-->
+        </div>
+    </div>
+
+
+</body>
+</html>

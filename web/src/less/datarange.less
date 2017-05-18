@@ -1,0 +1,92 @@
+.button()  {
+    &[type="button"]{
+        margin: 0;
+    }
+}
+
+@picker-height:260px;
+
+.date-picker() {
+    .pika-lendar {
+        width: @picker-height - 40px;
+    }
+}
+
+.date-range-picker {
+
+    .input-frame {
+        padding: 0 10px 10px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(80, 90, 101, 0.3);
+
+        label {
+            &:first-child{
+                padding-left: 20px;
+            }
+            &:not(:first-child){
+                padding-left: 20px;
+            }
+            padding: 7px 10px;
+        }
+        input {
+            float: none;
+            border-radius: 0px;
+            width: auto;
+        }
+//        .date-input {
+//            float: none;
+//            border-radius: 4px;
+//        }
+
+    }
+
+    .calendar-frame {
+        width: @picker-height - 20px;
+        //margin-left: 0;
+        margin-left: 15px;
+        &:first-of-type {
+            margin-left: 0;
+        }
+        .input-group {
+            &.hasExtInput {
+                display:none;
+            }
+            width: 100%;
+            padding-top: 0px;
+            padding-bottom: 10px;
+
+            .form-control {
+                border-radius: 4px;
+            }
+        }
+    }
+    .calendar-area {
+        .date-picker();
+        .pika-single {
+            border-radius: 4px;
+        }
+    }
+//    .to-date-area{
+//        width: @picker-height - 20px;
+//        margin-left: 15px;
+//        .date-picker();
+//    }
+    .def-ranges-area {
+        margin-left: 10px;
+        width: 140px;
+        height: 247px;
+        position: relative;
+        &.hasExtInput {
+            height:  203px;
+        }
+        .button();
+        .apply {
+            .button();
+            width: 100%;
+            bottom: 0;
+            position: absolute;
+
+        }
+    }
+
+}
