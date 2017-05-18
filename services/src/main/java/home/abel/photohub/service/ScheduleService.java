@@ -122,7 +122,10 @@ public class ScheduleService {
 	 */
 	public Schedule getSchedule(String theSiteId, TaskNamesEnum taskName) {
 		List<Schedule> schList = scheduleRepository.findBySiteIdAndTaskName(theSiteId, taskName.toString());
-		return schList.get(0);
+		if (schList.size() > 0 ) {
+			return schList.get(0);
+		}
+		return null;
 	}
 	
 	/**
@@ -336,14 +339,18 @@ public class ScheduleService {
 					throw new ExceptionInvalidArgument("Cannot set schedule. Site with id="+siteId+" not found.");
 				}
 			}
+
+			logger.trace("[ScheuleService.setSchedule] Schedule for task="+ taskName + " not found.  Create new schedule db record.");
 			theSchedule = new Schedule();
 			theSchedule.setTaskName(taskName.toString());
 			if ( theSite != null) {
-				theSite.addScedule(theSchedule);
-				theSite = siteRepo.save(theSite);
+				//theSchedule.setSite(theSite);
+				//theSite.addScedule(theSchedule);
+				//theSite = siteRepo.save(theSite);
 			}
 		}
 		else {
+			logger.trace("[ScheuleService.setSchedule] Schedule for task="+ taskName + " found.  load task from DB.");
 			theSchedule = schList.get(0);
 		}
 		
@@ -414,31 +421,38 @@ public class ScheduleService {
 		else {
 			throw new ExceptionInvalidArgument("Cannot set schedule. Incorect month value=" + dayOfWeek );
 		}
-		
-		
-//		if (theSite != null) {
-//			theSite.addScedule(theSchedule);
-//			siteRepository.save(theSite);	
-//		}
-//		else {
-			scheduleRepository.save(theSchedule);	
-//		}
-		
+
+		if ( (theSite != null) &&  (theSchedule.getSite() == null)) {
+			theSchedule.setSite(theSite);
+			theSchedule = scheduleRepository.save(theSchedule);
+			theSite.addScedule(theSchedule);
+			theSite = siteRepo.save(theSite);
+		}
+		else {
+			scheduleRepository.save(theSchedule);
+		}
+
+		logger.trace("[ScheuleService.setSchedule] Save schedule " + theSchedule + " in db.");
+
 		BaseTask queuedTask  = getTaskFromQueue(siteId,taskName);
 		
 		//   Такой задачи в очереди нет.  Тогда создаем новую.
 		if (queuedTask == null) {
 			queuedTask = (BaseTask)taskFactory.createTask(theSchedule.getTaskName(),theSite);
+			logger.trace("[ScheuleService.setSchedule] Create queued task " + queuedTask.getRecord());
 		}		
 		
 		//   Задача в очереди, удаляем из очереди.
 		else {
+			logger.trace("[ScheuleService.setSchedule] Found, removed from queue, and put to  queued task " + queuedTask.getRecord());
 			removeTask(queuedTask);
 		}
 		
 		if (queuedTask == null )  {
 			throw new ExceptionTaskAbort("[ScheuleService.setSchedule] Cannot create task");
 		}
+
+
 		BaseTask theTask = putTask(queuedTask, theSchedule);
 		logger.debug("[ScheuleService.setSchedule] Change or create sheduled task="+theTask.getTag()+", for site="+
 						(theTask.getSite()==null?NULL_SITE:theTask.getSite()));
@@ -458,7 +472,8 @@ public class ScheduleService {
 	 */
 	protected BaseTask putTask(BaseTask task, Schedule theSchedule) throws Exception {
 		CronTrigger cronTrigger = new CronTrigger(theSchedule.toString());	
-
+		//logger.trace("[ScheduleService.putTask]  Create Cron trigger for " + cronTrigger.getExpression() +
+		//		", with next execution time=" + cronTrigger.nextExecutionTime(triggerContext));
 		//cronTrigger.nextExecutionTime(triggerContext)
 		
 		ScheduledFuture<?> taskProcess = threadPoolTaskScheduler.schedule(task, (Trigger)cronTrigger);		
@@ -473,7 +488,12 @@ public class ScheduleService {
 			//schedSitesTasks.put(task.getSite().getId(),task);	
 		}
 		schedSitesTasks.put(task.getTag(), task);
-		
+
+		logger.trace("[ScheduleService.putTask]  Create cron trigger for " + cronTrigger.getExpression() +
+				", Start task delay sec. =" + taskProcess.getDelay(java.util.concurrent.TimeUnit.SECONDS));
+
+
+
 		return task;
 	}
 	

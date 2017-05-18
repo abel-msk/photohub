@@ -273,11 +273,11 @@ public class PhotoServiceTest {
 		assertThat(siteCred.getState()).isEqualTo(SiteStatusEnum.CONNECT);
 
 		//  Add schedule for site
-		BaseTask sch1 = scheduleService.setShcedule( null, TaskNamesEnum.TNAME_EMPTY, "0/10", "*", "*", "*", "*", "*" );
+		BaseTask sch1 = scheduleService.setShcedule( null, TaskNamesEnum.TNAME_EMPTY, "*/10", "*", "*", "*", "*", "*" );
 		BaseTask sch2 = scheduleService.getScheduledTask((String)null, TaskNamesEnum.TNAME_EMPTY);
 		assertThat(sch1).isEqualToComparingFieldByField(sch2);
 		
-		BaseTask userSch1 = scheduleService.setShcedule( theSite.getId(), TaskNamesEnum.TNAME_EMPTY, "0/10", "*", "*", "*", "*", "*" );
+		BaseTask userSch1 = scheduleService.setShcedule( theSite.getId(), TaskNamesEnum.TNAME_EMPTY, "*/10", "*", "*", "*", "*", "*" );
 		BaseTask userSch2 = scheduleService.getScheduledTask(theSite.getId(), TaskNamesEnum.TNAME_EMPTY);
 		assertThat(userSch1).isEqualToComparingFieldByField(userSch2);
 	

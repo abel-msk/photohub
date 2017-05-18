@@ -8,6 +8,8 @@ import home.abel.photohub.service.SiteService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
+
 public class EmptyTask extends BaseTask{
 
 	private static final long serialVersionUID = 1L;
@@ -19,7 +21,8 @@ public class EmptyTask extends BaseTask{
 	
 	@Override
 	public void exec() throws Throwable {
-		logger.trace("[EmptyTask.run] Invocation empty task");	
+
+		logger.trace("[EmptyTask.run] Invocation empty task at = " + new Date());
 	}
 	
 }

@@ -121,7 +121,7 @@ public class BaseTask implements Runnable, Serializable {
 			record = siteSvc.addTaskRecord(site,record);
 		}
 
-		logger.debug("[BaseTask.run] Try to execute stask name="+ getTag()+", for site="+
+		logger.debug("[BaseTask.run] Try to execute task name="+ getTag()+", for site="+
 				(getSite()==null?"system":getSite()) +
 				", id = " + (record.getId()==null?"null":record.getId())
 		);
@@ -139,7 +139,7 @@ public class BaseTask implements Runnable, Serializable {
 
 			if ( isSaveToDB()) {
 				try {
-					logger.trace("[BaseTask.run] Execution completed. Save result record to DB. Record="+record.getMessage());
+					//logger.trace("[BaseTask.run] Execution completed. Save result record to DB. Record="+record.getMessage());
 					siteSvc.updateTaskRecord(record);
 				} catch (Exception e) {
 					logger.error("[BaseTask.run] Cannot update Site="+site+" to DB.",e);
