@@ -361,7 +361,7 @@ public class SiteTest   {
 		ObjectMapper mapper = new ObjectMapper();
 		MvcResult result = null;
     	result = mockMvc.perform(
-    			put("/api/site/"+siteId+"/task")
+    			post("/api/site/"+siteId+"/task")
     			.cookie(cookies)
     			.contentType(MediaType.APPLICATION_JSON)
 				.param("taskname", taskName)

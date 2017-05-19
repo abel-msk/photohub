@@ -39,7 +39,7 @@ public class Schedule implements Serializable {
     @GeneratedValue(strategy=GenerationType.TABLE, generator="SchedSeqGenerator")	
 	private String id;
 	
-	@JsonIgnore
+	//@JsonIgnore
 	@ManyToOne
 	private Site site = null;
 	
@@ -51,6 +51,7 @@ public class Schedule implements Serializable {
 	private String dayOfMonth = "*"; //1-31
 	private String month = "*";      //1-12
 	private String dayOfWeek= "*";   //0-6
+	private boolean enable = false;
 	
 
 	public String getId() {
@@ -112,6 +113,8 @@ public class Schedule implements Serializable {
 	public void setDayOfWeek(String dayOfWeek) {
 		this.dayOfWeek = dayOfWeek;
 	}
+	public boolean isEnable() { return enable; }
+	public void setEnable(boolean enable) {this.enable = enable;}
 	
 	public String toString() {
 		return seconds + " " + minute + " " + hour + " " + dayOfMonth + " " + month + " " + dayOfWeek;

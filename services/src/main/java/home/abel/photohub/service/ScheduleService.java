@@ -81,14 +81,15 @@ public class ScheduleService {
 		
 		Iterable<Schedule> schList = scheduleRepository.findAll();
 		for (Schedule sTask: schList ) {
-			try {
-				BaseTask task = taskFactory.createTask(TaskNamesEnum.valueOf(sTask.getTaskName()),sTask.getSite());
-				putTask(task,sTask);
-			} catch (Exception e) {
-				logger.warn("[SceduleService.Init] Cannot run task eith name="+ sTask.getTaskName()
-						+", for Site="+(sTask.getSite() == null?NULL_SITE:sTask.getSite().getId())+ ". Error="+e.getMessage());
+			if (sTask.isEnable()) {
+				try {
+					BaseTask task = taskFactory.createTask(TaskNamesEnum.valueOf(sTask.getTaskName()), sTask.getSite());
+					putTask(task, sTask);
+				} catch (Exception e) {
+					logger.warn("[SceduleService.Init] Cannot run task eith name=" + sTask.getTaskName()
+							+ ", for Site=" + (sTask.getSite() == null ? NULL_SITE : sTask.getSite().getId()) + ". Error=" + e.getMessage());
+				}
 			}
-
 		}
 	}
 	
@@ -106,8 +107,8 @@ public class ScheduleService {
 	/**
 	 *	Возвращает рассписание для задачи сайта
 	 *
-	 * @param site
-	 * @param taskName
+	 * @param site     Сайт для которого создана задача
+	 * @param taskName Имя задачи
 	 * @return
 	 */
 	public Schedule getSchedule(Site site, TaskNamesEnum taskName) {
@@ -116,8 +117,8 @@ public class ScheduleService {
 	
 	/**
 	 * 	Возвращает рассписание задачи(по имени) для сайта.  
-	 * @param theSiteId
-	 * @param taskName
+	 * @param theSiteId id сайта для которого создана задача
+	 * @param taskName  Имя задачи
 	 * @return
 	 */
 	public Schedule getSchedule(String theSiteId, TaskNamesEnum taskName) {
@@ -130,7 +131,7 @@ public class ScheduleService {
 	
 	/**
 	 * Возвращает список рассписаний задач для сайта
-	 * @param siteId
+	 * @param siteId  ID сайтя для котокрого надо найти задачи
 	 * @return
 	 * @throws Exception
 	 */
@@ -155,7 +156,7 @@ public class ScheduleService {
 	 *    Возвращает список  возможных задачь для запуска по рассписанию
 	 *    Если рассписание для задачи установленно добавляем его вместо пустого
 	 *
-	 * @param siteId
+	 * @param siteId ID сайтя для которого надо найти задачи
 	 * @return
 	 */
 
@@ -192,8 +193,8 @@ public class ScheduleService {
 
 	/**
 	 *     Возвращает задачу из Очереди
-	 * @param siteId
-	 * @param taskName
+	 * @param siteId ID сайта для которого надо найти задачу
+	 * @param taskName  имя искомой задачи
 	 * @return
 	 * @throws Exception
 	 */
@@ -204,8 +205,8 @@ public class ScheduleService {
 		
 	/**
 	 *   Возвращает задачу из Очереди
-	 * @param site
-	 * @param taskName
+	 * @param site Сайт для которого надо найти задачу
+	 * @param taskName Имя задачи
 	 * @return
 	 * @throws Exception
 	 */
@@ -217,8 +218,8 @@ public class ScheduleService {
 	}
 	/**
 	 * 	Возвращает задачу из Очереди
-	 * @param siteId
-	 * @param taskName
+	 * @param siteId Сайт для которого надо найти задачу
+	 * @param taskName Имя задачи
 	 * @return
 	 * @throws Exception
 	 */
@@ -245,11 +246,11 @@ public class ScheduleService {
 
 	/**
 	 * 
-	 *    Возвращает задаче из очереди рассписания.
+	 *    Возвращает задачу из очереди рассписания.
 	 * 
 	 * 
-	 * @param siteId
-	 * @param name
+	 * @param siteId  ID сайта для которого надо найти задачу
+	 * @param name   Имя искомой задачи
 	 * @return
 	 * @throws Exception
 	 */
@@ -277,9 +278,9 @@ public class ScheduleService {
 	/**
 	 *  
 	 *	Определяет работает ли задача по рассписанию с имененм у указанного сайта.
-	 * 
-	 * @param name
-	 * @param siteId
+	 *
+	 * @param siteId ID сайта для которого надо найти задачу
+	 * @param name  имя задачи
 	 * @return
 	 * @throws Exception 
 	 */
@@ -302,20 +303,31 @@ public class ScheduleService {
 	 *      SET SCHEDULE
 	 * 
 	 * 
-	 *************************************************************************************************/	
-	
+	 *************************************************************************************************/
+
+
+
 	/**
 	 * 
 	 *	Сохраняеи в базе рассписание для задачи. Добавляет задачу в очередь задач.
 	 *	Если задача с таким именем и для этого сайта уже существуе, заменяет ее.
 	 *  
 	 * @param siteId
+	 * @param taskName
+	 * @param seconds
+	 * @param minute
+	 * @param hour
+	 * @param dayOfMonth
+	 * @param month
+	 * @param dayOfWeek
 	 * @throws Throwable
+	 * @return
 	 */
 	@Transactional
 	public BaseTask setShcedule(
 			String siteId,
-			TaskNamesEnum taskName, 
+			TaskNamesEnum taskName,
+			boolean enable,
 			String seconds,
 			String minute,
 			String hour,
@@ -353,9 +365,10 @@ public class ScheduleService {
 			logger.trace("[ScheuleService.setSchedule] Schedule for task="+ taskName + " found.  load task from DB.");
 			theSchedule = schList.get(0);
 		}
-		
-		
-		
+
+		//   ENABLE
+		theSchedule.setEnable(enable);
+
 		//   SECONDS
 		if (seconds==null) {
 			theSchedule.setSeconds("*");
@@ -444,7 +457,7 @@ public class ScheduleService {
 		
 		//   Задача в очереди, удаляем из очереди.
 		else {
-			logger.trace("[ScheuleService.setSchedule] Found, removed from queue, and put to  queued task " + queuedTask.getRecord());
+			logger.trace("[ScheuleService.setSchedule] Remove old queued task " + queuedTask.getRecord());
 			removeTask(queuedTask);
 		}
 		
@@ -452,10 +465,12 @@ public class ScheduleService {
 			throw new ExceptionTaskAbort("[ScheuleService.setSchedule] Cannot create task");
 		}
 
-
-		BaseTask theTask = putTask(queuedTask, theSchedule);
-		logger.debug("[ScheuleService.setSchedule] Change or create sheduled task="+theTask.getTag()+", for site="+
-						(theTask.getSite()==null?NULL_SITE:theTask.getSite()));
+		BaseTask theTask = queuedTask;
+		if ( enable ) {
+			theTask = putTask(queuedTask, theSchedule);
+			logger.debug("[ScheuleService.setSchedule] Change or create sheduled task=" + theTask.getTag() + ", for site=" +
+					(theTask.getSite() == null ? NULL_SITE : theTask.getSite()));
+		}
 		return theTask;
 	}
 	
@@ -478,7 +493,7 @@ public class ScheduleService {
 		
 		ScheduledFuture<?> taskProcess = threadPoolTaskScheduler.schedule(task, (Trigger)cronTrigger);		
 		task.setThisTaskProcess(taskProcess);
-		logger.debug("[ScheduleService.putTask]  Put task=" + task.getTag()+" to schedule for site="+ (task.getSite()==null?"system":task.getSite()));
+		//logger.debug("[ScheduleService.putTask]  Put task=" + task.getTag()+" to schedule for site="+ (task.getSite()==null?"system":task.getSite()));
 		
 		Map<TaskNamesEnum,BaseTask>schedSitesTasks = sitesSchedQueueMap.get((task.getSite() == null?NULL_SITE:task.getSite().getId()));	
 		
@@ -491,8 +506,6 @@ public class ScheduleService {
 
 		logger.trace("[ScheduleService.putTask]  Create cron trigger for " + cronTrigger.getExpression() +
 				", Start task delay sec. =" + taskProcess.getDelay(java.util.concurrent.TimeUnit.SECONDS));
-
-
 
 		return task;
 	}
@@ -539,7 +552,6 @@ public class ScheduleService {
 				siteRepo.save(theSite);
 			}
 		}
-		
 
 		return removedTask;
 	}	
@@ -558,7 +570,11 @@ public class ScheduleService {
 		if (removedTask == null) {
 			removedTask = task;
 		}
-		removedTask.getThisTaskProcess().cancel(true);
+		//   If task running and have process control
+		//   stop process
+		if ( removedTask.getThisTaskProcess() != null ) {
+			removedTask.getThisTaskProcess().cancel(true);
+		}
 		
 		logger.debug("[TaskQueueService.removeScheduledTask] Task name="+removedTask.getTag()+", stopped and removed from schedule queue.");
 		
