@@ -80,6 +80,7 @@
 		<appender-ref ref="DEBUG_LEVEL_REMAPPER"/>
 	</logger>
 
+	<logger name="org.flywaydb" level="DEBUG"/>
 
   	<logger name="home.abel.photohub" level="TRACE"/>
   	   

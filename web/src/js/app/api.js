@@ -29,7 +29,8 @@ define( ["jquery"], function($) {
             },
 
             next: function () {
-                var job = queue.pop();
+                //var job = queue.pop();
+                var job = queue.shift();
                 bisy = false;
                 if (typeof job == 'function') {
                     API_DEBUG && debug_("[JobQueue] execute request");
@@ -84,7 +85,7 @@ define( ["jquery"], function($) {
 
             "listSched":["GET","","/site/"],
             "getShed":["GET","","/site/"],
-            "setShed":["PUT","json","/site/"],
+            "setSched":["PUT","json","/site/"],
             "logSched":["GET","","/site/"],
 
             "photoList":["GET","","/list"],

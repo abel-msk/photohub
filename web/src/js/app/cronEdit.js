@@ -24,18 +24,6 @@ define(["jquery","modalDialog","utils","logger"],
             'dayOfWeekId':'-weekd-id'
         };
 
-        function debugForEvent(target) {
-
-            var value = $(target).val();
-            if (typeof $(target).val() != 'string') {
-                value = value.join();
-            }
-            DEBUG && logger.debug("[CronEdit.event] Change event fired. Target="+
-                $(target).attr('id') +
-                ", value = " +  value
-            );
-        }
-
         //---------------------------------------------------------------------------
         //
         //    Подготовить HTML блока
@@ -56,6 +44,7 @@ define(["jquery","modalDialog","utils","logger"],
                 '	<label for="'+options.hourId+'" >Hours</label>'+
                 '	<select id="'+options.hourId+'" multiple class="form-control" >'+
                 '		<option value="*" selected="selected">*</option>'+
+                '		<option value="0">00</option>'+
                 '		<option value="1">01</option>'+
                 '		<option value="2">02</option>'+
                 '		<option value="3">03</option>'+
@@ -79,7 +68,6 @@ define(["jquery","modalDialog","utils","logger"],
                 '		<option value="21">21</option>'+
                 '		<option value="22">22</option>'+
                 '		<option value="23">23</option>'+
-                '		<option value="24">24</option>'+
                 '	</select>'+
                 '</div>'+
                 '<div class="form-cell" style="'+options.cellwidth+'">'+
@@ -162,10 +150,10 @@ define(["jquery","modalDialog","utils","logger"],
         //
         //
         //---------------------------------------------------------------------------
-        function CronEdit(appendTo,cronObj,onChange) {
+        function CronEdit(appendTo,cronObj,onChangeCB) {
             this.cronObj = cronObj;
             this.change = false;
-            this.onChange = onChange;
+            this.onChangeCB = onChangeCB;
             this.elementId = appendTo;
 
 
@@ -198,6 +186,17 @@ define(["jquery","modalDialog","utils","logger"],
             $('#'+this.idSet.dayId).val(cron.dayOfMonth.split(",") || '*');
             $('#'+this.idSet.monthId).val(cron.month.split(",") || '*');
             $('#'+this.idSet.dayOfWeekId).val(cron.dayOfWeek.split(",") || '*');
+
+            this.cronObj = cron;
+        };
+
+        //---------------------------------------------------------------------------
+        //
+        //     Return current cron object
+        //
+        //---------------------------------------------------------------------------
+        CronEdit.prototype.getCron = function() {
+            return this.cronObj;
         };
 
         //---------------------------------------------------------------------------
@@ -215,54 +214,63 @@ define(["jquery","modalDialog","utils","logger"],
             $('#'+this.idSet.secId).off('change').
             on('change',{'caller':this}, function(event) {
                 event.data.caller.cronObj.seconds = $(event.target || event.srcElement).val();
-                event.data.caller.change = true;
-                DEBUG && debugForEvent(event.target || event.srcElement);
                 event.data.caller.onChange(event.data.caller.elementId,event.data.caller.cronObj);
             });
 
             $('#'+this.idSet.minId).off('change').
             on('change',{'caller':this}, function(event) {
                 event.data.caller.cronObj.minute = $(event.target || event.srcElement).val();
-                event.data.caller.change = true;
-                DEBUG && debugForEvent(event.target || event.srcElement);
                 event.data.caller.onChange(event.data.caller.elementId,event.data.caller.cronObj);
             });
 
             $('#'+this.idSet.hourId).off('change').
             on('change',{'caller':this}, function(event) {
                 event.data.caller.cronObj.hour = $(event.target || event.srcElement).val().join();
-                event.data.caller.change = true;
-                DEBUG && debugForEvent(event.target || event.srcElement);
                 event.data.caller.onChange(event.data.caller.elementId,event.data.caller.cronObj);
             });
 
             $('#'+this.idSet.dayId).off('change').
             on('change',{'caller':this}, function(event) {
                 event.data.caller.cronObj.dayOfMonth = $(event.target || event.srcElement).val().join();
-                event.data.caller.change = true;
-                DEBUG && debugForEvent(event.target || event.srcElement);
                 event.data.caller.onChange(event.data.caller.elementId,event.data.caller.cronObj);
             });
 
             $('#'+this.idSet.monthId).off('change').
             on('change',{'caller':this}, function(event) {
                 event.data.caller.cronObj.month = $(event.target || event.srcElement).val().join();
-                event.data.caller.change = true;
-                DEBUG && debugForEvent(event.target || event.srcElement);
                 event.data.caller.onChange(event.data.caller.elementId,event.data.caller.cronObj);
             });
 
             $('#'+this.idSet.dayOfWeekId).off('change').
             on('change',{'caller':this}, function(event) {
-                var newValue = $(event.target || event.srcElement).val().join();
-                if ( event.data.caller.cronObj.dayOfWeek !== newValue) {
-                    event.data.caller.change = true;
-                    event.data.caller.cronObj.dayOfWeek = newValue;
-                }
-                DEBUG && debugForEvent(event.target || event.srcElement);
+                event.data.caller.cronObj.dayOfWeek = $(event.target || event.srcElement).val().join();
                 event.data.caller.onChange(event.data.caller.elementId,event.data.caller.cronObj);
             });
         };
+
+
+        //---------------------------------------------------------------------------
+        //
+        //     Compile cron object after changes and call callback
+        //
+        //---------------------------------------------------------------------------
+        CronEdit.prototype.onChange = function( ) {
+
+            debug.print("[CronEdit.onChange] Cron setting changed. Cron="+
+                this.cronObj.seconds + " " +
+                this.cronObj.minute +  " " +
+                this.cronObj.hour +  " " +
+                this.cronObj.dayOfMonth +  " " +
+                this.cronObj.month +  " " +
+                this.cronObj.dayOfWeek
+            );
+
+            if ( typeof this.onChangeCB == "function" ) {
+                this.onChangeCB(this.elementId,this.cronObj);
+            }
+            this.validate(this.cronObj);
+        };
+
 
         return CronEdit;
     }

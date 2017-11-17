@@ -160,7 +160,8 @@ define(["jquery","api","modalDialog","utils","logger","moment"],
             }
 
             this.siteId = model.get("id");
-            this.cronList = {};
+            renderTasksList(this.siteId);
+
 
             //-----------------------------------------------
             //   Activate btn listeners for task running
@@ -182,7 +183,7 @@ define(["jquery","api","modalDialog","utils","logger","moment"],
                 ;
 
             //  Get tasks
-            renderTasksList(this.siteId);
+
         }
 
         //------------------------------------------------------------------------

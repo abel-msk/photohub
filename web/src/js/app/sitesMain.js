@@ -62,6 +62,7 @@ define(["jquery",
         var connector = null;
         var actions = null;
         var tasks = null;
+        var scheds = null;
         var propFormRows;           //  Current site properties form rows
 
         var sitesList = new SitesCollection();
@@ -248,6 +249,10 @@ define(["jquery",
 
 
                 tasks = new SitesTasks(model);
+
+                logger.debug("[SitesTask]  START ");
+
+
                 scheds = new  SitesSched(model);
 
                 //   В переделку

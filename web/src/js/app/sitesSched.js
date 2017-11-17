@@ -14,7 +14,7 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
         var EDIT_FRAME_SUFFIX = '-sched-frame';
         var BTN_ID_SUFFIX = "-save-edit";
         var INSERT_FRAME_SUFFIX = "-cron-form";
-
+        var c2h = new Cron2Human();
 
         //------------------------------------------------------------------------
         //
@@ -22,23 +22,28 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
         function schedRowHTML(siteId, schedule) {
 
             var taskName = schedule.taskName;
-            var schedules = " ";
-            var next = " ";
-
 
             var resHtml =  '<div id="'+schedule.id+SCHED_TBLROW+'" class="row panel-body-row">' +
                 '   <span class="text-right row-label">'+taskName+'</span>'+
-                '   <div class="row-data" style="max-width: 70%;">' +
+                '   <div class="row-data" style="max-width: 55%;">' +
+                    //
+                    //    Строка состояния и рассписания заполняется из кода. _displaySched
+                    //
+                //'      <div  class="status '+(schedule.enable?"status-succ":"status-norm")+'" style="text-transform: uppercase;">'+(schedule.enable?"Enabled":"Disabled")+'</div>' +
                 //'   <div data-toggle="collapse" data-target="#' + schedule.id + EDIT_FRAME_SUFFIX +'" aria-expanded="false" aria-controls="subpanel">' +
-                '      <span  class="schedule ">'+schedules+'</span>' +
-                '      <span  class="next ">'+next+'</span>' +
+                //'      <span  class="schedule ">'+schedules+'</span>' +
+                //'      <span  class="next ">'+next+'</span>' +
                 '   </div>'+
-                '   <span class="row-cmd pull-right">'+
-                //'      <a id="'+schedule.id+BTN_ID_SUFFIX+'" data-siteId="'+siteId+'" data-schedId="'+schedule.id+'" data-taskName="'+taskName+'" class="edit link text-right">Edit</a>' +
-                '   <a id="'+schedule.id+BTN_ID_SUFFIX+'"  data-siteId="'+siteId+'" data-schedId="'+schedule.id+'" data-taskName="'+taskName+'"  class="edit link text-right" >'+
-                '       <span class="round"> <span class="glyphicon glyphicon-menu-left transition-rotate rotate0"> </span></span>'+
-                '   </a>' +
-                '   </span>'+
+                '   <div class="row-cmd pull-right"> ' +
+                '   <div class="pull-right">'+
+                '       <a id="'+schedule.id+BTN_ID_SUFFIX+'"  data-siteId="'+siteId+'" data-schedId="'+schedule.id+'" data-taskName="'+taskName+'"  class="edit link text-right" >'+
+                '           <span class="round"><span class="glyphicon glyphicon-menu-left transition-rotate rotate0"> </span></span>'+
+                '       </a>' +
+                '   </div>'+
+                '   <div class="pull-right">'+
+                '       <a data-siteId="'+siteId+'" data-schedId="'+schedule.id+'" class="enable link text-right" >'+(schedule.enable?"Deactivate":"Activate")+'</a>'+
+                '   </div>'+
+                '   </div>'+
                 '   <div id="'+schedule.id+EDIT_FRAME_SUFFIX+'"  data-schedId="'+schedule.id+'"  class="cron-form collapse row" style="clear: both; padding-top: 5px">' +
                 '       <div class="text-right row-label">&nbsp;</div>' +
                 '       <div id="'+schedule.id+INSERT_FRAME_SUFFIX+'" data-schedId="'+schedule.id+'"  class="cron-form-ins">  </div>'+
@@ -63,9 +68,8 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
 
         function SitesSched(model) {
             this.schedIdMap = {};
-            this._renderSchedList(model.get("id"));
-            this.c2h = new Cron2Human();
 
+            this._renderSchedList(model.get("id"));
 
             $('body').off('click',"#"+SHEDLIST_HOLDER_ID+' a.edit')
                 .on('click',"#"+SHEDLIST_HOLDER_ID+' a.edit',{'caller':this},function(event) {
@@ -94,6 +98,15 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
 
                 .off('click',"#"+SHEDLIST_HOLDER_ID+' a.save')
                 .on('click',"#"+SHEDLIST_HOLDER_ID+' a.save',{'caller':this},function(event) {
+                    var target = event.target || event.srcElement;
+                    event.data.caller._saveSched(
+                        target.getAttribute('data-siteId'),
+                        target.getAttribute('data-schedId')
+                    );
+                })
+
+                .off('click',"#"+SHEDLIST_HOLDER_ID+' a.enable')
+                .on('click',"#"+SHEDLIST_HOLDER_ID+' a.enable',{'caller':this},function(event) {
                     var target = event.target || event.srcElement;
                     event.data.caller._saveSched(
                         target.getAttribute('data-siteId'),
@@ -228,39 +241,41 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
         };
 
         //------------------------------------------------------------------------
-        //    Вызывается когда пользователь нажал на кнлпку  EDIT
+        //    Вызывается при изменении значения формы редактирования CRON
         //------------------------------------------------------------------------
         SitesSched.prototype._displaySched = function(formRowId,cronObj) {
             logger.debug("[SitesSched._displaySched] Display human readable schedules for id=" +formRowId+ ", cron=",cronObj);
+            var isError = true;
 
-            var next = "";
-            var schedules = "Not scheduled.";
-            //var cronStr = getCronStr(cronObj);
-
-            var cronStr ="";
-            if ( cronObj.id )  {
-                cronStr =
-                    //cronObj.seconds + " " +
-                    cronObj.minute + " " +
-                    cronObj.hour + " " +
-                    cronObj.dayOfMonth + " " +
-                    cronObj.month + " " +
-                    cronObj.dayOfWeek;
+            var message = c2h.validate(cronObj);
+            if ( ! message ) {
+                message = 'Scheduled: ' +c2h.toString(cronObj);
+                isError = false;
             }
-            if ( cronStr.search('[0-9,/]+') == -1 ) {
-                cronStr = "";
-            }
+            // else {
+            //     message = "Error: " + message;
+            // }
 
-            if (cronStr) {
-                //schedules = "Schedules: " + prettyCron.toString(cronStr);
-                schedules = "Scheduled: " + this.c2h.toString(cronObj);
-                //next = "Next: " + prettyCron.getNext(cronStr);
-            }
 
+
+            //
+            //     Заполняем строку состояния  рассписания
+            //
             var shedId = $('#'+formRowId).attr('data-schedId');
+            var htmlStr = '<div  class="status '+(cronObj.enable?"status-succ":"status-norm")+'" style="text-transform: uppercase;">'+
+                (cronObj.enable?"Enabled":"Disabled")+
+                '</div>' +
+                '<span  class="schedule '+(isError?"status-err":"")+'">'+message+'</span>' +
+                '<span  class="next ">'+""+'</span>'
+                ;
+            $('#'+shedId + SCHED_TBLROW+ " .row-data").html(htmlStr);
 
-            $('#'+shedId + SCHED_TBLROW+ " .schedule").text(schedules);
-            $('#'+shedId + SCHED_TBLROW+ " .next").text(next);
+
+            //
+            //     Устанавливаем  название кнопки enable/disable
+            //
+            $('#'+shedId + SCHED_TBLROW+ " a.enable").text(cronObj.enable?"Deactivate":"Activate");
+
         };
 
         //------------------------------------------------------------------------
@@ -268,6 +283,7 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
         //------------------------------------------------------------------------
         SitesSched.prototype._editSched = function(siteId,schedId) {
             logger.debug("[SitesSched._editSched] Edit shedule edit for siteId="+siteId+", shedId="+schedId);
+
             //  Открыть выпадающий фрейм редактирования
             $('#'+SHEDLIST_HOLDER_ID+" "+' .collapse.in').collapse('hide');
             $('#'+schedId+EDIT_FRAME_SUFFIX).collapse('show')
@@ -281,12 +297,47 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
             //  Открыть выпадающий фрейм редактирования
             $('#'+schedId+EDIT_FRAME_SUFFIX).collapse('hide');
         };
+
+
         //------------------------------------------------------------------------
         //    Вызывается когда пользователь нажал на кнлпку  SAVE
         //------------------------------------------------------------------------
         SitesSched.prototype._saveSched = function(siteId,schedId) {
             logger.debug("[SitesSched._saveSched] Save shedule edit for siteId="+siteId+", shedId="+schedId);
+
+            var cronObj = this.schedIdMap[schedId].class.getCron();
+            var caller = this;
+
+            Api.setSched(siteId,cronObj,
+
+                //  on Success
+                function(response) {
+                    try {
+                        if (response.object) {
+                            //   Отображаем текущее значение  в основной строке
+                            caller._displaySched(caller.schedIdMap[schedId].elId,response.object);
+                            //   Сохраняем крон объект
+                            caller.schedIdMap[schedId].class.setCron(response.object);
+                            caller.schedIdMap[schedId].obj = response.object;
+                        }
+                    }
+                    catch (e) {
+                        logger.debug("[SitesSched.saveSched] Error: ",e);
+                    }
+                },
+
+                //  on Error
+                function(response) {
+                    Dialog.open({
+                        'error': true,
+                        'title': "Server error",
+                        'text': response.message,
+                        'buttons': {OK: function(){}}
+                    });
+                }
+            );
         };
+
 
     return SitesSched;
 });

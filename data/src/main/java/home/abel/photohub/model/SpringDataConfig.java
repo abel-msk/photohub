@@ -72,6 +72,7 @@ public class SpringDataConfig {
         	Flyway flyway= new Flyway();
 			//dataSource().getConnection().setAutoCommit(false);
 			//flyway.   // baselineOnMigrate to true
+		    flyway.setBaselineVersionAsString("0.1.0");
 			flyway.setBaselineOnMigrate(true);
 			flyway.setDataSource(dataSource());
 			flyway.setLocations("classpath:db/migration/");
