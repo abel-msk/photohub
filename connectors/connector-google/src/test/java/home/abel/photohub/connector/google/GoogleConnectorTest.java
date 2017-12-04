@@ -99,25 +99,25 @@ public class GoogleConnectorTest {
 		    	System.out.println("+++ AUTH OK +++");
 			}
 			
-//			List<PhotoObjectInt> rootList = connector.getRootObjects();
-//			
-//			for ( PhotoObjectInt Item : rootList) {
-//				logger.debug("Item="+Item.getName());
-//			}
-//			
-//			List<PhotoObjectInt> filePhotos = null;
-//			PhotoObjectInt AlbmObject = rootList.get(0);
-//			if (AlbmObject.isFolder()) {
-//				filePhotos  = AlbmObject.listSubObjects(); 
-//			}
-//			filePhotos.get(0).getThumbnail(new Dimension(250,250));
+			List<PhotoObjectInt> rootList = connector.getRootObjects();
+
+			for ( PhotoObjectInt Item : rootList) {
+				logger.debug("Item="+Item.getName());
+			}
+
+			List<PhotoObjectInt> filePhotos = null;
+			PhotoObjectInt AlbmObject = rootList.get(0);
+			if (AlbmObject.isFolder()) {
+				filePhotos  = AlbmObject.listSubObjects();
+			}
+			filePhotos.get(0).getThumbnail(new Dimension(250,250));
 //			
 			//PhotoMetadataInt meta = filePhotos.get(0).getMeta();
 			//6060383542025899969.5795087093546466562
-			String theIdString = new String("6060383542025899969.5795087093546466562");
-			PhotoObjectInt gObject = connector.loadObject(theIdString);
-			
-			gObject.getThumbnail(new Dimension(250,250));
+//			String theIdString = new String("6060383542025899969.5795087093546466562");
+//			PhotoObjectInt gObject = connector.loadObject(theIdString);
+//
+//			gObject.getThumbnail(new Dimension(250,250));
 			
 			//   Check metadata editing
 //			String theIdString = new String("5383296798370565889.5383296918768456850");

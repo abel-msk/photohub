@@ -2,10 +2,10 @@
 <dataset>
 
 	<AUTH_TOKEN/>
-	<CONFIG NAME="defualtFolderThumb" VALUE="/Volumes/Dual-B/Users/abel/Developing/git/photohub2/photohub2-svc/src/test/data/folder.png"/>
-	<CONFIG NAME="localPhotoPath" VALUE="/var/folders/m2/mjr14d2136gf788sys6c6gj00000gn/T//ph/photo-root"/>
+	<!--<CONFIG NAME="defualtFolderThumb" VALUE="/Volumes/Dual-B/Users/abel/Developing/git/photohub2/photohub2-svc/src/test/data/folder.png"/>-->
+	<!--<CONFIG NAME="localPhotoPath" VALUE="/var/folders/m2/mjr14d2136gf788sys6c6gj00000gn/T//ph/photo-root"/>-->
 	<CONFIG NAME="localThumbFormat" VALUE="png"/>
-	<CONFIG NAME="localThumbPath" VALUE="/var/folders/m2/mjr14d2136gf788sys6c6gj00000gn/T//ph/photo-thumbnail"/>
+	<!--<CONFIG NAME="localThumbPath" VALUE="/var/folders/m2/mjr14d2136gf788sys6c6gj00000gn/T//ph/photo-thumbnail"/>-->
 	<GROUPS/>
 	<GROUP_AUTHORITIES/>
 	<GROUP_MEMBERS/>

@@ -355,6 +355,9 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven { url "http://repo.spring.io/libs-snapshot" }
+    maven {
+        url "https://repository.apache.org/content/repositories/snapshots/"
+    }
 }
 
 dependencies {
@@ -363,20 +366,26 @@ dependencies {
 	compile project(':connectors:connector-local')
 	compile project(':connectors:connector-google')
 	compile project(':services')
+    compile project(':image-processing')
+
+
+    //compile group: 'org.apache.commons',  name: 'commons-imaging', version: '1.+'
+    //compile group: 'org.apache.commons', name: 'commons-imaging', version: '1.0-R1534292'
 
     //   Special cases
     compile group: 'org.flywaydb', name: 'flyway-core', version: '4.1.2', force:true
 
 
 	//	Springframework
-
-    compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}"
-    compile group: 'org.springframework', name: 'spring-context', version: "${props.springFrameworkVersion}"
-
-    //compile group: 'org.springframework', name: 'spring-context', version: "${springFrameworkVersion}" {
-    //    exclude group:'commons-logging ',module:'commons-logging' }
-    compile group: 'org.springframework', name: 'spring-webmvc', version: "${props.springFrameworkVersion}"
-    compile group: 'org.springframework', name: 'spring-beans', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}", force:true
+    compile group: 'org.springframework', name: 'spring-context', version: "${props.springFrameworkVersion}", force:true
+    compile group: 'org.springframework', name: 'spring-webmvc', version: "${props.springFrameworkVersion}", force:true
+    compile group: 'org.springframework', name: 'spring-beans', version: "${props.springFrameworkVersion}", force:true
+    compile group: 'org.springframework', name: 'spring-aop', version: "${props.springFrameworkVersion}", force:true
+    compile group: 'org.springframework', name: 'spring-jdbc', version: "${props.springFrameworkVersion}", force:true
+    compile group: 'org.springframework', name: 'spring-orm', version: "${props.springFrameworkVersion}", force:true
+    compile group: 'org.springframework', name: 'spring-tx', version: "${props.springFrameworkVersion}", force:true
+    compile group: 'org.springframework', name: 'spring-web', version: "${props.springFrameworkVersion}", force:true
 
     //	Spring  boot
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: props.springBootVersion
@@ -419,10 +428,10 @@ dependencies {
 	//	Testing
     compile group: 'com.jayway.jsonpath', name: 'json-path', version: '2.2.0'
 
-    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: props.springBootVersion
-	testCompile group: 'org.springframework', name: 'spring-test', version: "${props.springFrameworkVersion}"
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version:"${props.springBootVersion}"
+	testCompile group: 'org.springframework', name: 'spring-test', version: "${props.springFrameworkVersion}", force:true
 	testCompile group: 'junit', name: 'junit', version: "${props.junitVersion}"
-	testCompile group: 'org.assertj', name: 'assertj-core', version: '3.6.2'
+	testCompile group: 'org.assertj', name: 'assertj-core', version: "${props.assertjVersion}"
 	testCompile (group: 'org.dbunit', name: 'dbunit', version: "${props.dbunitVersion}") {
 		exclude group:'junit',module:'junit' }
 	testCompile group: 'com.github.springtestdbunit', name: 'spring-test-dbunit', version: '1.2.1'

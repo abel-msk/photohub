@@ -17,6 +17,7 @@ import javax.servlet.http.Cookie;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
+import home.abel.photohub.webconfig.standalone.AppInit;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Condition;
 import org.assertj.core.api.IterableAssert;
@@ -74,6 +75,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebAppConfiguration
 //@RunWith(SpringRunner.class)
 //@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+//@ContextConfiguration(classes={AppInit.class})
 @ContextConfiguration(classes=home.abel.photohub.web.SiteTest.ServiceTestContextCfg.class)
 
 
@@ -95,6 +97,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class SiteTest   {
 
+//  Removed with 	changing ContextConfiguration
 	@Configuration
 	@PropertySource("classpath:test-settings.properties")
 	@Import({
