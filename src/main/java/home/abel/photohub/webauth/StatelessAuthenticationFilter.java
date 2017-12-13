@@ -14,7 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -25,6 +24,8 @@ class StatelessAuthenticationFilter extends GenericFilterBean {
 
 	private final TokenAuthenticationService tokenAuthenticationService;
 	private final  HeaderBuilderService headerBuilderService;
+
+
 
 	protected StatelessAuthenticationFilter(TokenAuthenticationService taService, HeaderBuilderService  headerBuilderService) {
 		this.tokenAuthenticationService = taService;
@@ -37,34 +38,64 @@ class StatelessAuthenticationFilter extends GenericFilterBean {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        //logger.trace("Filter requrst " + request.getMethod() + ", to " + request.getPathInfo());
-        
-		// Skeep auth for any options requests
+
+		//
+		//   Option request pas w/o auth for future processing
+		//
 		if (request.getMethod().equals("OPTIONS")) {
 			chain.doFilter(req, res);
-    		return;
-        }
-		
+			return;
+		}
+
+
+		//
+		//    Pretty print for request parameters
+		//
+		String paramStr = new String("");
+		if ( request.getQueryString() != null) {
+			String[] parameters = request.getQueryString().split("&");
+			for (String parameter : parameters) {
+				if ((!parameter.startsWith("callback=")) &&
+						(!parameter.startsWith("_="))
+						) {
+					paramStr += parameter + ",";
+				}
+			}
+			//  Remove last coma
+			if ( paramStr.length() > 1 ) {
+				paramStr = paramStr.substring(0, paramStr.length() - 1);
+			}
+			else {
+				paramStr = "";
+			}
+		}
+		logger.info(">>> Authentication "+request.getMethod()+" for "+request.getRequestURI()+" options=["+paramStr+"]");
+
+		//headerBuilderService.printReqHeaders(request);
+		headerBuilderService.printDefReqHeaders(request);
+
+
 		AntPathRequestMatcher matcher = new AntPathRequestMatcher("/api/login/**");
-		if ( matcher.matches(request) ) {
-			chain.doFilter(req, res);
-    		return;
-        }		
-		
+		if ( ! matcher.matches(request) ) {
 
+			Authentication auth = tokenAuthenticationService.getAuthentication((HttpServletRequest) req);
+			SecurityContextHolder.getContext().setAuthentication(auth);
 
-		Authentication auth = tokenAuthenticationService.getAuthentication((HttpServletRequest) req);
-		SecurityContextHolder.getContext().setAuthentication(auth);	
-		
-		if (auth == null) {
-			logger.debug("Authentication fail for request \""+ request.getRequestURI() + "\", method = \"" + request.getMethod()+"\"");			
-			//   Add  default, project specific headers to response
-			headerBuilderService.buildResponse(request,response);
+			//    Trace all incoming headers
+//			if ( logger.isTraceEnabled()) {
+//				headerBuilderService.printReqHeaders(request);
+//				headerBuilderService.printRespHeaders(response);
+//			}
+
+			if (auth == null) {
+				logger.debug("Authentication FAIL ");
+				//   Add  default, project specific headers to response
+				headerBuilderService.buildResponse(request, response);
+			} else {
+				logger.debug("Authentication SUCCESS for " + auth.getDetails().toString());
+			}
 		}
-		else {
-			logger.debug("Authentication success for request \""+ request.getRequestURI() + "\", method = \"" + request.getMethod()+"\"");
-		}
-		
 		chain.doFilter(req, res); // always continue
+		logger.info("<<< Authentication return  for "+request.getMethod()+" for "+request.getRequestURI());
 	}
 }

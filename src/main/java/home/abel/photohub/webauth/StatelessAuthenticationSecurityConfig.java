@@ -84,14 +84,6 @@ public class StatelessAuthenticationSecurityConfig extends WebSecurityConfigurer
 				
 				//all other request need to be authenticated
 				.anyRequest().authenticated().and()
-				
-				// custom JSON based authentication by POST of {"username":"<name>","password":"<password>"} which sets the token header upon authentication
-//				.addFilterBefore(
-//						new StatelessLoginFilter("/api/login",
-//								tokenAuthenticationService,
-//								userDetailsService,
-//								authenticationManager()
-//						), UsernamePasswordAuthenticationFilter.class)
 
 				// custom Token based authentication based on the header previously given to the client
 				.addFilterBefore(

@@ -50,7 +50,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
  ****************************************************************************/
 
 @Configuration
-@EnableWebMvc
+//@EnableWebMvc
 @ComponentScan(basePackages = {"home.abel.photohub.web","home.abel.photohub.webconfig.standalone"})
 
 @Import({
@@ -60,14 +60,14 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 	home.abel.photohub.webconfig.standalone.MvcConfiguration.class})
 
 
-@EnableAutoConfiguration
+//@EnableAutoConfiguration
 @EnableSpringDataWebSupport
 @EnableTransactionManagement
 
 //@EnableAsync
 //@EnableSwagger
 @EnableSwagger2
-//@SpringBootApplication
+@SpringBootApplication
 public class AppInit extends SpringBootServletInitializer {
 	final Logger logger = LoggerFactory.getLogger(AppInit.class);
 	
@@ -104,9 +104,10 @@ public class AppInit extends SpringBootServletInitializer {
     @Bean
     public EmbeddedServletContainerFactory servletContainer() {
         TomcatEmbeddedServletContainerFactory factory = new TomcatEmbeddedServletContainerFactory();
-        //factory.setPort(9000);
+        //factory.setPort(8081);
         //factory.setSessionTimeout(10, TimeUnit.MINUTES);
         //factory.addErrorPages(new ErrorPage(HttpStatus.404, "/notfound.html");
+		logger.trace("Initialize TomcatEmbeddedServletContainerFactory");
         return factory;
     }
 	 
@@ -126,6 +127,7 @@ public class AppInit extends SpringBootServletInitializer {
     public DispatcherServlet dispatcherServlet() {
     	DispatcherServlet ds =  new DispatcherServlet();
     	ds.setDispatchOptionsRequest(true);
+    	logger.trace("Initialize dispatcherServlet");
     	return ds;
     }   
     
@@ -146,8 +148,10 @@ public class AppInit extends SpringBootServletInitializer {
         //registration.setMultipartConfig(factory.createMultipartConfig());
         registration.setMultipartConfig(multipartConfigElement());
         //multipartConfigElement()
-        
-        return registration;
+
+		logger.trace("Initialize dispatcherServletRegistration");
+
+		return registration;
     }  
     
 	/*----------------------------------------------------------------- 
@@ -195,6 +199,8 @@ public class AppInit extends SpringBootServletInitializer {
 //	public void addCorsMappings(CorsRegistry registry) {
 //		registry.addMapping("/**");
 //	}
+
+
 
     /**==================================================================================
      *    Start Application

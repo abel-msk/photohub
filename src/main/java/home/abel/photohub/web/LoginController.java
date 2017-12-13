@@ -76,7 +76,7 @@ public class LoginController {
 		}
 		logger.debug("Return status " + response);
 		return new ResponseEntity<DefaultResponse>(response,headerBuild.getHttpHeader(HTTPRequest), HttpStatus.OK);
-//		return ResponseEntity.ok().body(response);
+		//return ResponseEntity.ok().body(response);
 	}
 	
 	
