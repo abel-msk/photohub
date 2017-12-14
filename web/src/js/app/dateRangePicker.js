@@ -277,7 +277,7 @@ define(["jquery","pikaday","modalDialog","utils","moment","logger"],function($,P
                 function (event) {
                     var options = event.data.options;
 
-                    if ((options) && (typeof options.onApply == "function")) {
+                    if ((options) && (typeof options.onApply === "function")) {
                         options.onApply(event.data.caller.getFromDate(), event.data.caller.getToDate());
                     }
                     else {
@@ -307,7 +307,7 @@ define(["jquery","pikaday","modalDialog","utils","moment","logger"],function($,P
         this.pickerFromObj.setDate(date,true);
         //this.pickerFromObj.gotoDate(date);
 
-        if (this.options.onChange && (typeof this.options.onChange == "function")) {
+        if (this.options.onChange && (typeof this.options.onChange === "function")) {
             this.options.onChange(date,this.getToDate());
         }
     };
@@ -326,7 +326,7 @@ define(["jquery","pikaday","modalDialog","utils","moment","logger"],function($,P
         this.pickerToObj.setDate(date,true);
         //this.pickerToObj.gotoDate(date);
 
-        if (this.options.onChange && (typeof this.options.onChange == "function")) {
+        if (this.options.onChange && (typeof this.options.onChange === "function")) {
             this.options.onChange(this.getFromDate(),date);
         }
     };

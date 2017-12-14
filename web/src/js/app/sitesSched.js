@@ -3,8 +3,8 @@
  */
 
 
-define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2Human"],
-    function($,Api,Dialog,Utils,logger,moment,CronEdit,Cron2Human) {
+define(["jquery","api","modalDialog","utils","logger","sitesShEdit"],
+    function($,Api,Dialog,Utils,logger,ShEdit) {
 
 
         "use strict";
@@ -12,9 +12,10 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
         var SHEDLIST_HOLDER_ID = "sched-list";
         var SCHED_TBLROW       = "-sched-row";
         var EDIT_FRAME_SUFFIX = '-sched-frame';
+        var SHED_INFO_SUFFIX = "-open-btn";
         var BTN_ID_SUFFIX = "-save-edit";
-        var INSERT_FRAME_SUFFIX = "-cron-form";
-        var c2h = new Cron2Human();
+        //var INSERT_FRAME_SUFFIX = "-cron-form";
+
 
         //------------------------------------------------------------------------
         //
@@ -23,36 +24,29 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
 
             var taskName = schedule.taskName;
 
-            var resHtml =  '<div id="'+schedule.id+SCHED_TBLROW+'" class="row panel-body-row">' +
-                '   <span class="text-right row-label">'+taskName+'</span>'+
-                '   <div class="row-data" style="max-width: 55%;">' +
-                    //
-                    //    Строка состояния и рассписания заполняется из кода. _displaySched
-                    //
-                //'      <div  class="status '+(schedule.enable?"status-succ":"status-norm")+'" style="text-transform: uppercase;">'+(schedule.enable?"Enabled":"Disabled")+'</div>' +
-                //'   <div data-toggle="collapse" data-target="#' + schedule.id + EDIT_FRAME_SUFFIX +'" aria-expanded="false" aria-controls="subpanel">' +
-                //'      <span  class="schedule ">'+schedules+'</span>' +
-                //'      <span  class="next ">'+next+'</span>' +
-                '   </div>'+
-                '   <div class="row-cmd pull-right"> ' +
-                '   <div class="pull-right">'+
-                '       <a id="'+schedule.id+BTN_ID_SUFFIX+'"  data-siteId="'+siteId+'" data-schedId="'+schedule.id+'" data-taskName="'+taskName+'"  class="edit link text-right" >'+
-                '           <span class="round"><span class="glyphicon glyphicon-menu-left transition-rotate rotate0"> </span></span>'+
-                '       </a>' +
-                '   </div>'+
-                '   <div class="pull-right">'+
-                '       <a data-siteId="'+siteId+'" data-schedId="'+schedule.id+'" class="enable link text-right" >'+(schedule.enable?"Deactivate":"Activate")+'</a>'+
-                '   </div>'+
-                '   </div>'+
-                '   <div id="'+schedule.id+EDIT_FRAME_SUFFIX+'"  data-schedId="'+schedule.id+'"  class="cron-form collapse row" style="clear: both; padding-top: 5px">' +
-                '       <div class="text-right row-label">&nbsp;</div>' +
-                '       <div id="'+schedule.id+INSERT_FRAME_SUFFIX+'" data-schedId="'+schedule.id+'"  class="cron-form-ins">  </div>'+
-                '       <div class="pull-right clearfix" style="width:11%">'+
-                '         <a class="save link pull-right text-right clearfix" data-siteId="'+siteId+'" data-schedId="'+schedule.id+'" >Save</a>'+
-                '         <a class="cancel link pull-right text-right clearfix" data-siteId="'+siteId+'" data-schedId="'+schedule.id+'">Cancel</a>'+
-                '      </div>' +
-                '   </div>'+
-                '</div>';
+            var mainPanelId = schedule.id+SCHED_TBLROW;
+            var subpanelId = schedule.id+EDIT_FRAME_SUFFIX;
+            var openPanelBtnId = schedule.id+BTN_ID_SUFFIX;
+
+                var resHtml = "<div id='"+mainPanelId+"' class='row panel-body-row'>"+
+                    "    <span class='text-right row-label'>"+taskName+"</span>"+
+                    "    <div data-toggle='collapse' data-parent='#"+mainPanelId+"' data-target='#"+subpanelId+"' aria-expanded='false' aria-controls='subpanel' >"+
+                    "        <span id='"+schedule.id+SHED_INFO_SUFFIX+"'  class='row-data'>&nbsp;</span>"+
+                    "        <a id='"+openPanelBtnId+"' class='link row-cmd pull-right' style='margin-top: -12px;'>"+
+                    "            <span><span class='glyphicon glyphicon-menu-down  fa-stack-1x transition-rotate' style='padding-top: 6px'></span></span>"+
+                    "        </a>"+
+                    "    </div>"+
+                    "    <div id='"+subpanelId+"' class='collapse row' data-siteId='"+siteId+"' data-schedId='"+schedule.id+"' style='clear: both'>"+
+                    "         <div class='pull-right clearfix' style='width:11%'>"+
+                    "             <a class='save link pull-right text-right clearfix' data-siteId='"+siteId+"' data-schedId='"+schedule.id+"'>Save</a>"+
+                    "             <a class='cancel link pull-right text-right clearfix' data-siteId='"+siteId+"' data-schedId='"+schedule.id+"'>Cancel</a>"+
+                    "         </div>"+
+                    "    </div>"+
+                    "</div>";
+
+            //"       <a data-siteId='"+siteId+"' data-schedId='"+schedule.id+"' class='enable link text-right pull-right' >"+(schedule.enable?"Deactivate":"Activate")+"</a>"+
+
+
             return resHtml;
         }
 
@@ -71,7 +65,9 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
 
             this._renderSchedList(model.get("id"));
 
-            $('body').off('click',"#"+SHEDLIST_HOLDER_ID+' a.edit')
+            $('body')
+/*
+                .off('click',"#"+SHEDLIST_HOLDER_ID+' a.edit')
                 .on('click',"#"+SHEDLIST_HOLDER_ID+' a.edit',{'caller':this},function(event) {
                     var target = event.target || event.srcElement;
                     logger.debug("[SitesSched.click] a.edit event fired target=", target);
@@ -85,6 +81,7 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
                         target.getAttribute('data-schedId')
                     );
                 })
+*/
 
                 .off('click',"#"+SHEDLIST_HOLDER_ID+' a.cancel')
                 .on('click',"#"+SHEDLIST_HOLDER_ID+' a.cancel',{'caller':this},function(event) {
@@ -105,35 +102,39 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
                     );
                 })
 
-                .off('click',"#"+SHEDLIST_HOLDER_ID+' a.enable')
-                .on('click',"#"+SHEDLIST_HOLDER_ID+' a.enable',{'caller':this},function(event) {
-                    var target = event.target || event.srcElement;
-                    event.data.caller._saveSched(
-                        target.getAttribute('data-siteId'),
-                        target.getAttribute('data-schedId')
-                    );
-                })
+                // .off('click',"#"+SHEDLIST_HOLDER_ID+' a.enable')
+                // .on('click',"#"+SHEDLIST_HOLDER_ID+' a.enable',{'caller':this},function(event) {
+                //     var target = event.target || event.srcElement;
+                //     event.data.caller._saveSched(
+                //         target.getAttribute('data-siteId'),
+                //         target.getAttribute('data-schedId')
+                //     );
+                // })
 
                 // -----------------------------------------------------
                 //
-                //    Перехватывает события  раскрытия и закрытия  формы едактирования рассписанием
+                //    Перехватывает события  раскрытия и закрытия формы редактирования рассписания
                 //
+
                 .off('show.bs.collapse')
                 .on('show.bs.collapse',{'caller':this},function(event) {
                     var target = event.target || event.srcElement;
-                    logger.debug("[SitesSched.show.bs.collapse] Cancel shedule ", target);
+                    //logger.debug("[SitesSched.show.bs.collapse] Cancel shedule ", target);
                     var schedId = target.getAttribute("data-schedId");
 
-                    $('#'+schedId+BTN_ID_SUFFIX + ' span span').removeClass('rotate0').addClass('rotate-90');
+                    //   Возможно вставить загрузку текущего значения рассписания для этой задачи
 
+                    //   поворачиваем указатель ракрытия фрейма
+                    $('#'+schedId+BTN_ID_SUFFIX + ' span span').removeClass('fa-rotate-0').addClass('fa-rotate-90');
                 })
                 .off('hide.bs.collapse')
                 .on('hide.bs.collapse',{'caller':this},function(event) {
                     var target = event.target || event.srcElement;
-                    logger.debug("[SitesSched.hide.bs.collapse] Cancel shedule ", target);
+                    //logger.debug("[SitesSched.hide.bs.collapse] Cancel shedule ", target);
                     var schedId = target.getAttribute("data-schedId");
-                    $('#'+schedId+BTN_ID_SUFFIX + ' span span').removeClass('rotate-90').addClass('rotate0');
-                });
+                    $('#'+schedId+BTN_ID_SUFFIX + ' span span').removeClass('fa-rotate-90').addClass('fa-rotate-0');
+                })
+            ;
 
         }
 
@@ -154,6 +155,7 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
         //         "object": [
         //             {
         //                 "id": null,
+        //                 ""
         //                 "taskName": "TNAME_EMPTY",
         //                 "seconds": "*",
         //                 "minute": "*",
@@ -185,41 +187,32 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
                 function(response) {
                     try {
                         if (response.object) {
-                            var schedRecordsList = response.object;
+                            var cronObjList = response.object;
                             $("#"+SHEDLIST_HOLDER_ID).html("");
 
                             var listHtml = "";
-                            for (var i = 0; i < schedRecordsList.length; i++) {
-                                var scheduleObj = schedRecordsList[i];
+                            for (var i = 0; i < cronObjList.length; i++) {
+                                var cronObj = cronObjList[i];
 
-                                if (! scheduleObj.id) {
-                                    scheduleObj.id = Math.floor((Math.random() * 10000)) * (-1);
+                                if (! cronObj.id) {
+                                    cronObj.id = Math.floor((Math.random() * 10000));
                                 }
-                                caller.schedIdMap[scheduleObj.id] = {
-                                    'id': scheduleObj.id,
-                                    'tName': scheduleObj.taskName,
-                                    'obj': scheduleObj,
-                                    'elId': scheduleObj.id+INSERT_FRAME_SUFFIX
+                                caller.schedIdMap[cronObj.id] = {
+                                    'id': cronObj.id,
+                                    'tName': cronObj.taskName,
+                                    'cronObj': cronObj,
+                                    'elId': cronObj.id+EDIT_FRAME_SUFFIX   //  ID для HTML-ного  блока куда всавится форма редактирования рассписания
                                 };
 
-                                $("#"+SHEDLIST_HOLDER_ID).append(schedRowHTML(siteId, scheduleObj));
-                                caller._displaySched(caller.schedIdMap[scheduleObj.id].elId , scheduleObj);
+                                $("#"+SHEDLIST_HOLDER_ID).append(schedRowHTML(siteId, cronObj));
                             }
 
-
-                            //   Для всех срон записей создаем класс упраления ред.формой
+                            //   Для всех 'cron' записей создаем класс упраления ред.формой
                             //   и добвляем в масив.
-                            //   В процессе создания класса будет генерироваться штмл форма внутри фрейма.
+                            //   В процессе создания класса будет генерироваться html форма внутри фрейма.
                             for ( var key in caller.schedIdMap) {
-                                caller.schedIdMap[key].class = new CronEdit(caller.schedIdMap[key].elId,caller.schedIdMap[key].obj);
-
-                                //   Добавляем кнопки Save и Cancel после добавления формы
-                                //$('#'+caller.schedIdMap[key].elId).append(formsBtnHTML(siteId,caller.schedIdMap[key]));
-
-                                caller.schedIdMap[key].class.setCron(caller.schedIdMap[key].obj);
-                                caller.schedIdMap[key].class.setListeners(function(elId,cronObj){
-                                    caller._displaySched(elId,cronObj);
-                                });
+                                caller.schedIdMap[key].schedObj = new ShEdit(caller.schedIdMap[key].elId,caller.schedIdMap[key].cronObj);
+                                caller._displaySched(key);
                             }
                         }
                     }
@@ -243,41 +236,25 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
         //------------------------------------------------------------------------
         //    Вызывается при изменении значения формы редактирования CRON
         //------------------------------------------------------------------------
-        SitesSched.prototype._displaySched = function(formRowId,cronObj) {
-            logger.debug("[SitesSched._displaySched] Display human readable schedules for id=" +formRowId+ ", cron=",cronObj);
-            var isError = true;
+        SitesSched.prototype._displaySched = function(cronId) {
+            var message = this.schedIdMap[cronId].schedObj.getNextDate();
+            var cronObj = this.schedIdMap[cronId].cronObj;
+            if (message) message = "Next start at: " + message;
 
-            var message = c2h.validate(cronObj);
-            if ( ! message ) {
-                message = 'Scheduled: ' +c2h.toString(cronObj);
-                isError = false;
-            }
-            // else {
-            //     message = "Error: " + message;
-            // }
-
-
+            logger.debug("[SitesSched._displaySched] Display human readable schedules with msg= "+message+", cron=",cronObj);
 
             //
             //     Заполняем строку состояния  рассписания
             //
-            var shedId = $('#'+formRowId).attr('data-schedId');
-            var htmlStr = '<div  class="status '+(cronObj.enable?"status-succ":"status-norm")+'" style="text-transform: uppercase;">'+
-                (cronObj.enable?"Enabled":"Disabled")+
-                '</div>' +
-                '<span  class="schedule '+(isError?"status-err":"")+'">'+message+'</span>' +
-                '<span  class="next ">'+""+'</span>'
+            var htmlStr = '<span  class="status '+(cronObj.enable?"status-succ":"status-norm")+'" style="text-transform: uppercase;">'+
+                    (cronObj.enable?"Enabled":"Disabled")+
+                '</span>' +
+                '<span  class="schedule" style="padding-left: 10px;">'+message+'</span>'
                 ;
-            $('#'+shedId + SCHED_TBLROW+ " .row-data").html(htmlStr);
-
-
-            //
-            //     Устанавливаем  название кнопки enable/disable
-            //
-            $('#'+shedId + SCHED_TBLROW+ " a.enable").text(cronObj.enable?"Deactivate":"Activate");
-
+            $('#'+cronId+SHED_INFO_SUFFIX).html(htmlStr);
         };
 
+/*
         //------------------------------------------------------------------------
         //    Вызывается когда пользователь нажал на кнлпку  EDIT
         //------------------------------------------------------------------------
@@ -288,14 +265,18 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
             $('#'+SHEDLIST_HOLDER_ID+" "+' .collapse.in').collapse('hide');
             $('#'+schedId+EDIT_FRAME_SUFFIX).collapse('show')
         };
+*/
 
         //------------------------------------------------------------------------
-        //    Вызывается когда пользователь нажал на кнлпку  CANCEL
+        //    Вызывается когда пользователь нажал на кнлпку  CANCEL // ресет формы
         //------------------------------------------------------------------------
         SitesSched.prototype._cancelSched = function(siteId,schedId) {
             logger.debug("[SitesSched._cancelSched] Cancel shedule edit for siteId="+siteId+", shedId="+schedId);
-            //  Открыть выпадающий фрейм редактирования
-            $('#'+schedId+EDIT_FRAME_SUFFIX).collapse('hide');
+
+            //  Возвращаем значения рассписание в последнее сохраненное состояние
+            this.schedIdMap[schedId].schedObj.setCron(this.schedIdMap[schedId].cronObj);
+
+            //$('#'+schedId+EDIT_FRAME_SUFFIX).collapse('hide');
         };
 
 
@@ -305,7 +286,8 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
         SitesSched.prototype._saveSched = function(siteId,schedId) {
             logger.debug("[SitesSched._saveSched] Save shedule edit for siteId="+siteId+", shedId="+schedId);
 
-            var cronObj = this.schedIdMap[schedId].class.getCron();
+            var cronObj = this.schedIdMap[schedId].schedObj.getCron();
+            cronObj.site = siteId;
             var caller = this;
 
             Api.setSched(siteId,cronObj,
@@ -314,11 +296,11 @@ define(["jquery","api","modalDialog","utils","logger","moment","cronEdit","cron2
                 function(response) {
                     try {
                         if (response.object) {
-                            //   Отображаем текущее значение  в основной строке
-                            caller._displaySched(caller.schedIdMap[schedId].elId,response.object);
                             //   Сохраняем крон объект
-                            caller.schedIdMap[schedId].class.setCron(response.object);
-                            caller.schedIdMap[schedId].obj = response.object;
+                            caller.schedIdMap[schedId].schedObj.setCron(response.object);
+                            caller.schedIdMap[schedId].cronObj = response.object;
+                            //   Отображаем текущее значение  в основной строке
+                            caller._displaySched(schedId);
                         }
                     }
                     catch (e) {

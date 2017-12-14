@@ -363,6 +363,19 @@ public class SiteTest   {
 	public TaskRecord startTask(String taskName,  String siteId) throws Throwable {
 		ObjectMapper mapper = new ObjectMapper();
 		MvcResult result = null;
+
+		mockMvc.perform(
+				options("/api/site/"+siteId+"/task")
+						.cookie(cookies)
+						.contentType(MediaType.APPLICATION_JSON)
+						.param("taskname", taskName)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andReturn();
+
+
+
     	result = mockMvc.perform(
     			post("/api/site/"+siteId+"/task")
     			.cookie(cookies)

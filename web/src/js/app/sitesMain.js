@@ -253,7 +253,7 @@ define(["jquery",
                 logger.debug("[SitesTask]  START ");
 
 
-                scheds = new  SitesSched(model);
+                scheds = new SitesSched(model);
 
                 //   В переделку
                 //actions = new Actions({'siteId': model.get('id')});

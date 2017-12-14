@@ -118,7 +118,8 @@ public class TaskSchedController {
 			@RequestBody Schedule schObj
 			) throws Throwable {
 		
-		logger.debug(">>> Request GET for /site/"+theSiteID+"/schedule/"+taskName);    	
+		logger.debug(">>> Request PUT for /site/"+theSiteID+"/schedule/"+taskName+ ", cron="+schObj);
+
 		//Schedule sch = scheduleService.getSchedule(theSiteID,taskName);
 	
 		if ( theSiteID.equalsIgnoreCase(ScheduleService.NULL_SITE ) ) {

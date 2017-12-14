@@ -1,5 +1,5 @@
 plugins {
-    id "org.springframework.boot" version '1.5.2.RELEASE'
+    id "org.springframework.boot" version '1.5.9.RELEASE'
 }
 //import org.apache.tools.ant.filters.ReplaceTokens
 import org.apache.tools.ant.filters.*
@@ -56,7 +56,7 @@ ext {
 
 allprojects {
     apply plugin: 'java'
-    apply plugin: 'maven-publish'
+    //apply plugin: 'maven-publish'
     apply plugin: 'idea'
 
     ext {
@@ -159,7 +159,6 @@ task prepareDistribution {
     doLast {
         def logFolder = new File(distribDirStr+"/log")
         logFolder.mkdirs()
-
         copy {
             into(distribDirStr+"/bin")
             from( project.sourceSets.main.resources.srcDirs ) {
@@ -192,6 +191,12 @@ task prepareDistribution {
                         "db.password"       : dbUserPasswd,
                         "database.type"     : dbType
                 ])
+            }
+        }
+        copy {
+            into(distribDirStr+"/db/defaults")
+            from( project.sourceSets.main.resources.srcDirs ) {
+                include 'folder.png'
             }
         }
     }
@@ -388,12 +393,17 @@ dependencies {
     compile group: 'org.springframework', name: 'spring-web', version: "${props.springFrameworkVersion}", force:true
 
     //	Spring  boot
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: props.springBootVersion
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version: props.springBootVersion
+    compile group: 'org.springframework.boot', name: 'spring-boot', version: props.springBootVersion, force:true
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter', version: props.springBootVersion, force:true
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: props.springBootVersion, force:true
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-logging', version: props.springBootVersion, force:true
 
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-aop', version: props.springBootVersion
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-integration', version: props.springBootVersion
-    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
+    compile group: 'org.springframework.boot', name: 'spring-boot-autoconfigure', version: props.springBootVersion, force:true
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version: props.springBootVersion, force:true
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: props.springBootVersion, force:true
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-aop', version: props.springBootVersion, force:true
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-integration', version: props.springBootVersion, force:true
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat:${props.springBootVersion}")
 
     //	Spring  security
     compile group: 'org.springframework.security', name: 'spring-security-core', version: "${props.springSecurityVersion}"
@@ -428,7 +438,10 @@ dependencies {
 	//	Testing
     compile group: 'com.jayway.jsonpath', name: 'json-path', version: '2.2.0'
 
-    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version:"${props.springBootVersion}"
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-test', version : props.springBootVersion, force:true
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-test-autoconfigure', version : props.springBootVersion, force:true
+
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version:props.springBootVersion, force:true
 	testCompile group: 'org.springframework', name: 'spring-test', version: "${props.springFrameworkVersion}", force:true
 	testCompile group: 'junit', name: 'junit', version: "${props.junitVersion}"
 	testCompile group: 'org.assertj', name: 'assertj-core', version: "${props.assertjVersion}"

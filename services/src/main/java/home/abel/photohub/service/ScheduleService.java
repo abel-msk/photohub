@@ -545,11 +545,14 @@ public class ScheduleService {
 				removedTask.getTag().toString());
 		
 		for (Schedule schedule : schList) {
-			scheduleRepository.delete(schedule);
+
 			Site theSite = schedule.getSite();
 			if ( theSite != null) {
 				theSite.removeSchedule(schedule);
 				siteRepo.save(theSite);
+			}
+			else {
+				scheduleRepository.delete(schedule);
 			}
 		}
 

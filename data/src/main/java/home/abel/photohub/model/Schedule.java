@@ -39,7 +39,7 @@ public class Schedule implements Serializable {
     @GeneratedValue(strategy=GenerationType.TABLE, generator="SchedSeqGenerator")	
 	private String id;
 	
-	//@JsonIgnore
+	@JsonIgnore
 	@ManyToOne
 	private Site site = null;
 	
