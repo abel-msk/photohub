@@ -241,6 +241,21 @@ processResources {
 //   REST API Testing
 //----------------------------------------------------------
 
+task copyTestDBData (type: Copy) {
+    String srcFile = project(':services').sourceSets.test.getResources().getSrcDirs().getAt(0).absolutePath + "/db-test-data.xml";
+    inputs.files srcFile
+    outputs.dir sourceSets.test.getResources().getSrcDirs().getAt(0)
+    from srcFile
+    into sourceSets.test.getResources().getSrcDirs().getAt(0)
+    doLast {
+        println "... Get test db data file - " + srcFile;
+        copy {
+            from srcFile
+            into sourceSets.test.getResources().getSrcDirs().getAt(0)
+        }
+    }
+}
+
 task cleanDB {
     doFirst {
         println "... Check and clean test DB = " + testdbName
@@ -269,18 +284,23 @@ test {
         includeTestsMatching "*SiteTest"
     }
 }
+test.dependsOn cleanDB
+test.dependsOn copyTestDBData
 
-task testApi(type: Test, dependsOn:cleanDB) {
+
+task testApi(type: Test, dependsOn: cleanDB ) {
     beforeTest { descriptor ->
         logger.lifecycle("Running test: $descriptor.className")
     }
-
-    //testLogging.showStandardStreams = true   //  Используетмся для вывода debag логов инициализации Spring'a
+    //testLogging.showStandardStreams = true   //  Используетмся для вывода debug логов инициализации Spring'a
 
     filter {
         includeTestsMatching "*SiteTest"
     }
 }
+
+testApi.dependsOn cleanDB
+testApi.dependsOn copyTestDBData
 
 //----------------------------------------------------------
 //
@@ -316,9 +336,8 @@ project(':connectors:connector-google') {
     }
 }
 
-//----------------------------------------------------------
-//   Substitute test resources variables
-//----------------------------------------------------------
+
+
 processTestResources {
     inputs.file new File('build.gradle')
     filesMatching('**/*.properties') {
@@ -413,6 +432,9 @@ dependencies {
     //	JSON Processing
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${props.jacksonVersion}"
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${props.jacksonVersion}"
+    //	Testing
+    //compile group: 'com.jayway.jsonpath', name: 'json-path', version: '2.2.0'
+    testCompile group:  'org.codehaus.jackson', name: 'jackson-mapper-asl',version: '1.9.13'
 
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
     compile group: 'org.springframework.hateoas', name: 'spring-hateoas', version: '0.23.0.RELEASE'
@@ -435,8 +457,7 @@ dependencies {
 	compile group: 'org.slf4j', name: 'log4j-over-slf4j', version: "${props.slf4jVersion}"
 	compile group: 'ch.qos.logback', name: 'logback-classic', version: "${props.logbackVersion}"
 
-	//	Testing
-    compile group: 'com.jayway.jsonpath', name: 'json-path', version: '2.2.0'
+
 
     testCompile group: 'org.springframework.boot', name: 'spring-boot-test', version : props.springBootVersion, force:true
     testCompile group: 'org.springframework.boot', name: 'spring-boot-test-autoconfigure', version : props.springBootVersion, force:true
@@ -447,7 +468,7 @@ dependencies {
 	testCompile group: 'org.assertj', name: 'assertj-core', version: "${props.assertjVersion}"
 	testCompile (group: 'org.dbunit', name: 'dbunit', version: "${props.dbunitVersion}") {
 		exclude group:'junit',module:'junit' }
-	testCompile group: 'com.github.springtestdbunit', name: 'spring-test-dbunit', version: '1.2.1'
+	testCompile group: 'com.github.springtestdbunit', name: 'spring-test-dbunit', version: '1.3.0'
 }
 
 //----------------------------------------------------------

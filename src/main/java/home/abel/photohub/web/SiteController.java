@@ -4,8 +4,13 @@ import home.abel.photohub.connector.prototype.SiteCredentialInt;
 import home.abel.photohub.connector.prototype.SitePropertyInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
 import home.abel.photohub.model.Node;
+import home.abel.photohub.model.Schedule;
 import home.abel.photohub.model.Site;
 import home.abel.photohub.service.SiteService;
+import home.abel.photohub.service.TaskQueueService;
+import home.abel.photohub.tasks.BaseTask;
+import home.abel.photohub.tasks.TaskFactory;
+import home.abel.photohub.tasks.TaskNamesEnum;
 import home.abel.photohub.web.model.AuthWaitSession;
 import home.abel.photohub.web.model.DefaultObjectResponse;
 import home.abel.photohub.web.model.DefaultResponse;
@@ -46,6 +51,13 @@ public class SiteController {
 	SiteService siteSvc;
 	@Autowired
 	HeaderBuilderService headerBuild;
+
+	@Autowired
+	TaskQueueService taskQueue;
+
+	@Autowired
+	TaskFactory taskFactory;
+
 
 	/*=============================================================================================
 	 * 
@@ -293,39 +305,63 @@ public class SiteController {
 	ResponseEntity<DefaultResponse> deleteSite(
 	        final HttpServletRequest HTTPrequest,
 	        final HttpServletResponse HTTPresponse,
-	        @PathVariable("id") String objectID
+	        @PathVariable("id") String siteId
 			) throws Throwable
 	{ 		
-		logger.debug(">>> Request DELETE for /site/"+objectID);	
-		siteSvc.removeSite(objectID);
+//		logger.debug(">>> Request DELETE for /site/"+objectID);
+//		siteSvc.removeSite(siteId);
+
+		Site theSite = siteSvc.getSite(siteId);
+		if ( theSite == null ) throw new ExceptionObjectNotFound("Site with ID="+siteId+" not found.");
+
+		Schedule schedule = new Schedule();
+		schedule.setTaskName(TaskNamesEnum.TNAME_REMOVE.toString());
+		schedule.setEnable(false);
+		schedule.setId(siteId);
+
+		BaseTask task  = taskFactory.createTask(TaskNamesEnum.TNAME_REMOVE, theSite, schedule);
+		task = taskQueue.put(task);
+
+
 		DefaultResponse response = new DefaultResponse("Object deleted",0);
 		return new ResponseEntity<DefaultResponse>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
 	}	
 	
 	
-//	/*=============================================================================================
-//	 * 
-//	 *    Handle request for Clean sites  content
-//	 *      
-//	 =============================================================================================*/
-//	@RequestMapping(value = "/site/{id}/clean", method = RequestMethod.OPTIONS)
-//	ResponseEntity<String> acceptCleanSite(HttpServletRequest request) throws IOException, ServletException {
-//    	logger.debug("Request OPTION  for /site/{id}/disconnect");
-//	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
-//	}
-//	
-//	@RequestMapping(value = "/site/{id}/clean", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE) 
-//	ResponseEntity<DefaultResponse> cleanSite(
-//	        final HttpServletRequest HTTPrequest,
-//	        final HttpServletResponse HTTPresponse,
-//	        @PathVariable("id") String objectID
-//			) throws Throwable
-//	{ 		
-//		logger.debug(">>> Request get for /site/"+objectID+"/clean");	
-//		siteSvc.cleanSite(objectID);
-//		DefaultResponse response = new DefaultResponse("Site cleaned",0);
-//		return new ResponseEntity<DefaultResponse>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
-//	}	
+	/*=============================================================================================
+	 *
+	 *    Handle request for Clean sites  content
+	 *
+	 =============================================================================================*/
+	@RequestMapping(value = "/site/{id}/clean", method = RequestMethod.OPTIONS)
+	ResponseEntity<String> acceptCleanSite(HttpServletRequest request) throws IOException, ServletException {
+    	logger.debug("Request OPTION  for /site/{id}/clean");
+	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+	}
+
+	@RequestMapping(value = "/site/{id}/clean", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<DefaultResponse> cleanSite(
+	        final HttpServletRequest HTTPrequest,
+	        final HttpServletResponse HTTPresponse,
+	        @PathVariable("id") String siteId
+			) throws Throwable
+	{
+
+		Site theSite = siteSvc.getSite(siteId);
+		if ( theSite == null ) throw new ExceptionObjectNotFound("Site with ID="+siteId+" not found.");
+
+		Schedule schedule = new Schedule();
+		schedule.setTaskName(TaskNamesEnum.TNAME_CLEAN.toString());
+		schedule.setEnable(false);
+		schedule.setId(siteId);
+
+		BaseTask task  = taskFactory.createTask(TaskNamesEnum.TNAME_CLEAN, theSite, schedule);
+		task = taskQueue.put(task);
+
+
+		DefaultResponse response = new DefaultResponse("Site cleaned.",0);
+		return new ResponseEntity<DefaultResponse>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
+	}
 	
 	
 	/*=============================================================================================

@@ -1,6 +1,9 @@
 package home.abel.photohub.tasks;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +14,7 @@ import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.model.Node;
 import home.abel.photohub.model.Site;
+import home.abel.photohub.model.Schedule;
 import home.abel.photohub.model.SiteRepository;
 import home.abel.photohub.service.PhotoService;
 import home.abel.photohub.service.SiteService;
@@ -21,9 +25,11 @@ public class ScanTask extends BaseTask {
 
 	private SiteConnectorInt connector;
 	private PhotoService photoService;
+	private SiteService siteSvc;
 
-	public ScanTask(Site theSite, SiteService siteSvc,PhotoService photoService ) throws Throwable {
-		super(theSite,TaskNamesEnum.TNAME_SCAN,siteSvc, true);
+	public ScanTask(Site theSite, SiteService siteService, Schedule shedule, ScheduleProcessing scheduleSvc, PhotoService photoService ) throws Throwable {
+		super(theSite,TaskNamesEnum.TNAME_SCAN,shedule,scheduleSvc, true);
+		siteSvc = siteService;
 		try {
 			this.connector = siteSvc.getOrLoadConnector(getSite());
 		}
@@ -33,7 +39,32 @@ public class ScanTask extends BaseTask {
 			throw e;
 		}
 		this.photoService = photoService;
+		this.description = ScanTask.getStaticDescription();
+		this.displayName = ScanTask.getStaticDisplayName();
 	}
+
+	/*-----------------------------------------------------------------------------------
+			Self descriptions methods
+	 -----------------------------------------------------------------------------------*/
+
+
+	public static  String getStaticDisplayName() {
+		return "Scan site";
+	}
+	public static  String getStaticDescription() {
+		return "Scanning site for new objects and add to local db.";
+	}
+	public static  boolean isVisible() {
+		return true;
+	}
+	public static Map<String,String> getParamsDescr() {
+		return null;
+	}
+
+
+	/*-----------------------------------------------------------------------------------
+       Task execution body
+ 	-----------------------------------------------------------------------------------*/
 
 	@Override
 	public void exec() throws Throwable {

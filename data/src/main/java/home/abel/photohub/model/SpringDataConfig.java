@@ -182,7 +182,7 @@ public class SpringDataConfig {
         //factory.setPersistenceXmlLocation("classpath:META-INF/persistence.xml");
 		factory.setPersistenceXmlLocation("classpath:persistence.xml");
 
-		factory.setPackagesToScan("home.abel.photohub.data");
+		factory.setPackagesToScan("home.abel.photohub.model");
 		factory.setDataSource(dataSource());
 		return factory;
 	}

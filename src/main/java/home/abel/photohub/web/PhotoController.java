@@ -298,9 +298,10 @@ public class PhotoController {
 	
 	/**
 	 * Upload image file and place it as Object in 'parentId' folder
-	 * @param request
-	 * @param response
 	 * @param inputParentId
+	 * @param theName
+	 * @param theDescr
+	 * @param theSiteId
 	 * @param multiPart
 	 * @return
 	 * @throws Exception
@@ -456,7 +457,9 @@ public class PhotoController {
 	}
 	/**
 	 * Delete object by ID
-	 * @param objetId  object node id for requested object
+	 * @param objectId  object node id for requested object
+	 * @param forseDelete
+	 * @param withFile
 	 * @return
 	 * @throws Throwable
 	 */
@@ -610,7 +613,7 @@ public class PhotoController {
 	 *    
 	 * @param objectId   - the object id
 	 * @param theAttrName - Attribute name
-	 * @param RequestJson -  Attribute object.  
+	 * @param theArrtObj -  Attribute object.
 	 * @return
 	 * @throws Exception
 	 */

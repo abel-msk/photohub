@@ -5,16 +5,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -25,6 +16,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = { "username" }))
+@NamedQuery(name="User.findAll", query="SELECT s FROM User s")
+@TableGenerator(
+		name="UserSeqGen",
+		table="SEQUENCE",
+		pkColumnName="SEQ_NAME",
+		valueColumnName="SEQ_COUNT",
+		pkColumnValue="USER_ID",
+		allocationSize = 5)
+
 public class User implements UserDetails {
 
 	public User() {
@@ -42,6 +42,8 @@ public class User implements UserDetails {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	//@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@Column(columnDefinition = "BIGINT")
+	//@GeneratedValue(strategy=GenerationType.TABLE, generator="UserSeqGen")
 	private Long id;
 
 	@NotNull

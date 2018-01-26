@@ -33,9 +33,7 @@ public class Site implements Serializable {
 
 	@Id
 	@Column(columnDefinition = "BIGINT") 
-    @GeneratedValue(strategy=GenerationType.TABLE, generator="SiteSeqGenerator")	
-	//@GeneratedValue(strategy=GenerationType.AUTO)
-	//@GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy=GenerationType.TABLE, generator="SiteSeqGenerator")
 	private String id;
 
 	//   Site name entered by user at creation time
@@ -47,11 +45,6 @@ public class Site implements Serializable {
 	@JsonIgnore
 	@OneToMany(cascade = CascadeType.REMOVE, mappedBy = "site", fetch = FetchType.LAZY, orphanRemoval = true)
 	private List<Schedule> schedules;
-	
-	
-	
-//	@Column(name="is_default_site")
-//	private boolean defaultSite = false;
 
 	//    Connector type.  Returned from Connector class.
 	//@Column(name="connectorType")
@@ -79,8 +72,14 @@ public class Site implements Serializable {
 	
 	@JsonIgnore
 	@OneToMany(cascade = {CascadeType.REMOVE,CascadeType.PERSIST,CascadeType.MERGE }, mappedBy="siteBean", fetch = FetchType.LAZY, orphanRemoval = true)
-	private List<TaskRecord> tasks;
-		
+	private List<TaskRecord> tasksLog;
+
+
+
+	/*
+		Method definition
+
+	 */
 	public Site() {
 	}
 
@@ -192,29 +191,29 @@ public class Site implements Serializable {
 	public void setConnectorState(String state) {
 		this.connectorState = state;
 	}
-	
-	public List<TaskRecord> getTasks() {
-		return tasks;
+
+	public List<TaskRecord> getTasksLog() {
+		return tasksLog;
 	}
 
-	public void setTasks(List<TaskRecord> tasks) {
-		this.tasks = tasks;
+	public void setTasksLog(List<TaskRecord> tasksLog) {
+		this.tasksLog = tasksLog;
 	}
 
 	public TaskRecord addTaskRecord(TaskRecord task) {
-		if (getTasks() == null) {
-			setTasks(new ArrayList<TaskRecord>());
+		if (getTasksLog() == null) {
+			setTasksLog(new ArrayList<TaskRecord>());
 		}
-		getTasks().add(task);
+		getTasksLog().add(task);
 		task.setSiteBean(this);
 		return task;
 	}
 
 	public TaskRecord removeTaskRecord(TaskRecord task) {
-		if (getTasks() == null) {
+		if (getTasksLog() == null) {
 			return task;
 		}
-		getTasks().remove(task);
+		getTasksLog().remove(task);
 		task.setSiteBean(null);
 		return task;
 	}

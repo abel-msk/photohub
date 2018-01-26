@@ -15,7 +15,8 @@
 		<class>home.abel.photohub.model.SiteProperty</class>
 		<class>home.abel.photohub.model.TaskRecord</class>
 		<class>home.abel.photohub.model.Media</class>
-		<class>home.abel.photohub.model.Schedule</class>		
+		<class>home.abel.photohub.model.Schedule</class>
+		<class>home.abel.photohub.model.TaskParam</class>
 		<properties>
 			<property name="eclipselink.logging.level.sql" value="FINE"/>
 			<property name="eclipselink.logging.parameters" value="true"/>

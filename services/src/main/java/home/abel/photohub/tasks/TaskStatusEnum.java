@@ -5,4 +5,5 @@ public enum TaskStatusEnum {
 	RUN,
 	FIN,
 	ERR,
+	CANS,
 }

@@ -119,48 +119,48 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
                 throw Error();
             }
             currentSiteId = this.options.siteId;
-            getStatus(this.options.siteId);
+            //getStatus(this.options.siteId);
 
         }
 
-        //------------------------------------------------------------------------
+        // //------------------------------------------------------------------------
+        // //
+        // //      Запуск сканирования сайта
+        // //
+        // //------------------------------------------------------------------------
+        // action.prototype.doScan = function() {
         //
-        //      Запуск сканирования сайта
+        //     if (! this.options.siteId) {
+        //         logger.debug("[action.doScan] siteId cannot be null");
+        //         throw Error();
+        //     }
+        //     var siteId = this.options.siteId;
         //
-        //------------------------------------------------------------------------
-        action.prototype.doScan = function() {
-
-            if (! this.options.siteId) {
-                logger.debug("[action.doScan] siteId cannot be null");
-                throw Error();
-            }
-            var siteId = this.options.siteId;
-
-            Api.scanSite(this.options.siteId,{'start':true},
-                //  on Success
-                function(response) {
-                    if (response.object) {
-                        logger.debug("[action.startScan] SiteId=" + siteId + ", status=" + response.object.status);
-                        changeState(response.object);
-                        if (response.object.status == "RUN") {
-                            monitorStatus(siteId);
-                        }
-                    }
-                    else {
-                        logger.debug("[action.startScan] Error. Api success return w/o task object");
-                    }
-                },
-                //  on Error
-                function(response){
-                    Dialog.open({
-                        'error': true,
-                        'title': "Server error",
-                        'text': response.message,
-                        'buttons': {OK: function(){}}
-                    });
-                }
-            )
-        };
+        //     Api.scanSite(this.options.siteId,{'start':true},
+        //         //  on Success
+        //         function(response) {
+        //             if (response.object) {
+        //                 logger.debug("[action.startScan] SiteId=" + siteId + ", status=" + response.object.status);
+        //                 changeState(response.object);
+        //                 if (response.object.status == "RUN") {
+        //                     monitorStatus(siteId);
+        //                 }
+        //             }
+        //             else {
+        //                 logger.debug("[action.startScan] Error. Api success return w/o task object");
+        //             }
+        //         },
+        //         //  on Error
+        //         function(response){
+        //             Dialog.open({
+        //                 'error': true,
+        //                 'title': "Server error",
+        //                 'text': response.message,
+        //                 'buttons': {OK: function(){}}
+        //             });
+        //         }
+        //     )
+        // };
 
         //------------------------------------------------------------------------
         //
@@ -174,23 +174,38 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
                 throw Error();
             }
 
-            Api.cleanSite(this.options.siteId,{'start':true,'deleteSite':false},
-                //  on Success
-                function(response) {
-                        logger.debug("[action.doClean] rc=" + response.rc);
+            Dialog.open({
+                'error': false,
+                'title': "Cleaning site",
+                'text':  "Are you sure want to remove all sites local data ?",
+                'buttons': {
+                    'OK': function () {
+                        Api.cleanSite(this.options.siteId,
+                            //  on Success
+                            function (response) {
+                                logger.debug("[action.doClean] rc=" + response.rc);
 
-                    //TODO : OPEN cleaning monitor dialog
-                },
-                //  on Error
-                function(response){
-                    Dialog.open({
-                        'error': true,
-                        'title': "Server error",
-                        'text': response.message,
-                        'buttons': {OK: function(){}}
-                    });
+                                //TODO : OPEN cleaning monitor dialog
+                            },
+                            //  on Error
+                            function (response) {
+                                Dialog.open({
+                                    'error': true,
+                                    'title': "Server error",
+                                    'text': response.message,
+                                    'buttons': {
+                                        OK: function () {
+                                        }
+                                    }
+                                });
+                            }
+                        )
+                    },
+                    'Cancel':function() {}
                 }
-            )
+            });
+
+
         };
 
         //------------------------------------------------------------------------
@@ -290,10 +305,60 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
         );
     };
 
+    //------------------------------------------------------------------------
+    //
+    //   Статический метод - Добавление задачи к сайту
+    //
+    //
+    //     Response:
+    //     {
+    //         "message" : "OK",
+    //         "rc" : 0,
+    //         "object" : [ {
+    //             "displayName" : "Scan site",
+    //             "name" : "TNAME_SCAN",
+    //             "description" : "Scanning site for new objects and add to local db.",
+    //             "params" : null,
+    //             "visible" : true
+    //         }, {
+    //             "displayName" : "Dummy",
+    //             "name" : "TNAME_EMPTY",
+    //             "description" : "Empty Task",
+    //             "params" : {
+    //                 "PARAM1" : "Test param for empty task"
+    //             },
+    //             "visible" : true
+    //         } ]
+    //     }
+    //
+    //
+    //
+    //
+    //------------------------------------------------------------------------
+    actionClass.addTask = function(siteId) {
+        var caller = this;
+
+        Api.listTaskDescr(
+            function (response) {
 
 
 
 
+            },
+            function (response) {
+                Dialog.open({
+                    'error': true,
+                    'title': "Server error",
+                    'text': response.message,
+                    'buttons': {
+                        OK: function () {
+                        }
+                    }
+                });
+                return false;
+            }
+        );
+    };
 
 
     return actionClass;

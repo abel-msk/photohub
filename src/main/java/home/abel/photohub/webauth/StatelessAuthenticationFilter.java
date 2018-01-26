@@ -72,7 +72,7 @@ class StatelessAuthenticationFilter extends GenericFilterBean {
 		logger.info(">>> Authentication "+request.getMethod()+" for "+request.getRequestURI()+" options=["+paramStr+"]");
 
 		//headerBuilderService.printReqHeaders(request);
-		headerBuilderService.printDefReqHeaders(request);
+		//headerBuilderService.printDefReqHeaders(request);
 
 
 		AntPathRequestMatcher matcher = new AntPathRequestMatcher("/api/login/**");
@@ -96,6 +96,8 @@ class StatelessAuthenticationFilter extends GenericFilterBean {
 			}
 		}
 		chain.doFilter(req, res); // always continue
-		logger.info("<<< Authentication return  for "+request.getMethod()+" for "+request.getRequestURI());
+
+		logger.info("<<< Response: " + ((HttpServletResponse) res).getStatus());
+		logger.info("<<< Authentication return  method="+request.getMethod()+", path="+request.getRequestURI()+ ", http retcode="+((HttpServletResponse) res).getStatus());
 	}
 }

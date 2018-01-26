@@ -43,17 +43,19 @@ define(["jquery",
         "connector",
         "sitesProps",
         "sitesActions",
-        "sitesTasks",
-        "sitesSched",
+        "taskList",
         "utils",
+        "taskAdd",
         "moment",
         "locale/ru",
         "bootstrap"
         ],
 
-    function ($,Login,Dialog,logger,SitesCollection,Api,Connector,SitesProps,Actions,SitesTasks,SitesSched,Utils,Moment) {
+    function ($,Login,Dialog,logger,SitesCollection,Api,Connector,SitesProps,Actions,TaskList,Utils,TaskAdd,Moment) {
     $(document).ready(function() {
 
+        var TASKLIST_HOLDER_ID = "#task-list";
+        var ADD_TASK_BTN_ID   = "#add-task-btn";
 
         Moment.locale('RU');
 
@@ -61,8 +63,8 @@ define(["jquery",
         //  Init site connect btn processor
         var connector = null;
         var actions = null;
-        var tasks = null;
-        var scheds = null;
+        var taskListClass = null;
+        //var scheds = null;
         var propFormRows;           //  Current site properties form rows
 
         var sitesList = new SitesCollection();
@@ -143,16 +145,16 @@ define(["jquery",
         //---------------------------------------------------------------------
         //    SCAN Site handler
         //---------------------------------------------------------------------
-        $("#site_scan_btn").on('click', {'caller': this}, function (event) {
-            if ( validateStorePath() ) {
-                actions.doScan();
-            }
-        });
+        // $("#site_scan_btn").on('click', {'caller': this}, function (event) {
+        //     if ( validateStorePath() ) {
+        //         actions.doScan();
+        //     }
+        // });
 
         //---------------------------------------------------------------------
         //    CLEAN site handler
         //---------------------------------------------------------------------
-        $("#site_clean_btn").on('click', {'caller': this}, function (event) {
+        $("#clean-site-btn").on('click', {'caller': this}, function (event) {
             actions.doClean();
         });
 
@@ -162,10 +164,12 @@ define(["jquery",
         //---------------------------------------------------------------------
         //   Handle collections model delete
 
-        $('#delete_site').on('click', {'caller': this}, function(event){
+        $('#delete-site-btn').on('click', {'caller': this}, function(event){
             var siteId = getCurrentId();
             actions.deleteSite(collection.get(siteId));  // called with model
+
         });
+
 
         //---------------------------------------------------------------------
         //    Filling out sites list
@@ -227,8 +231,9 @@ define(["jquery",
                 $("#connect_btn").attr("site", model.get('id'));
                 $("#site_connector_type").text(model.get('connectorType'));
 
-
-
+                //---------------------------------------------------------------------
+                //  Заряжаем перехват кастомных событий
+                //---------------------------------------------------------------------
                 $('body')
                     .off('connector.changeState')
                     .on('connector.changeState', changeConnectionState)
@@ -243,23 +248,46 @@ define(["jquery",
                 connector = new Connector();
                 connector.setState(model.get('connectorState'), model.get('id'));
 
-
                 //   Заполняем и инициализируем Properties сайта
                 siteProps = new SitesProps(model);
 
+                //   Заполняем и инициализируем список активных задач.
+                taskListClass = new TaskList(model,TASKLIST_HOLDER_ID);
 
-                tasks = new SitesTasks(model);
+                //---------------------------------------------------------------------
+                //   Перехватявае событи добавления новой задачи
+                //---------------------------------------------------------------------
+                $('#add-task-btn').off('click')
+                    .on('click', {'caller': this}, function(event){
+                        //var caller = event.data.caller;
+                        var taskAdd = new TaskAdd();
+                        taskAdd.open(getCurrentId());
+                    });
+
+                //---------------------------------------------------------------------
+                //   Перехватываем событе добавления новой задачи
+                //---------------------------------------------------------------------
+                $('body').off('task:add')
+                    .on('task:add',function(event,newTaskObj){
+                        if (taskListClass)  taskListClass.addTask(newTaskObj);
+                    });
+
+
+                //---------------------------------------------------------------------
+                //   Перехватываем событие сохранения
+                //---------------------------------------------------------------------
+                $('body').off('task:edit')
+                    .on('task:edit',function(event,newTaskObj){
+                        if (taskListClass)  taskListClass.renderTask(null,newTaskObj);
+                    });
+
+
+
+                // Инициализируем объект  Actions  дял текущего сайта (используется для удаления)
+                actions = new Actions({'siteId': model.get('id')});
+
 
                 logger.debug("[SitesTask]  START ");
-
-
-                scheds = new SitesSched(model);
-
-                //   В переделку
-                //actions = new Actions({'siteId': model.get('id')});
-
-
-
             } catch (e){
                 logger.debug("[sites.fillSiteForm] Error:",e);
             }

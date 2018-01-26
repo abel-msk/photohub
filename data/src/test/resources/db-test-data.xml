@@ -75,10 +75,37 @@
 	/>
 
 
+	<schedules
+			ID="1"
+			DAYOFMONTH="*"
+			DAYOFWEEK="*"
+			HOUR="*"
+			MINUTE="*"
+			MONTH="*"
+			SECONDS="*/5"
+			TASKNAME="TNAME_EMPTY"
+			SITE_ID="1"
+			ENABLE="true"
+		/>
 
 
-		
-		
+	<task_param
+			id="1"
+			name="PARAM1"
+			value="VALUE1"
+			type="string"
+			SCHEDULE_ID="1"
+		/>
+
+	<task_param
+			id="2"
+			name="PARAM2"
+			value="VALUE2"
+			type="string"
+			SCHEDULE_ID="1"
+	/>
+
+
 	<sequence SEQ_NAME="MEDIA_ID"  SEQ_COUNT = "10" />
 	<sequence SEQ_NAME="NODE_ID"  SEQ_COUNT = "10" />
 	<sequence SEQ_NAME="PHOTO_ID"  SEQ_COUNT = "10" />
@@ -86,5 +113,7 @@
 	<sequence SEQ_NAME="SITE_ID"  SEQ_COUNT = "10" />
 	<sequence SEQ_NAME="TASK_REC_ID"  SEQ_COUNT = "10" />
 	<sequence SEQ_NAME="SCHED_ID"  SEQ_COUNT = "10" />
+	<sequence SEQ_NAME="TPARAM_ID"  SEQ_COUNT = "6" />
+	<sequence SEQ_NAME="USER_ID"  SEQ_COUNT = "1" />
 		
 </dataset>

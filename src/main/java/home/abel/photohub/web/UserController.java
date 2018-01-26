@@ -83,20 +83,20 @@ public class UserController {
 	 *    Handle request for  GET  for get user by id
 	 *      
 	 =============================================================================================*/
-	@RequestMapping(value = "/user/{id}", method = RequestMethod.GET, produces="application/json") 
+	@RequestMapping(value = "/user/{id}", method = RequestMethod.GET, produces="application/json")
 	ResponseEntity<User> getUser(
 	        final HttpServletRequest HTTPrequest,
 	        final HttpServletResponse HTTPresponse,
 	        @PathVariable("id") Long userId
 	        ) throws Throwable
-	{ 		
-		logger.debug(">>> Request GET for /user/"+ userId);	
+	{
+		logger.debug(">>> Request GET for /user/"+ userId);
 		User theUser = userService.getUser(userId);
 
 		logger.debug("<<< List ok");
 		return new ResponseEntity<User>(theUser,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
 	}
-	
+
 	
 	
 	/*=============================================================================================
@@ -145,7 +145,7 @@ public class UserController {
 	 *    Handle request for DELETE user object 
 	 *      
 	 =============================================================================================*/
-	@RequestMapping(value = "/user/{id}", method = RequestMethod.DELETE, produces="application/json") 
+	@RequestMapping(value = "/user/{id}", method = RequestMethod.DELETE, produces="application/json")
 	ResponseEntity<DefaultResponse> deleteUser(
 	        final HttpServletRequest HTTPrequest,
 	        final HttpServletResponse HTTPresponse,
@@ -154,10 +154,10 @@ public class UserController {
 	{
 		logger.debug(">>> Request POST for delete userId = " + userId);
 		userService.deleteUser(userId);
-		DefaultResponse response = new DefaultResponse("User deleted",0);	
+		DefaultResponse response = new DefaultResponse("User deleted",0);
 		logger.debug("<<< User deleted ok ");
 		return new ResponseEntity<DefaultResponse>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
 	}
-	
+
 }
 

@@ -7,10 +7,14 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
 
     var  defaultOptions = {
         'element':null,
-        'btnElement': null
+        'btnElement': null,
+        'html':'<div class="row panel-body-row">' +
+            '<span class="col-md-4 col-sm-4 row-label">{name}</span>' +
+            '<div id="{id}" class="col-md-8 col-sm-8 row-data"></div>' +
+            '</div>'
     };
 
-    function VEeList(options) {
+    function VeList(options) {
         this.options = $.extend(true, {}, defaultOptions, options || {});
         this.id = "v" + Math.floor((Math.random() * 10000));
 
@@ -19,15 +23,21 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
         if ( ! this.options.element ) throw Error("[VEeList.init] element parameter required.");
     }
 
-    VEeList.prototype.rowHTML = function(uid,name) {
-        return '<div class="row panel-body-row">' +
-            '<span class="col-md-4 col-sm-4 row-label">' + name + '</span>' +
-            '<div id="' + uid + '" class="col-md-8 col-sm-8 row-data"></div>' +
-            '</div>'
-            ;
+    VeList.prototype.rowHTML = function(htmlStr,uid,name) {
+        var namePattern = /\{name\}/g;
+        var idPattern = /\{id\}/g;
+
+        htmlStr =  htmlStr.replace(namePattern,name);
+        htmlStr = htmlStr.replace(idPattern,uid);
+        // return '<div class="row panel-body-row">' +
+        //     '<span class="col-md-4 col-sm-4 row-label">' + name + '</span>' +
+        //     '<div id="' + uid + '" class="col-md-8 col-sm-8 row-data"></div>' +
+        //     '</div>'
+        //     ;
+        return htmlStr;
     };
 
-    VEeList.prototype.push = function(key, value, tag) {
+    VeList.prototype.push = function(key, value, tag) {
         this.rows[key] = {
             'key':key,
             'value': value,
@@ -35,21 +45,21 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
         };
     };
 
-    VEeList.prototype.get = function (key) {
+    VeList.prototype.get = function (key) {
         if ( this.rows[key] &&  this.rows[key].object )
             return this.rows[key].object.getValue();
         else
             return null;
     };
 
-    VEeList.prototype.getOriginal = function (key) {
+    VeList.prototype.getOriginal = function (key) {
         if ( this.rows[key])
             return this.rows[key].value;
         else
             return null;
     };
 
-    VEeList.prototype.render = function() {
+    VeList.prototype.render = function() {
         var counter = 0;
         var key;
 
@@ -59,7 +69,7 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
             var rowEl = this.rows[key].parentSelector?this.rows[key].parentSelector:this.options.element;
 
             $(rowEl).html("");
-            $(this.rowHTML(rowId,key)).clone().appendTo(rowEl);
+            $(this.rowHTML(this.options.html,rowId,key)).clone().appendTo(rowEl);
 
             row["object"] = new ViewEdit({
                 'name': row.key,
@@ -69,7 +79,7 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
         }
     };
 
-    VEeList.prototype.save = function () {
+    VeList.prototype.save = function () {
         var key;
         for ( key in this.rows) {
             var row = this.rows[key].object;
@@ -78,7 +88,7 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
         $(this.options.btnElement).text("Edit").attr("data-state", "view");
     };
 
-    VEeList.prototype.edit = function () {
+    VeList.prototype.edit = function () {
         var key;
         for ( key in this.rows) {
             var row = this.rows[key].object;
@@ -87,13 +97,13 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
         $(this.options.btnElement).text("Save").attr("data-state", "edit");
     };
 
-    VEeList.prototype.isChange = function(key) {
+    VeList.prototype.isChange = function(key) {
         return  this.rows[key] && (this.rows[key].value == this.rows[key].object.getValue())
     };
 
     //
     //
-    //  Вызывает функцию для каждого едемента списка
+    //  Вызывает функцию для каждого элемента списка
     //  Параметры  func,caller
     //      func - вызываемая функция
     //      caller - значение оператора this при вызове
@@ -104,7 +114,7 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
     //     origValue - начально установленное значение элемента
     //
     //
-    VEeList.prototype.each = function(func,caller) {
+    VeList.prototype.each = function(func,caller) {
         if (!caller) caller = this;
 
         if (typeof func == "function") {
@@ -117,5 +127,5 @@ define(["jquery","logger","form/viewEdit"],function ($,logger,ViewEdit) {
     };
 
 
-    return VEeList;
+    return VeList;
 });

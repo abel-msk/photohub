@@ -22,12 +22,16 @@ public class DBUserDetailsService implements UserDetailsService {
 
 	@Override
 	public final User loadUserByUsername(String username) throws UsernameNotFoundException {
-		logger.debug("Load auth details for user : "+ username);
+		logger.debug("[loadUserByUsername] Load auth details for user : "+ username);
 		final User user = userRepo.findByUsername(username);
 		if (user == null) {
+			logger.warn("[loadUserByUsername] User "+ username+ " not found.");
 			throw new UsernameNotFoundException("user not found");
 		}
 		detailsChecker.check(user);
+
+		logger.debug("[loadUserByUsername] UserObject= : "+ username);
+
 		return user;
 	}
 }

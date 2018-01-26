@@ -1,14 +1,22 @@
 package home.abel.photohub.web;
 
-import home.abel.photohub.model.Site;
-import home.abel.photohub.model.SiteProperty;
-import home.abel.photohub.model.TaskRecord;
-import home.abel.photohub.model.TaskRepository;
+import com.github.springtestdbunit.DbUnitTestExecutionListener;
+import com.github.springtestdbunit.TransactionDbUnitTestExecutionListener;
+import com.github.springtestdbunit.annotation.DatabaseSetup;
+import home.abel.photohub.model.*;
+import home.abel.photohub.service.ConfigService;
+import home.abel.photohub.service.TaskQueueService;
+import home.abel.photohub.service.UserService;
+import home.abel.photohub.tasks.BaseTask;
+import home.abel.photohub.tasks.TaskDescription;
+import home.abel.photohub.tasks.TaskNamesEnum;
+import home.abel.photohub.tasks.TaskStatusEnum;
 import home.abel.photohub.web.model.DefaultObjectResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,17 +25,17 @@ import javax.servlet.http.Cookie;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
-import home.abel.photohub.webconfig.standalone.AppInit;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Condition;
-import org.assertj.core.api.IterableAssert;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
@@ -35,18 +43,22 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
+import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -73,29 +85,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-//@RunWith(SpringRunner.class)
-//@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-//@ContextConfiguration(classes={AppInit.class})
 @ContextConfiguration(classes=home.abel.photohub.web.SiteTest.ServiceTestContextCfg.class)
+@PropertySource("classpath:test-settings.properties")
 
+//https://github.com/springtestdbunit/spring-test-dbunit
+//@TestExecutionListeners(value = { DbUnitTestExecutionListener.class,
+//		TransactionDbUnitTestExecutionListener.class},
+//		mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 
-/*  
-        mockMvc.perform(get("/api/todo"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id", is(1)))
-                .andExpect(jsonPath("$[0].description", is("Lorem ipsum")))
-                .andExpect(jsonPath("$[0].title", is("Foo")))
-                .andExpect(jsonPath("$[1].id", is(2)))
-                .andExpect(jsonPath("$[1].description", is("Lorem ipsum")))
-                .andExpect(jsonPath("$[1].title", is("Bar")));
-                
- */
+@TestExecutionListeners(value = { DbUnitTestExecutionListener.class },
+		mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 
-
+@DatabaseSetup("classpath:db-test-data.xml")
 
 public class SiteTest   {
+	final Logger logger = LoggerFactory.getLogger(SiteTest.class);
 
 //  Removed with 	changing ContextConfiguration
 	@Configuration
@@ -105,7 +109,7 @@ public class SiteTest   {
 		home.abel.photohub.model.SpringDataConfig.class,
 		home.abel.photohub.service.SpringConfig.class
 		})
-	//@ComponentScan(basePackages={"home.abel.photohub.service","home.abel.photohub.utils"})
+
 	public static class ServiceTestContextCfg {
 
 	}
@@ -126,14 +130,18 @@ public class SiteTest   {
 		}
 	};
 
+	public static boolean firstRun =false;
+
     @Autowired
     private WebApplicationContext webApplicationContext;
 
     @Autowired MockHttpSession session;
     @Autowired MockHttpServletRequest request;
+    @Autowired ConfigService configService;
+	@Autowired TaskQueueService taskQueue;
 
 //	@Autowired
-//	private TaskRepository taskRepository;
+//	private TaskRecordRepository taskRepository;
 
 
     @Autowired
@@ -153,6 +161,8 @@ public class SiteTest   {
 	public static final String RESOURCE_IMAGE_FN = "photo1.JPG";
 	public static final String TMP_IMAGE_FILE = "/tmp/photo1.JPG";
 	public final static String TMP_ROOT_PATH = "/tmp/photohub_test_2";
+
+	public final static String TEST_SITE_ID = "2";
 	
     
 	/**
@@ -161,77 +171,124 @@ public class SiteTest   {
 	 */
 	@Before
 	public void before() throws Throwable {
-				
-		File newFolder = new File(TMP_ROOT_PATH + File.separator + TEST_FOLDER_NAME);
-		if ( ! newFolder.exists() ) {
-			newFolder.mkdirs();
+
+		System.out.println("\n------ Before test running ------");
+
+		if( ! firstRun ) {
+			configService.Init();
+			//taskQueue.Init();
+
+			firstRun = false;
 		}
-		
-		URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(RESOURCE_IMAGE_FN);
-		String sampeImagePath =  resourceUrl.toURI().getPath(); 				
-		File sampeImageFile = new File(sampeImagePath);
-		
-		File imgFile = new  File(newFolder.getAbsolutePath() +  File.separator + RESOURCE_IMAGE_FN) ;
-		if ( ! imgFile.exists()) {
-			FileUtils.copyFile(sampeImageFile,imgFile);
-			System.out.println("Copy file " + imgFile.getAbsolutePath());
-			imgFile.deleteOnExit();
-		}
+//		File newFolder = new File(TMP_ROOT_PATH + File.separator + TEST_FOLDER_NAME);
+//		if ( ! newFolder.exists() ) {
+//			newFolder.mkdirs();
+//		}
+//
+//		URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(RESOURCE_IMAGE_FN);
+//		String sampeImagePath =  resourceUrl.toURI().getPath();
+//		File sampeImageFile = new File(sampeImagePath);
+//
+//		File imgFile = new  File(newFolder.getAbsolutePath() +  File.separator + RESOURCE_IMAGE_FN) ;
+//		if ( ! imgFile.exists()) {
+//			FileUtils.copyFile(sampeImageFile,imgFile);
+//			System.out.println("Copy file " + imgFile.getAbsolutePath());
+//			imgFile.deleteOnExit();
+//		}
 		
 		//   Start Mockmvc
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
         		.addFilter(filterChain)
                 .build();
 	}
-	
+
+	@BeforeClass
+	public static  void beforeClass() throws Exception {
+		//Add auth user service
+		File newFolder = new File(TMP_ROOT_PATH + File.separator + TEST_FOLDER_NAME);
+		if ( ! newFolder.exists() ) {
+			newFolder.mkdirs();
+		}
+
+		URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(RESOURCE_IMAGE_FN);
+		String sampeImagePath =  resourceUrl.toURI().getPath();
+		File sampeImageFile = new File(sampeImagePath);
+
+		File imgFile = new  File(newFolder.getAbsolutePath() +  File.separator + RESOURCE_IMAGE_FN) ;
+		if ( ! imgFile.exists()) {
+			FileUtils.copyFile(sampeImageFile,imgFile);
+			System.out.println("Copy file " + imgFile.getAbsolutePath());
+			imgFile.deleteOnExit();
+		}
+	}
+
 	@AfterClass
 	public static void afterClass() throws Exception {
 		System.out.println("***After Class is invoked");
 		System.out.println("***Remove site structure");
 		FileUtils.deleteDirectory(new File(SITE_ROOT_PATH));
     }
-	
-	
-	/**
-	 * Perform site authentication save and return coockies
-	 * @return
-	 * @throws Throwable 
-	 */
-	private Cookie[]  authHTTPConnection() throws Throwable {
-        cookies = initCookies();
-            	
-    	ResultActions actions = null;
-    	//	Incorrect auth data
-    	actions = mockMvc.perform(post("/api/login/login").cookie(cookies)
-    			.contentType(MediaType.APPLICATION_JSON)
-	                .param("username", "test")
-	                .param("password", "test"))
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().is(400))
-                //.andExpect(status().isUnauthorized())
-                ;
-    	
-    	
-    	actions = mockMvc.perform(post("/api/login/login").cookie(cookies)
-    			.contentType(MediaType.APPLICATION_JSON)
-	                .param("username", "admin")
-	                .param("password", "admin"))
-    			.andDo(print())
-    			.andExpect(status().isOk());
-    	
-    	cookies = updateCookies(cookies, actions);
-    	printCookie(cookies);
-    	return cookies;
+
+	private Cookie[]  httpAuth(String userName,String password) throws Throwable {
+		logger.debug("[httpAuth] Auth for user="+userName+", password="+password);
+		cookies = initCookies();
+		ResultActions actions = null;
+		actions = mockMvc.perform(post("/api/login/login").cookie(cookies)
+				.contentType(MediaType.APPLICATION_JSON)
+				.param("username", userName)
+				.param("password", password))
+				;
+
+		if  ( actions.andReturn().getResponse().getStatus() != 200 ) {
+			logger.warn("[httpAuth] Auth FAILED rc=" +actions.andReturn().getResponse().getStatus()+
+					", error="+ actions.andReturn().getResponse().getErrorMessage());
+			throw new ExceptionAccessDeny(actions.andReturn().getResponse().getErrorMessage());
+		}
+
+		return updateCookies(cookies, actions);
 	}
-	
+
+
+	@Test
+	public void authTest()  throws Throwable{
+
+		System.out.println("\n------ Test: authTest ------\n");
+
+
+		try {
+			cookies = httpAuth("test", "test");
+			assertThat(true);
+		}
+		catch (ExceptionAccessDeny e) {
+			try {
+				cookies = httpAuth("admin", "admin");
+			}
+			catch (ExceptionAccessDeny e2) {
+				Assert.isTrue(true, "Authentication for user Admin failed. " +  e.getMessage());
+				assertThat(true);
+			}
+		}
+	}
+
 	@Test
 	public void testSiteCreation() throws Throwable {
+
+		System.out.println("\n------ Test: testSiteCreation ------\n");
+
 		ObjectMapper mapper = new ObjectMapper();
 		MvcResult result = null;
 		
 		//    DO Auth
-		cookies = authHTTPConnection();
-		
+		//cookies = authHTTPConnection();
+
+		try {
+			cookies = httpAuth("admin", "admin");
+		}
+		catch (ExceptionAccessDeny e) {
+			Assert.isTrue(true, "Authentication for user Admin failed. " +  e.getMessage());
+		}
+
+
 		//   Get site Types
        	result = mockMvc.perform(get("/api/site/types").cookie(cookies))
     		.andDo(print())
@@ -268,26 +325,38 @@ public class SiteTest   {
     		.andExpect(status().isOk())
     		.andReturn();
 
-		//	Objects List
-
-
-
     	//	Start site scan
-    	TaskRecord tr = startTask("TNAME_SCAN",newSiteId);
-		while (isTaskRun(tr)) {
+		System.out.println("\n------  Start scanning for site="+theNewSite+"\n");
+
+		Schedule scanTaskSchedule = new Schedule();
+		scanTaskSchedule.setSite(theNewSite);
+		scanTaskSchedule.setTaskName(TaskNamesEnum.TNAME_SCAN.toString());
+		scanTaskSchedule.setEnable(false);
+
+		BaseTask task1 = startTask(scanTaskSchedule);
+
+		String status = "RUN";
+    	//	Check  while task running
+		while (status.equals(TaskStatusEnum.RUN.toString()) || status.equals(TaskStatusEnum.IDLE.toString())) {
     		Thread.sleep(1*1000);
-    		tr = checkTask(newSiteId,tr.getId());
+			status = getTaskStatus(cookies,newSiteId,task1.getId());
     	}
 
-    	
     	//   Site Clean
 		System.out.println("\n------  Run clean task for siteId="+newSiteId+"\n");
 
-    	tr = startTask("TNAME_CLEAN",newSiteId);
-    	while (isTaskRun(tr)) {
-    		Thread.sleep(1*1000);
-    		tr = checkTask(newSiteId,tr.getId());
-    	}
+		scanTaskSchedule = new Schedule();
+		scanTaskSchedule.setSite(theNewSite);
+		scanTaskSchedule.setTaskName(TaskNamesEnum.TNAME_CLEAN.toString());
+		scanTaskSchedule.setEnable(false);
+		BaseTask task2 = startTask(scanTaskSchedule);
+
+		status = "RUN";
+		//	Check  while task running
+		while (status.equals(TaskStatusEnum.RUN.toString()) || status.equals(TaskStatusEnum.IDLE.toString())) {
+			Thread.sleep(1*1000);
+			status = getTaskStatus(cookies,newSiteId,task1.getId());
+		}
 
 		System.out.println("\n------  Remove site siteId="+newSiteId+"\n");
     	mockMvc.perform(
@@ -299,7 +368,6 @@ public class SiteTest   {
 
     	Thread.sleep(2*1000);
     	assertThat(getSitesList()).doNotHave(new checkSiteId(newSiteId));
-
 	}
 
 
@@ -307,16 +375,221 @@ public class SiteTest   {
 		return ((taskRecord != null) && ((taskRecord.getStatus().equals("RUN")) || (taskRecord.getStatus().equals("IDLE"))));
 	}
 
-	/**
-	 * Add site  
-	 * @param siteObject
-	 * @return
-	 * @throws Throwable
-	 */
+
+	@Test
+	public void testTaskSchedule() throws Throwable {
+
+		System.out.println("\n------ Test: testTaskSchedule ------\n");
+
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			cookies = httpAuth("admin", "admin");
+		}
+		catch (ExceptionAccessDeny e) {
+			Assert.isTrue(true, "Authentication for user Admin failed. " +  e.getMessage());
+		}
+
+		//
+		//	Get and check site description
+		//
+		MvcResult result = apiGetRequest(cookies,"/api/site/"+TEST_SITE_ID+"/tasksdescr",true);
+		DefaultObjectResponse<List<TaskDescription>> ObjectResponse = mapper.readValue(
+				result.getResponse().getContentAsString(),
+				new TypeReference<DefaultObjectResponse<List<TaskDescription>>>() { });
+
+		List<TaskDescription> taskDescrList = ObjectResponse.getObject();
+
+
+		TaskDescription emptyTaskDescr = null;
+		for (TaskDescription etd : taskDescrList) {
+			if ( etd.getName().equals(TaskNamesEnum.TNAME_EMPTY.toString())){
+				emptyTaskDescr = etd;
+			}
+		}
+		if (emptyTaskDescr == null) {
+			Assert.isTrue(true,
+					"[testTaskSchedule] Task TNAME_EMPTY not present in task description list. ");
+		}
+		//
+		//	Create scheduled task
+		//
+		Schedule schedule = new Schedule();
+		schedule.setTaskName(TaskNamesEnum.TNAME_EMPTY.toString());
+		schedule.setEnable(true);
+		schedule.setSeconds("*/5");
+
+		for(String tn:  emptyTaskDescr.getParams().keySet() ) {
+			TaskParam param = new TaskParam();
+			param.setName(tn);
+			param.setValue("theVALUE");
+			schedule.addParam(param);
+		}
+
+		result = apiPutRequest(cookies,
+				"/api/site/"+TEST_SITE_ID+"/task",
+				mapper.writeValueAsString(schedule),
+				true);
+
+		DefaultObjectResponse<BaseTask> ObjectResponse2 = mapper.readValue(
+				result.getResponse().getContentAsString(),
+				new TypeReference<DefaultObjectResponse<BaseTask>>() { });
+		BaseTask task1 = ObjectResponse2.getObject();
+
+
+		int count = 0;
+		String status = "RUN";
+		//	Check  while task running
+		while (status.equals(TaskStatusEnum.RUN.toString()) || status.equals(TaskStatusEnum.IDLE.toString())) {
+			Thread.sleep(1*1000);
+			status=getTaskStatus(cookies,TEST_SITE_ID,task1.getId());
+			count++;
+			Assert.isTrue(count < 20, "[testTaskSchedule]  Scheduled task does not started. Task="+task1);
+		}
+
+
+		//  List tasks
+
+		List<BaseTask> tasksList = getTasksList(cookies,TEST_SITE_ID);
+
+
+
+
+
+		//	Update task
+		///site/{id}/task/{tid}/schedule
+
+		schedule = task1.getSchedule();
+		schedule.setSeconds("*/10");
+
+		result = apiPutRequest(cookies,
+				"/api/site/"+TEST_SITE_ID+"/task/"+task1.getId()+"/schedule",
+				mapper.writeValueAsString(schedule),
+				true);
+
+		DefaultObjectResponse<Schedule> ObjectResponse3 = mapper.readValue(
+				result.getResponse().getContentAsString(),
+				new TypeReference<DefaultObjectResponse<Schedule>>() { });
+		schedule  = ObjectResponse3.getObject();
+
+
+		assertThat(schedule.getSeconds()).isEqualTo("*/10");
+		status=getTaskStatus(cookies, TEST_SITE_ID, task1.getId());
+
+		//	Stop Task
+		result = apiDeleteRequest(cookies,
+				"/api/site/"+TEST_SITE_ID+"/task/"+task1.getId(),
+				true
+		);
+
+		tasksList = getTasksList(cookies,TEST_SITE_ID);
+
+//		result =  apiGetRequest(cookies,
+//				"/api/site/"+TEST_SITE_ID+"/tasks",
+//				true
+//		);
+//		DefaultObjectResponse<Map<String,BaseTask>> ObjectResponse4 = mapper.readValue(
+//				result.getResponse().getContentAsString(),
+//				new TypeReference<DefaultObjectResponse<Map<String,BaseTask>>>() { });
+//		Map<String,BaseTask> tasksList = ObjectResponse4.getObject();
+
+		String taskid = task1.getId();
+
+		assertThat(tasksList).doNotHave(
+				new Condition<BaseTask>() {
+					@Override
+					public boolean matches(BaseTask task) {
+						return task.getId().equals(taskid) ;
+					}
+				}
+		);
+
+	}
+
+
+
+
+
+
+	public MvcResult apiGetRequest(Cookie[] cookies, String path, boolean isPrint) throws Throwable {
+		ObjectMapper mapper = new ObjectMapper();
+		MvcResult result = null;
+		result = mockMvc.perform
+				(get(path)
+						.cookie(cookies))
+				.andExpect(status().isOk())
+				.andReturn();
+		if (isPrint) {
+			System.out.println("Request: GET: " + path);
+			System.out.println("Response: ");
+			Object jsonObject = mapper.readValue(result.getResponse().getContentAsString(), Object.class);
+			String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
+			System.out.println(prettyJson);
+		}
+		return result;
+	}
+
+	public MvcResult apiPutRequest(Cookie[] cookies, String path, String jsonBody, boolean isPrint) throws Throwable{
+		ObjectMapper mapper = new ObjectMapper();
+		MvcResult result = null;
+		result = mockMvc.perform
+				(
+						put(path)
+						.cookie(cookies)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonBody)  //mapper.writeValueAsString(schedule)
+				)
+				.andExpect(status().isOk())
+				.andReturn();
+
+		if (isPrint) {
+			System.out.println("Request: PUT: " + path);
+			System.out.println("Response: ");
+			if (result.getResponse().getContentAsString() != null) {
+				Object jsonObject = mapper.readValue(result.getResponse().getContentAsString(), Object.class);
+				String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
+				System.out.println(prettyJson);
+			}
+		}
+		return result;
+	}
+
+
+	public MvcResult apiDeleteRequest(Cookie[] cookies, String path, boolean isPrint) throws Throwable {
+		MvcResult result = null;
+		result = mockMvc.perform
+				(
+						delete(path)
+								.cookie(cookies)
+								.contentType(MediaType.APPLICATION_JSON)
+				)
+				.andExpect(status().isOk())
+				.andReturn();
+
+		if (isPrint) {
+			ObjectMapper mapper = new ObjectMapper();
+			System.out.println("Request: Delete: " + path);
+			System.out.println("Response: ");
+			if (result.getResponse().getContentAsString() != null) {
+				Object jsonObject = mapper.readValue(result.getResponse().getContentAsString(), Object.class);
+				String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
+				System.out.println(prettyJson);
+			}
+		}
+		return result;
+
+	}
+
+
+
+		/**
+         * Add site
+         * @param siteObject
+         * @return
+         * @throws Throwable
+         */
 	public Site siteAdd(Site siteObject) throws Throwable  {
 
-
-		System.out.println("\n------  Create Site site="+siteObject+"\n");
+		System.out.println("\n------  Create site="+siteObject+"\n");
 
 		ObjectMapper mapper = new ObjectMapper();
 		MvcResult result = null;
@@ -356,62 +629,120 @@ public class SiteTest   {
 	
 	/**
 	 * Perfor site scann request
-	 * @param siteId
-	 * @return
+	 * @param  schedule Новый объект рассписания который надо ставить в очередь
+	 * @return вставленный объект
 	 * @throws Throwable
 	 */
-	public TaskRecord startTask(String taskName,  String siteId) throws Throwable {
+	public BaseTask startTask(Schedule schedule) throws Throwable {
 		ObjectMapper mapper = new ObjectMapper();
 		MvcResult result = null;
 
 		mockMvc.perform(
-				options("/api/site/"+siteId+"/task")
+				options("/api/site/"+schedule.getSite().getId()+"/task")
 						.cookie(cookies)
 						.contentType(MediaType.APPLICATION_JSON)
-						.param("taskname", taskName)
-		)
-				.andDo(print())
+			)
 				.andExpect(status().isOk())
 				.andReturn();
 
-
-
     	result = mockMvc.perform(
-    			post("/api/site/"+siteId+"/task")
+    			put("/api/site/"+schedule.getSite().getId()+"/task")
     			.cookie(cookies)
     			.contentType(MediaType.APPLICATION_JSON)
-				.param("taskname", taskName)
+				.content(mapper.writeValueAsString(schedule))
     			)
     		.andDo(print())
     		.andExpect(status().isOk())
     		.andReturn();
 
-    	DefaultObjectResponse<TaskRecord> ObjectResponse_3 = mapper.readValue(
+    	DefaultObjectResponse<BaseTask> resp = mapper.readValue(
     			result.getResponse().getContentAsString(),
-    			new TypeReference<DefaultObjectResponse<TaskRecord>>() { });
+    			new TypeReference<DefaultObjectResponse<BaseTask>>() { });
     	
-    	return ObjectResponse_3.getObject();
+    	return resp.getObject();
 	}
 
 
-	public TaskRecord checkTask(String siteId, String taskId) throws Throwable  {
+	public BaseTask updateTask(BaseTask task,Schedule schedule) throws Throwable {
+		return task;
+	};
+
+
+	public String getTaskStatus(Cookie[] cookies, String siteId, String taskId) throws Throwable{
 		ObjectMapper mapper = new ObjectMapper();
 		MvcResult result = null;
-		result = mockMvc.perform(
-				get("/api/site/"+siteId+"/task/"+taskId)
-						.cookie(cookies)
-						.contentType(MediaType.APPLICATION_JSON)
-				)
-				.andDo(print())
-				.andExpect(status().isOk())
-				.andReturn();
 
-		DefaultObjectResponse<TaskRecord> ObjectResponse_3 = mapper.readValue(
+		///site/{id}/task/{id}/taskrecord
+		result = apiGetRequest(cookies,
+				"/api/site/"+siteId+"/task/"+taskId+"/taskrecord",
+				true);
+		DefaultObjectResponse<TaskRecord> ObjectResponse3 = mapper.readValue(
 				result.getResponse().getContentAsString(),
 				new TypeReference<DefaultObjectResponse<TaskRecord>>() { });
-
-		return ObjectResponse_3.getObject();
+		TaskRecord tr = ObjectResponse3.getObject();
+		return tr.getStatus();
 	}
+
+
+
+
+	public List<BaseTask> getTasksList(Cookie[] cookies, String siteId) throws Throwable{
+		ObjectMapper mapper = new ObjectMapper();
+		MvcResult result = null;
+
+		result = apiGetRequest(cookies,
+				"/api/site/"+siteId+"/tasks",
+				true);
+		DefaultObjectResponse<List<BaseTask>> ObjectResponse3 = mapper.readValue(
+				result.getResponse().getContentAsString(),
+				new TypeReference<DefaultObjectResponse<List<BaseTask>>>() { });
+		List<BaseTask> theMap = ObjectResponse3.getObject();
+
+		return theMap;
+	}
+
+
+
+
+
+
+//	/**
+//	 * Perform site authentication save and return coockies
+//	 * @return
+//	 * @throws Throwable
+//	 */
+//	private Cookie[]  authHTTPConnection(String userName,String password) throws Throwable {
+//		cookies = initCookies();
+//
+//		ResultActions actions = null;
+//		//	Incorrect auth data
+//		actions = mockMvc.perform(post("/api/login/login").cookie(cookies)
+//				.contentType(MediaType.APPLICATION_JSON)
+//				.param("username", "test")
+//				.param("password", "test"))
+//				.andDo(MockMvcResultHandlers.print())
+//				.andExpect(status().is(400))
+//		//.andExpect(status().isUnauthorized())
+//		;
+//
+//
+//		actions = mockMvc.perform(post("/api/login/login").cookie(cookies)
+//				.contentType(MediaType.APPLICATION_JSON)
+//				.param("username", "admin")
+//				.param("password", "admin"))
+//				.andDo(print())
+//				.andExpect(status().isOk());
+//
+//		cookies = updateCookies(cookies, actions);
+//		printCookie(cookies);
+//		return cookies;
+//	}
+
+	/*--------------------------------------------------------------------------------------------
+
+			Cookie Utils
+
+	 --------------------------------------------------------------------------------------------*/
 
 	/**
      * Pront out curent coocke array

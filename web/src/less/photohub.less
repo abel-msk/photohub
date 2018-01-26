@@ -8,7 +8,8 @@
 @page-header: @base-gray;
 
 @error-color: #bd1317;
-@success-color: #499b16;
+//@success-color: #499b16;
+@success-color:#49b156;
 @warn-color: #c5620a;
 @normal-color: #1a2484;
 @error-bg: #f3d2d4;
@@ -102,9 +103,9 @@
   font-weight: 800;
 }
 
-.bold {
-  .bold-font();
-}
+
+
+
 
 //--------------------------------------------------------------
 //    Effects
@@ -261,11 +262,67 @@ a:focus, a:hover {
     padding-bottom: 5px;
 }
 
-
 //--------------------------------------------------------------
-//    Links
+//    Text highlighting
 //--------------------------------------------------------------
 
+.highlight {
+  color: @base-blue;
+  //.bold-font();
+}
+
+.bold {
+  .bold-font();
+}
+
+.form-group-sm .save-edit {
+  line-height: 30px;
+}
+
+
+.code {
+    //font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+    font-family: monospace,"Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter";
+    font-size: 13px;
+    font-style: normal;
+    font-variant: normal;
+
+}
+
+.code-block {
+    border-radius: 7px;
+    border: solid 1px #e5e4e8;
+    -webkit-box-shadow: inset 0px 0px 15px 0px rgba(216,222,230,1);
+    -moz-box-shadow: inset 0px 0px 15px 0px rgba(216,222,230,1);
+    box-shadow: inset 0px 0px 15px 0px rgba(216,222,230,1);
+    padding: 10px 15px 10px;
+    padding-bottom: 25px;
+    box-sizing: border-box;
+    //background-color: #f6faff;
+    background-color: #f6faff;
+
+    margin-left: -4px;
+    margin-right: -4px;
+
+
+    //min-height: 150px;
+
+    .code-block-body {
+        min-height: 110px;
+    }
+
+    .nowrap {
+        overflow-x: scroll;
+        padding-bottom: 5px;
+    }
+    .header {
+        padding-bottom: 5px
+    }
+
+    a.link {
+        padding:0;
+    }
+}
 
 //hover-lighting
 

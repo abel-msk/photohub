@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import home.abel.photohub.model.Config;
 import home.abel.photohub.model.QConfig;
@@ -26,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class ConfigService {
-	
+
 	/**
 	 * This Enum class list all configuration parameters need to run application
 	 * 
@@ -49,7 +51,10 @@ public class ConfigService {
     
 	@Autowired
 	UserService userService;
-	
+
+	@PersistenceContext
+	private EntityManager em;
+
 	private Properties confCache;	
 	
 	
@@ -63,7 +68,7 @@ public class ConfigService {
 	 * @author abel
 	 * @throws Exception 
 	 *
-	 */	
+	 */
 	@PostConstruct
 	public void Init() throws Exception {
 		//LOCAL_THUMB_URL
@@ -115,7 +120,6 @@ public class ConfigService {
 				}
 			}	
 		}
-		
 	}
 		
 

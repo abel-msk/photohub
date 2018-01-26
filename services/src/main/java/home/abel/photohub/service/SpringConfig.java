@@ -1,7 +1,6 @@
 package home.abel.photohub.service;
 
 import home.abel.photohub.connector.ConnectorsFactory;
-import home.abel.photohub.tasks.TaskFactory;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +12,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
-@ComponentScan(basePackages={"home.abel.photohub.service","home.abel.photohub.utils"})
+@ComponentScan(basePackages={"home.abel.photohub.service","home.abel.photohub.utils","home.abel.photohub.tasks"})
 @EnableTransactionManagement
 public class SpringConfig {
 	@Autowired
@@ -47,10 +46,10 @@ public class SpringConfig {
 	    return threadPool;
 	}	   
 	
-	@Bean
-	public TaskFactory  taskFactory()  {
-	    return new TaskFactory();
-	}	
+//	@Bean
+//	public TaskFactory  taskFactory()  {
+//	    return new TaskFactory();
+//	}
 	   
 }
 

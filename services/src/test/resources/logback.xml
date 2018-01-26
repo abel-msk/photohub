@@ -49,8 +49,12 @@
     <logger name="home.abel.photohub">
         <level value="TRACE" />
     </logger>
-     
-     
+
+    <logger name="org.flywaydb" level="DEBUG"/>
+
+
+    <logger name="org.eclipse.persistence" level="TRACE"/>
+
     <root>
         <level value="WARN" />
         <appender-ref ref="CONSOLE" />

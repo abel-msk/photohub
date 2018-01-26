@@ -19,6 +19,8 @@
 }
 
 
+
+
 .row-data {
     #scan_date {
         //line-height: 22px;
@@ -54,4 +56,61 @@
         white-space: nowrap;
     }
     
+}
+
+form {
+  .form-group-sm {
+
+    margin-bottom: 10px;
+
+    label {
+      line-height: 30px;
+      text-align: right;
+    }
+    .form-control {
+      font-size: 14px;
+    }
+  }
+}
+
+
+.form-horizontal {
+
+    .input-replce {
+        padding-top: 7px;
+    }
+
+
+    .form-group {
+        .form-inline {
+            .form-group:first-of-type {
+                padding-left: 0px;
+            }
+            .form-group:last-of-type {
+                padding-right: 0px;
+            }
+
+            .form-group {
+                margin-left: 0px;
+                margin-right: 0px;
+                //padding-left: 10px;
+                //padding-right: 10px;
+                .input-group:first-of-type {
+                    padding-left: 0px;
+                }
+                .input-group {
+                    //padding-left: 10px;
+                    //padding-right: 10px;
+                }
+            }
+            &+div {
+                float:left;
+            }
+            &+span {
+                float:left;
+                line-height: 30px;
+                padding-right: 5px;
+            }
+        }
+    }
 }

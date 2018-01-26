@@ -1,164 +1,383 @@
 package home.abel.photohub.tasks;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.util.*;
 import java.util.concurrent.Future;
 
-import javax.mail.Session;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import home.abel.photohub.model.Schedule;
+import home.abel.photohub.model.TaskParam;
+import home.abel.photohub.service.ExceptionInvalidArgument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.concurrent.ListenableFuture;
-
 import home.abel.photohub.model.Site;
 import home.abel.photohub.model.TaskRecord;
-import home.abel.photohub.service.SiteService;
 
 //@Transactional(readOnly=false)
 //@Transactional(propagation=Propagation.SUPPORTS)
 //@Transactional
+
+
+
 public class BaseTask implements Runnable, Serializable {
 	private static final long serialVersionUID = 1L;
 	final Logger logger = LoggerFactory.getLogger(BaseTask.class);
-	
-	private Site site;
-	private TaskNamesEnum tag;
-	private SiteService siteSvc;
+
+	@JsonIgnore
 	private Future<?> thisTaskProcess;
-	protected TaskRecord record;
+	@JsonIgnore
+	private ScheduleProcessing scheduleProcessing;
+	@JsonIgnore
 	private boolean saveToDB = true;
+	@JsonIgnore
+	private Queue queue = null;
 
-	
-	public BaseTask(Site theSite, TaskNamesEnum theTag,SiteService siteSvc, boolean saveToDB) {
-		this.siteSvc = siteSvc;
-		this.saveToDB = saveToDB;
-		site = theSite;
-		tag = theTag;
-		record = new TaskRecord();
-		record.setStartTime(new Date());
-		record.setName(tag.toString());
-		setStatus(TaskStatusEnum.IDLE,"Wait for execution");
+	private Schedule schedule = null;
+	private TaskRecord taskRecord;
+	protected String displayName;
+	protected String description;
 
-		//  Save to DB;
-		if ( isSaveToDB()) {
-			record = siteSvc.addTaskRecord(site, record);
+	/*-----------------------------------------------------------------------------------
+	    Конструктор используемый при десериализации из JSON формы
+	 -----------------------------------------------------------------------------------*/
+	@JsonCreator
+	public  BaseTask(
+			@JsonProperty("id") String id,
+			@JsonProperty("schedule") Schedule schedule,
+			@JsonProperty("taskRecord") TaskRecord taskRecord,
+			@JsonProperty("siteId") String siteId
+			) {
+		saveToDB = false;
+		this.schedule = schedule;
+		if ((schedule != null) && (schedule.getId() ==null)) { schedule.setId(id); }
+		if ((schedule != null) && (siteId !=null) && (schedule.getId() ==null) ) {
+			throw new ExceptionInvalidArgument("SiteId parameter should be defined in schedule object property.");
 		}
 	}
-	
-	
-//	private EntityManager em = null;
-//	
-//	public void setEntityManagerFactory(EntityManagerFactory emf) {
-//		em = emf.createEntityManager();
-//	}
-	
-	public TaskNamesEnum getTag() {
-		return tag;
+
+
+	/*-----------------------------------------------------------------------------------
+	    Инициализация инстанса объекта задачи
+	 -----------------------------------------------------------------------------------*/
+	public BaseTask(Site theSite, TaskNamesEnum theTag, Schedule theSchedule, ScheduleProcessing scheduleSvc, boolean saveToDB) {
+
+		scheduleProcessing = scheduleSvc;
+		this.saveToDB = saveToDB;
+
+		schedule = theSchedule;
+		if ( schedule == null) {
+			schedule = new Schedule();
+			schedule.setEnable(false);
+		}
+		schedule.setTaskName(theTag.toString());
+		schedule.setSite(theSite);
+		if ( isSaveToDB()) {
+			schedule = scheduleProcessing.saveSchedule(schedule);
+		}
+
+		taskRecord = new TaskRecord();
+		setStatus(TaskStatusEnum.IDLE,"Wait for execution");
+		saveLog();
+		logger.debug("Create new task. Task=" + this);
+		this.description = BaseTask.getStaticDescription();
+		this.displayName = BaseTask.getStaticDisplayName();
 	}
 
-	public void setTag(TaskNamesEnum tag) {
-		this.tag = tag;
+
+	/*-----------------------------------------------------------------------------------
+			Self descriptions methods
+	 -----------------------------------------------------------------------------------*/
+	public static  String getStaticDisplayName() {
+		return "DUMMY";
 	}
-	
+	public static  String getStaticDescription() {
+		return "Description for empty base task";
+	}
+
+	public static boolean isVisible() {return true;};
+
+	private static final Map<String,String> pMap;
+	static {
+		Map<String, String> tmpMap = new HashMap<>();
+		tmpMap.put("PARAM1","Test param for empty task");
+		pMap = Collections.unmodifiableMap(tmpMap);
+	}
+	public static Map<String,String> getParamsDescr() {
+		return pMap;
+	}
+
+
+
+	/*-----------------------------------------------------------------------------------
+			Gettsers and Setters
+	 -----------------------------------------------------------------------------------*/
+	public String getId() { return schedule.getId(); }
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	@JsonIgnore
 	public Site getSite() {
-		return site;
+		return schedule.getSite();
+	}
+	@JsonIgnore
+	public void setSite(Site site) { schedule.setSite(site); }
+
+	public TaskRecord getTaskRecord() {
+		return taskRecord;
+	}
+	public String getSiteId() {
+		return (schedule.getSite()==null?null:schedule.getSite().getId());
 	}
 
-	public void setSite(Site site) {
-		this.site = site;
+	private boolean isSaveToDB() {
+		return saveToDB;
+	}
+	public void setSaveToDB(boolean saveToDB) {
+		this.saveToDB = saveToDB;
 	}
 
-	public TaskRecord getRecord() {
-		return record;
-	}
-
-	public void setRecord(TaskRecord record) {
-		this.record = record;
-	}
-
-
-	
-	public SiteService getSiteSvc() {
-		return siteSvc;
-	}
-
-	public void setSiteSvc(SiteService siteSvc) {
-		this.siteSvc = siteSvc;
-	}
-
-	public TaskStatusEnum getStatus() {
-		return TaskStatusEnum.valueOf(record.getStatus());
-	}
-	
 	public Future<?> getThisTaskProcess() {
 		return thisTaskProcess;
 	}
-
 	public void setThisTaskProcess(Future<?> thisTaskProcess) {
 		this.thisTaskProcess = thisTaskProcess;
 	}
-	
-	public void setStatus(TaskStatusEnum status, String message) {
-		record.setMessage(message);
-		record.setStatus(status.toString());
-		record.setStopTime(new Date());
-	}	
-	
-	public void printMsg(String msg) {
-		record.setMessage(msg);
-	}
-	
 
+
+	public Queue getQueue() { return queue; }
+	public void setQueue(Queue queue) { this.queue = queue; }
+
+
+	public String toString() {
+		return schedule.getTaskName()+"/"+getDisplayName()+"(task Id="+(schedule.getId()==null?"undef":schedule.getId()) +
+				"|site="+(schedule.getSite()==null?"system":schedule.getSite())+
+				"), Schedule="+ schedule;
+	}
+
+	 /*-----------------------------------------------------------------------------------
+	     Запуск задачи
+	 -----------------------------------------------------------------------------------*/
+	/**
+	 *    Вызывается внешним рассписанием
+	 *    Создает запись в логе о начале исполнения
+	 *    передает исполнение в метод exec()
+	 *    после завершения создает запись об ошибке или успешном выполнеии в логе
+	 */
 	@Override
 	public void run() {
 		setStatus(TaskStatusEnum.RUN,"Start execution");
-		
-		if ( isSaveToDB()) {
-			record = siteSvc.addTaskRecord(site,record);
-		}
+		saveLog();
 
-		logger.debug("[BaseTask.run] Try to execute task name="+ getTag()+", for site="+
-				(getSite()==null?"system":getSite()) +
-				", id = " + (record.getId()==null?"null":record.getId())
-		);
+
+		logger.debug("[BaseTask.run] Starting. Task="+this);
 
 		try {
 			exec();
-			setStatus(TaskStatusEnum.FIN,"Execution complete.");
+			setStatus(TaskStatusEnum.FIN,"Task "+this+". Execution success.");
+
 		}
 		catch (Throwable ex) {
 			setStatus(TaskStatusEnum.ERR,ex.getMessage());
-			throw new ExceptionTaskAbort("Abort execution task="+getTag());
+			throw new ExceptionTaskAbort("Task "+this+". Execution aborted due to error="+ex.getMessage());
 		}
 		finally {
-			logger.debug("[BaseTask.run] Execution completed.");
+			//logger.debug("[BaseTask.run] Execution completed.");
+			saveLog();
+			logger.debug("[BaseTask.run] Execution completed. Save result record to DB. TaskRecord="+taskRecord);
 
 			if ( isSaveToDB()) {
 				try {
-					//logger.trace("[BaseTask.run] Execution completed. Save result record to DB. Record="+record.getMessage());
-					siteSvc.updateTaskRecord(record);
+					//this.scheduleProcessing.saveLog(logRecord);
+					if ( ! schedule.isEnable()) {
+						//   Remove task from DB
+						schedule = scheduleProcessing.removeSchedule(schedule);
+						//   Remove task from queue
+						if( queue != null)  queue.remove(this);
+					}
 				} catch (Exception e) {
-					logger.error("[BaseTask.run] Cannot update Site="+site+" to DB.",e);
+					logger.error("[BaseTask.run] Cannot update Site="+schedule.getSite()+" to DB.",e);
 				}
 			}
 		}
 	}
-	
+
+	/**
+	 *    Вызывается в процессе запуса. Используется для перекрытия наследующими коассами.
+	 */
 	public void exec() throws Throwable {
-		
+
 	}
-	
-	public boolean isSaveToDB() {
-		return saveToDB;
+
+	/*-----------------------------------------------------------------------------------
+			Работа с параметрами
+	 -----------------------------------------------------------------------------------*/
+
+	/**
+	 *	Возвращает значение зараметр задачи по его инмени
+	 * @return Список Объектов параметров задачи
+	 */
+	@JsonIgnore
+	public List<TaskParam> getParams() {
+		return this.schedule.getParams();
+	}
+
+	/**
+	 * Просматривет список введенныхпараметро,
+	 * если параметр с таким именем уже установлен то меняем его.
+	 * Иначе добавляем новый параметр в список параметров.
+	 *
+	 * @param inParams List ob task param objects
+	 */
+	@JsonIgnore
+	public void setParams(List<TaskParam> inParams) {
+		if (inParams == null) return;
+ 		logger.trace("[setParams] Set new parameters array. Array=" + inParams);
+		List<TaskParam> outParams = getSchedule().getParams();
+		for ( TaskParam inParam : inParams ) {
+			boolean found = false;
+			for ( TaskParam outParam : outParams ) {
+				if (inParam.getName().equals(outParam.getName()) ) {
+					outParam.setValue(inParam.getValue());
+					found=true;
+					break;
+				}
+			}
+			if (! found) {
+				schedule.addParam(inParam);
+			}
+		}
+		if ( isSaveToDB())  schedule = scheduleProcessing.updateSchedule(schedule);
 	}
 
 
-	public void setSaveToDB(boolean saveToDB) {
-		this.saveToDB = saveToDB;
+	/**
+	 * 	 Если параметр с указанным именем уже существует то менят значение на новое
+	 * 	 иначе добавляет новый парметр с указанным именем и указанным значением.
+	 * 	 Сохраняет изменения в базу.
+	 * 	 Параметр определяется по имени.
+	 * @param param объект для параметра
+	 * @return  возвращает объект для сохраненного в базу параметра
+	 */
+	@JsonIgnore
+	public TaskParam setParam(TaskParam param) {
+		List<TaskParam> params = schedule.getParams();
+		boolean found = false;
+		for ( TaskParam p: params ) {
+			if (p.getName().equals(param.getName())) {
+				p.setValue(param.getValue());
+				found = true;
+			}
+		}
+		if ( ! found ) {
+			TaskParam newPObj = param;
+			if (param.getId() != null ) {
+				newPObj = new TaskParam();
+				newPObj.setName(param.getName());
+				newPObj.setValue(param.getValue());
+			}
+			schedule.addParam(newPObj);
+		}
+		if ( isSaveToDB())  schedule = scheduleProcessing.updateSchedule(schedule);
+		return schedule.getParam(param.getName());
 	}
-	
+
+	/**
+	 * 	 Если параметр с указанным именем уже существует то менят значение на новое
+	 * 	 иначе добавляет новый парметр с указанным именем и указанным значением.
+	 * 	 Сохраняет изменения в базу.
+	 * 	 Параметр определяется по имени.
+	 * @param paramName Имя параметра
+	 * @param paramValue Значения параметра
+	 * @return  возвращает объект для сохраненного в базу параметра
+	 */
+	@JsonIgnore
+	public TaskParam setParam(String paramName, String paramValue) {
+		TaskParam param = new TaskParam();
+		param.setName(paramName);
+		param.setValue(paramValue);
+		return setParam(param);
+	}
+
+	/*-----------------------------------------------------------------------------------
+	     Работа с рассписанием
+	 -----------------------------------------------------------------------------------*/
+
+	/**
+	 * Проверяет установленно рассписания для задачи
+	 * @return true  усли рассписание установленно. False в противном случае
+	 */
+	@JsonIgnore
+	public boolean isScheduled() {
+		return  ((schedule == null) || (schedule.isEnable()));
+	}
+
+	/**
+	 * 	Возвращает текущее рассписания
+	 * @return бъект рассписания
+	 */
+	public Schedule getSchedule() {
+		return schedule;
+	}
+
+	/**
+	 * Вносит изменения в рассписание запуска задачи
+	 * @param schedule объект рассписания
+	 */
+	public void setSchedule(Schedule schedule) {
+		if (isSaveToDB()) {
+			schedule = scheduleProcessing.updateSchedule(schedule);
+			this.schedule = schedule;
+		}
+		else {
+			logger.warn("[BaseTask.setSchedule] Set schedule  for task w/o save to db Flag. "+
+					"Task=" + this );
+		}
+	}
+
+
+	/*-----------------------------------------------------------------------------------
+			Логирование и статусы
+	 -----------------------------------------------------------------------------------*/
+	@JsonIgnore
+	public TaskStatusEnum getStatus() {
+		return TaskStatusEnum.valueOf(taskRecord.getStatus());
+	}
+	@JsonIgnore
+	protected void setStatus(TaskStatusEnum status, String message) {
+		taskRecord.setMessage(message);
+		taskRecord.setStatus(status.toString());
+		taskRecord.setStopTime(new Date());
+
+	}
+
+	protected void saveLog() {
+		taskRecord.setSiteBean(schedule.getSite());
+		taskRecord.setName(schedule.getTaskName());
+		taskRecord.setScheduleId(schedule.getId());
+
+		if ( isSaveToDB()) {
+			scheduleProcessing.saveLog(taskRecord);
+		}
+	}
+
+	protected void printMsg(String msg) {
+		taskRecord.setMessage(msg);
+	}
+
 }

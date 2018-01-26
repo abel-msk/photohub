@@ -52,6 +52,9 @@ public class TaskRecord implements Serializable {
 	@JoinColumn(name="site")
 	private Site siteBean = null;
 
+	@Column(name="schedule_id", columnDefinition = "BIGINT")
+	private String scheduleId = null;
+
 	@QueryType(PropertyType.DATETIME)
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date startTime;
@@ -60,7 +63,7 @@ public class TaskRecord implements Serializable {
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date stopTime;	
 	
-	
+
 	public String getId() {
 		return id;
 	}
@@ -117,9 +120,17 @@ public class TaskRecord implements Serializable {
 		this.stopTime = stopTime;
 	}
 
-	
-	public String toString() {
-		return name+"(id="+id+",site="+siteBean+")";
+
+	public String getScheduleId() {
+		return scheduleId;
 	}
-	
+
+	public void setScheduleId(String scheduleId) {
+		this.scheduleId = scheduleId;
+	}
+
+	public String toString() {
+		return name+"(id="+id+",st="+status+",site="+siteBean+")";
+	}
+
 }

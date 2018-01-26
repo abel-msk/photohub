@@ -75,18 +75,20 @@ define( ["jquery"], function($) {
             "connectSite":["GET","","/site/"],
             "authSite":["PUT","json","/site/"],
             "disconnectSite":["GET","","/site/"],
-            //"getLastScan":["GET","","/site/"],
-            "listTasks":["GET","","/site/"],
-            "startTask":["POST","","/site/"],
-            "getTask":["GET","","/site/"],
-            "logTask":["GET","","/site/"],
-            // "cleanSite":["GET","","/site/"],
-            // "listTasks":["GET","","/site/"],
+            "cleanSite":["GET","","/site/"],
 
-            "listSched":["GET","","/site/"],
-            "getShed":["GET","","/site/"],
-            "setSched":["PUT","json","/site/"],
-            "logSched":["GET","","/site/"],
+            "listTasks":["GET","","/site/"],
+            "listTaskDescr":["GET","","/site/"],
+            "startTask":["PUT","json","/site/"],
+            "getTask":["GET","","/site/"],
+            "getTaskStatus":["GET","","/site/"],
+            "deleteTask":["DELETE","","/site/"],
+            "editTask":["PUT","json","/site/"],
+
+            // "listSched":["GET","","/site/"],
+            // "getShed":["GET","","/site/"],
+            // "setSched":["PUT","json","/site/"],
+            // "logSched":["GET","","/site/"],
 
             "photoList":["GET","","/list"],
             "getPhoto":["GET","","/photo/"],
@@ -447,11 +449,18 @@ define( ["jquery"], function($) {
             },
 
 
-            //getLastScan: function(siteId, callbackResult, callbackError) {
-            //    API_DEBUG && debug_("[getLastScan] start ");
-            //    call("getLastScan", { 'url':getActionUrl('getLastScan')+siteId+"/scan/last" },{}, callbackResult, callbackError);
-            //},
+            cleanSite: function(siteId, callbackResult, callbackError) {
+                API_DEBUG && debug_("[cleanSite] start ");
+                call("cleanSite", { 'url':getActionUrl('cleanSite')+siteId+"/clean" },{}, callbackResult, callbackError);
+            },
 
+
+
+            //  GET site/{id}/tasksdescr
+            listTaskDescr: function(siteId, callbackResult, callbackError) {
+                API_DEBUG && debug_("[listTasks] start ");
+                call("listTasks", { 'url':getActionUrl('listTaskDescr')+siteId+"/tasksdescr" },{}, callbackResult, callbackError);
+            },
 
             //  GET site/{id}/tasks
             listTasks: function(siteId, callbackResult, callbackError) {
@@ -460,53 +469,29 @@ define( ["jquery"], function($) {
             },
 
             //  PUT site/{id}/task
-            startTask: function(siteId, taskName, callbackResult, callbackError) {
+            startTask: function(siteId, theTask, callbackResult, callbackError) {
                 API_DEBUG && debug_("[startTask] start ");
-                call("startTask", { 'url':getActionUrl('startTask')+siteId+"/task" },{'taskname':taskName }, callbackResult, callbackError);
+                call("startTask", { 'url':getActionUrl('startTask')+siteId+"/task" },theTask, callbackResult, callbackError);
             },
 
-            //  GET site/{id}/task/{id}
-            getTask: function(siteId, taskId, callbackResult, callbackError) {
-                API_DEBUG && debug_("[getTask] start ");
-                call("getTask", { 'url':getActionUrl('getTask')+siteId+"/task/"+taskId },{}, callbackResult, callbackError);
+            //  GET site/{id}/task/{id}/taskrecord
+            getTaskStatus: function(siteId, taskId, callbackResult, callbackError) {
+                API_DEBUG && debug_("[getTaskStatus] start ");
+                call("getTaskStatus", { 'url':getActionUrl('getTaskStatus')+siteId+"/task/"+taskId+"/taskrecord" },{}, callbackResult, callbackError);
             },
 
-
-            //  GET site/{id}/tasklog/{name}
-            logTask: function(siteId, taskname, callbackResult, callbackError) {
-                API_DEBUG && debug_("[logTask] start ");
-                call("logTask", { 'url':getActionUrl('logTask')+siteId+"/tasklog/"+taskname },{}, callbackResult, callbackError);
+            //  DELETE /site/{id}/task/{tid}
+            deleteTask: function(siteId, taskId, callbackResult, callbackError) {
+                API_DEBUG && debug_("[deleteTask] start ");
+                call("deleteTask", { 'url':getActionUrl('deleteTask')+siteId+"/task/"+taskId },{}, callbackResult, callbackError);
             },
 
-            // scanSite: function(siteId, options,callbackResult, callbackError) {
-            //     API_DEBUG && debug_("[scanSite] start ");
-            //     call("scanSite", { 'url':getActionUrl('scanSite')+siteId+"/scan" },options, callbackResult, callbackError);
-            // },
-            // cleanSite: function(siteId, options, callbackResult, callbackError) {
-            //     API_DEBUG && debug_("[cleanSite] start ");
-            //     call("cleanSite", { 'url':getActionUrl('cleanSite')+siteId+"/clean" },options, callbackResult, callbackError);
-            // },
+            ///site/{id}/task/{tid}/schedule
 
-            listSched: function(siteId, callbackResult, callbackError){
-                API_DEBUG && debug_("[listSched] start ");
-                call("listSched", { 'url':getActionUrl('listSched')+siteId+"/schedules"},{}, callbackResult, callbackError);
+            editTask: function(siteId, schedule, callbackResult, callbackError) {
+                API_DEBUG && debug_("[editTask] start ");
+                call("editTask", { 'url':getActionUrl('editTask')+siteId+"/task/"+schedule.id+"/schedule" },schedule, callbackResult, callbackError);
             },
-
-            getSched: function(siteId, taskName, callbackResult, callbackError){
-                API_DEBUG && debug_("[getSched] start ");
-                call("getSched", { 'url':getActionUrl('getSched')+siteId+"/schedule/"+ taskName },{}, callbackResult, callbackError);
-            },
-
-            setSched: function(siteId, object, callbackResult, callbackError) {
-                API_DEBUG && debug_("[setSched] start ");
-                call("setSched", { 'url':getActionUrl('setSched')+siteId+"/schedule/"+ object.taskName}, object, callbackResult, callbackError);
-            },
-
-            logSched: function(siteId, taskName, callbackResult, callbackError) {
-                API_DEBUG && debug_("[logSched] start ");
-                call("logSched", { 'url':getActionUrl('logSched')+siteId+"/schedule/"+ taskName + "/log"}, {}, callbackResult, callbackError);
-            },
-
 
 
 

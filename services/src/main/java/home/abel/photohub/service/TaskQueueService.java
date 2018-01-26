@@ -1,193 +1,176 @@
 package home.abel.photohub.service;
 
-import com.querydsl.core.Tuple;
-import com.querydsl.core.group.Group;
-import com.querydsl.jpa.JPAExpressions;
-import com.querydsl.sql.SQLExpressions;
-import home.abel.photohub.model.QTaskRecord;
-import home.abel.photohub.model.Site;
-import home.abel.photohub.model.SiteRepository;
-import home.abel.photohub.model.TaskRecord;
-import home.abel.photohub.model.TaskRepository;
+import home.abel.photohub.model.*;
+import home.abel.photohub.model.TaskRecordRepository;
 import home.abel.photohub.tasks.BaseTask;
-import home.abel.photohub.tasks.ExceptionTaskExist;
 import home.abel.photohub.tasks.TaskFactory;
-import home.abel.photohub.tasks.TaskNamesEnum;
+import home.abel.photohub.tasks.ScheduleProcessing;
+import home.abel.photohub.tasks.Queue;
 import home.abel.photohub.tasks.TaskStatusEnum;
+import home.abel.photohub.tasks.TaskNamesEnum;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 
+import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
+
 
 import com.querydsl.jpa.impl.JPAQuery;
-import static com.querydsl.core.group.GroupBy.*;
 
 //import com.mysema.query.jpa.JPASubQuery;
 //import com.mysema.query.jpa.impl.JPAQuery;
 
+/**
+ *    This class contains all necessary methods for work with task QUEUE
+ */
 
 @Service
 public class TaskQueueService {
-	final Logger logger = LoggerFactory.getLogger(PhotoAttrService.class);
-	
+	final Logger logger = LoggerFactory.getLogger(TaskQueueService.class);
 
-	/**
-	 * TaskCallback
-	 * 
-	 * Расширенный класс  ListenableFutureCallback, который будет вызван после после окончания 
-	 * каждой задачи.
-	 * В разсширеном классе, после вызова задача   данные о завершении заоачи записываются в базу.
-	 * @author abel
-	 */
-	
-	class TaskCallback implements ListenableFutureCallback<Void>  {
-		final Logger logger = LoggerFactory.getLogger(TaskCallback.class);
-		protected BaseTask baseTask;
-		protected Map<String,Map<TaskNamesEnum,BaseTask>> queue;
-
-
-		TaskCallback(BaseTask task, Map<String,Map<TaskNamesEnum,BaseTask>> queue) {
-			this.queue = queue;
-			this.baseTask = task;
-			add();
-		}	
-
-		@Override
-		public void onSuccess(Void result) {
-			logger.debug("[TaskCallback.onSuccess] Task complete OK. Task="+baseTask.getTag());
-			remove();
-			onFinish();
-		}
-
-		@Override
-		public void onFailure(Throwable ex) {
-			logger.debug("[TaskCallback.onFailure] Task complete with error. Task="+baseTask.getTag());
-			remove();
-			onFinish();
-		}
-		
-		private void remove() {
-//			if (isAutoRemove()) {
-				Map<TaskNamesEnum,BaseTask>sitesTasks = queue.get(baseTask.getSite().getId());		
-				if (sitesTasks != null) {
-					sitesTasks.remove(baseTask.getTag());
-				}
-//			}
-		}
-		
-		private void add() {
-			Map<TaskNamesEnum,BaseTask>sitesTasks = queue.get(baseTask.getSite().getId());	
-			if (sitesTasks == null) {				
-				sitesTasks = new java.util.concurrent.ConcurrentHashMap<TaskNamesEnum,BaseTask>();
-				queue.put(baseTask.getSite().getId(),sitesTasks);	
-			}
-			sitesTasks.put(baseTask.getTag(), baseTask);
-		}
-		
-		protected void onFinish() {
-			logger.debug("Task "+baseTask.getTag()+", for site="+baseTask.getSite()+", finished.");
-		}
-	}
-
-		
-	protected Map<String,Map<TaskNamesEnum,BaseTask>> sitesQueueMap  = 
-			new java.util.concurrent.ConcurrentHashMap<String,Map<TaskNamesEnum,BaseTask>>();
-	
 
 	@Autowired
-	ThreadPoolTaskExecutor threadPoolTaskExecutor;
+	Queue queue;
 
-	
+
 	@Autowired
 	SiteRepository siteRepo;
 	
 	@Autowired
-	TaskRepository taskRepo;
+    TaskRecordRepository taskRepo;
 	
 	@Autowired
 	TaskFactory taskFactory;
 
+
 	@Autowired
-	private DataSource dataSource;
-		
+	ScheduleRepository scheduleRepository;
+
+	@Autowired
+	ScheduleProcessing scheduleProcessing;
+
+	@Autowired
+	ThreadPoolTaskExecutor threadPoolTaskExecutor;
+
+	@Autowired
+	ThreadPoolTaskScheduler threadPoolTaskScheduler;
+
 	@PersistenceContext
 	private EntityManager entityManager;
 
+
+	@PostConstruct
 	/**
-	 * 
-	 *  Создает задачу для сайта и вставляет в очередь
-	 * 
-	 * @param name
+	 * Сразу после старта, загружает все задачи с рассписанием в очередь
+	 * @throws Exception
+	 */
+	public void Init() throws Throwable {
+		logger.trace("[SceduleService.Init] Arm saved scheduled jobs.");
+
+		Iterable<Schedule> schList = scheduleRepository.findAll();
+		for (Schedule scheduleObj: schList ) {
+			BaseTask task = null;
+
+			try {
+				task = taskFactory.createTask(
+						TaskNamesEnum.valueOf(scheduleObj.getTaskName()),
+						scheduleObj.getSite(),
+						scheduleObj);
+				this.put(task);
+			} catch (Exception e) {
+				logger.warn("[SceduleService.Init] Cannot run task " +task+ ", Error=" + e.getMessage());
+			}
+		}
+	}
+
+
+	/*---------------------------------------------------------------------------------------------
+	 *     Список задач
+	 ---------------------------------------------------------------------------------------------*/
+
+	/**
+	 *   Возвращает список рассписаний для текущих задач
 	 * @param siteId
 	 * @return
-	 * @throws Throwable
 	 */
-	public BaseTask createTask(String name,String siteId) throws Throwable {
-		return put(taskFactory.createTask(name, siteId));		
+	public List<BaseTask> getTaskList(String siteId) {
+
+		List<BaseTask> tList = new ArrayList<>();
+
+		if ( queue.getSitesTasks(siteId) != null ) {
+			for (BaseTask task : queue.getSitesTasks(siteId).values()) {
+				if (BaseTask.isVisible()) {
+					tList.add(task);
+				}
+			}
+		}
+
+
+//		Collections.sort(tList, new Comparator<BaseTask>() {
+//			@Override
+//			public int compare(BaseTask i1, BaseTask i2) {
+//				return (Long.parseLong(i2.getId()) > Long.parseLong(i1.getId())) ? -1 : 1;
+//			}
+//		});
+
+		tList.sort((i1,i2)->(Long.parseLong(i2.getId()) > Long.parseLong(i1.getId())) ? -1 : 1);
+
+		return tList;
 	}
-	
+
+	/*---------------------------------------------------------------------------------------------
+	 *     ЗАПУСК задачи
+	 ---------------------------------------------------------------------------------------------*/
 	/**
-	 * Добавляем задачу в список активных задач, 
-	 * Запускаем задачу и задаем ей  TaskCallback  в качестве колбека.   
+	 * Добавляем задачу в список активных задач,
+	 * Запускаем задачу и задаем ей  TaskCallback  в качестве колбека.
 	 * TaskCallback будет вызван при завершении задачи
-	 *   [TaskQueueService.put] 
-	 * 
+	 *
 	 * @param task
 	 * @return
-	 * @throws Exception  Ошибка при запуске
+	 * @throws Exception
 	 */
 	public BaseTask put(BaseTask task) throws Exception {
-		return put(task.getSite().getId(), task.getTag(), task );
-	}
-	
-	public BaseTask put(String siteId, TaskNamesEnum name, BaseTask task) throws Exception {
-		
-		//  Если в задаче объект Site не определен, пытаемся найти объект Site его по SiteId
-		//  и сохранить объект в задаче.
-		if ( task.getSite() == null) {
-			Site theSite = siteRepo.findOne(siteId);
-			if (theSite == null ) {
-				throw new ExceptionInvalidArgument("Cannot start taks "+task.getTag()+". Site object with id "+siteId+" not foun.");
-			}
-			task.setSite(theSite);
-		}
-		
-		//----------------------------------------------
-		//  Находим список заряженных задач для SiteId иначе создаем новый
-		if (isTaskRunning(name,siteId)) {
-			throw new ExceptionTaskExist("The task "+ name + " for site " + siteId + " already running.");
-		}
-		
-		//----------------------------------------------
-		//    Выполняем запуск задачи и добавляем в список "заряженых" задая для сайта.		
-		try {			
-			ListenableFuture<Void> taskProcess = (ListenableFuture<Void>) threadPoolTaskExecutor.submitListenable(task);
-			taskProcess.addCallback(new TaskCallback(task,sitesQueueMap));
-			task.setThisTaskProcess(taskProcess);
-			
-//			ListenableFutureCallback<?> taskCB =  new TaskCallback(task,sitesQueueMap);
-//			ListenableFuture<?> taskProcess =  threadPoolTaskExecutor.submitListenable(task);
-//			taskProcess.addCallback(taskCB);
-//			task.setThisTaskProcess(taskProcess);
 
+//		if (isTaskRunning(task)){
+//			throw new ExceptionTaskExist("The task "+ task + " already running.");
+//		}
+
+		if ( ! task.isScheduled() ) {
+			task = runNow(task);
+		}
+		else {
+			task = runScheduled(task);
+		}
+
+		queue.put(task);
+		task.setQueue(queue);
+		return task;
+	}
+
+	/**
+	 *   Производит запуск задачи в фоновом режиме.
+	 * @param task задача которую еужно запускать
+	 * @return
+	 */
+	public BaseTask runNow(BaseTask task) throws Exception{
+		//    Выполняем запуск задачи и добавляем в список "заряженых" задая для сайта.
+		try {
+			ListenableFuture<Void> taskProcess = (ListenableFuture<Void>) threadPoolTaskExecutor.submitListenable(task);
+			//taskProcess.addCallback(new TaskCallback(task,queue));
+			task.setThisTaskProcess(taskProcess);
 		}
 		catch (Exception e) {
 			logger.warn("Task does not started. Task="+task+", Error="+e.getMessage());
@@ -196,235 +179,234 @@ public class TaskQueueService {
 		return task;
 	}
 
-		
+	/**
+	 * Производит запус задачи по рассписанию.
+	 * @param task  задача которую нужно запускать
+	 * @return
+	 */
+	public BaseTask runScheduled(BaseTask task) throws Exception{
+		try {
+			CronTrigger cronTrigger = new CronTrigger(task.getSchedule().toCronString());
+			ScheduledFuture<?> taskProcess = threadPoolTaskScheduler.schedule(task,cronTrigger);
+
+			task.setThisTaskProcess(taskProcess);
+		}
+		catch (Exception e) {
+			logger.warn("[runScheduled] Task "+task+" cannot be scheduled. Error="+e.getMessage());
+			throw e;
+		}
+		return task;
+	}
+
+
+	/*---------------------------------------------------------------------------------------------
+	 *     ПОИСК задачи в очереди
+	 ---------------------------------------------------------------------------------------------*/
+	public BaseTask  getTaskById(String taskId) {
+		Schedule sh = scheduleRepository.findOne(taskId);
+
+		//logger.trace("[getTaskById] look for task by id " + taskId + ". schedule " + (sh==null?"null":sh));
+		if ( sh != null) {
+			return queue.get(queue.site2Id(sh.getSite()), taskId);
+		}
+		return null;
+	}
+
 	/**
 	 *  
 	 *	Определяет запущена ли задача с имененм у указанного сайта.
-	 * 
-	 * @param name
-	 * @param siteId
-	 * @return
-	 */
-	public boolean isTaskRunning(TaskNamesEnum name, String siteId) {
-		return isTaskInQueue(name,siteId,sitesQueueMap);
-	}
-	
-	/**
-	 *     Проверка нахождения задачи в очереди 
-	 *     
-	 * @param taskName
-	 * @param siteId
-	 * @param queue
-	 * @return
-	 */
-	protected boolean isTaskInQueue(TaskNamesEnum taskName, String siteId, Map<String,Map<TaskNamesEnum,BaseTask>> queue) {
-		//   Находим список заряженных задач для SiteId иначе создаем новый	
-		Map<TaskNamesEnum,BaseTask>sitesTasks = queue.get(siteId);
-		
-		//   Возможно надо проверять не только наличие задачи в очереди но и ее состояние может она закончилась.
-		//   Check if such task for site is running
-		if ( sitesTasks != null ) {
-			if ( sitesTasks.get(taskName) != null ) {
-				return true;
-			}
-		}		
-		return false;
-	}
-
-	/**
-	 *  
-	 *  Возвращает задачу из очереди. null если не найдено. 
-	 * 
-	 * @param siteId
-	 * @param name
-	 * @return
-	 * @throws Exception
-	 */
-	public BaseTask get(String siteId, TaskNamesEnum name) throws Exception {
-		Map<TaskNamesEnum, BaseTask> sitesTasks = sitesQueueMap.get(siteId);
-		if (sitesTasks != null) {
-			BaseTask task = sitesTasks.get(name);
-			if (task != null) {
-				return task;
-			}
-		}
-		return null;
-	}
-
-
-	/*=============================================================================================
 	 *
-	 *     УДАЛЕНИЕ задачи из очереди
-	 *
-	 =============================================================================================*/
-	
-	/**
-	 * Remove task from queue.
-	 * @param name
+	 * @param siteId
 	 * @return
 	 */
-	public BaseTask remove(String siteId, TaskNamesEnum name) {
-		BaseTask task = null;
-		Map<TaskNamesEnum,BaseTask>sitesTasks = sitesQueueMap.get(siteId);		
-		if (sitesTasks != null ) {
-			task = sitesTasks.remove(name);
-		}
-		return task;
+	public boolean isTaskRunning(String siteId, String taskId) {
+		BaseTask task = queue.get(siteId, taskId);
+		return (task!= null) && (task.getStatus() == TaskStatusEnum.RUN );
 	}
-	
+
+	/*---------------------------------------------------------------------------------------------
+	 *     ОСТАНОВКА И УДАЛЕНИЕ задачи из очереди
+	 ---------------------------------------------------------------------------------------------*/
 	/**
-	 * Remove task from queue.
-	 * @param task
+	 * Stop task executin and remove from DB and queue
+	 * @param task Task object
 	 * @return
 	 */
-	public BaseTask remove(BaseTask task) {
-		Map<TaskNamesEnum,BaseTask>sitesTasks = sitesQueueMap.get(task.getSite().getId());		
-		if (sitesTasks != null ) {
-			task = sitesTasks.remove(task.getTag());
-			if ((task != null) && (task.getStatus() == TaskStatusEnum.RUN)) { 
-				task.getThisTaskProcess().cancel(true);
-			}
+	public BaseTask stopTask(BaseTask task, boolean abort) {
+		BaseTask currentTask = queue.get(task);
+
+		//  Останавливаем исполнение задачи если она в состоянии ожидания или работает но стоит флаг abort
+		if ((currentTask.getStatus() == TaskStatusEnum.RUN) && (!abort)) {
+			currentTask.getSchedule().setEnable(false);
 		}
+		currentTask.getThisTaskProcess().cancel(abort);
+
+		//  TODO Save task record with cancel status
+
+		queue.remove(currentTask);
+		scheduleProcessing.removeSchedule(currentTask.getSchedule());
+
+		//  Удалить задачу из базы
+		//scheduleProcessing.removeSchedule(currentTask.getSchedule());
+		logger.trace("[stopTask] Stopping task "  + currentTask);
 		return task;
 	}
 
-	/*=============================================================================================
-	 *
-	 *     ПОИСК Задачи в базе
-	 *
-	 =============================================================================================*/
-
 	/**
-	 * Возвращает задачу из базы по ID
-	 * @param taskId
-	 * @return
-     */
-	public TaskRecord getTaskRecordById(String taskId) {
-		return taskRepo.findOne(taskId);
+	 * Remove all tasks for given site
+	 * @param site Site db object
+	 */
+	public void stopTasksForSite(Site site) {
+		Map<String,BaseTask> taskMap =queue.getSitesTasks(site.getId());
+		for (String taskId: taskMap.keySet()) {
+			logger.trace("[stopTasksForSite] Stor task " + taskMap.get(taskId));
+			stopTask(taskMap.get(taskId),true);
+		}
 	}
 
 
-	/**
-	 *
-	 * @param siteId
-	 * @return
-     */
-	public List<TaskRecord> getUserTRList(String siteId) {
+	/*---------------------------------------------------------------------------------------------
+	 *    Редактирование рассписания и параметров задачи.
+	 ---------------------------------------------------------------------------------------------*/
 
-		Site theSite = siteRepo.findOne(siteId);
-		List<TaskRecord> trList = getLastUserTR(siteId);
+	public BaseTask updateTaskSchedule(BaseTask task, Schedule schedule, List<TaskParam> inputParams, boolean abort) throws Throwable {
 
-		for( TaskNamesEnum taskNameEnum: TaskNamesEnum.values() ) {
-			if (taskNameEnum.isUserTask()) {
-				boolean found = false;
-				for (TaskRecord tRecord : trList) {
-					if (taskNameEnum.toString().equalsIgnoreCase(tRecord.getName())) {
-						found = true;
-						break;
+//		if ( schedule.getId() == null )
+//			throw new ExceptionInvalidArgument("New schedule object not allowed Schedule"+schedule);
+
+		CopyOnWriteArrayList<TaskParam>  inParams = null;
+		if ( inputParams != null ) {
+			inParams = new CopyOnWriteArrayList<>(inputParams);
+		}
+
+
+		BaseTask currentTask = getTaskById(task.getId());
+		logger.trace("[updateTaskSchedule] Update task "+currentTask+" schedule to " + schedule);
+
+		//Schedule oldSchedule = task.getSchedule();
+
+		ScheduleProcessing.isValidCron(schedule);
+		currentTask.getThisTaskProcess().cancel(abort);
+
+
+		Schedule curSchedule = currentTask.getSchedule();
+		curSchedule.setSeconds(schedule.getSeconds());
+		curSchedule.setMinute(schedule.getMinute());
+		curSchedule.setHour(schedule.getHour());
+		curSchedule.setDayOfMonth(schedule.getDayOfMonth());
+		curSchedule.setMonth(schedule.getMonth());
+		curSchedule.setDayOfWeek(schedule.getDayOfWeek());
+
+		if (inParams == null) {
+			if (curSchedule.getParams() != null) {
+				ArrayList<TaskParam>  tempParams = new ArrayList<>(schedule.getParams());
+				for (TaskParam param :tempParams) {
+					curSchedule.deleteParam(param.getName());
+				}
+			}
+		}
+		else {
+			//   Находим параметр которых нет в inputParams и удаляем параметр из текущего списка
+			//   если параметр присутствует то обновляем его значение
+			if (curSchedule.getParams() != null) {
+				for (TaskParam curParam : curSchedule.getParams()) {
+					boolean found = false;
+					for ( TaskParam inParam : inParams) {
+						if ( curParam.getName().equals(inParam.getName())) {
+							found = true;
+							curParam.setValue(inParam.getValue());
+						}
+					}
+					if ( ! found ) {
+						curSchedule.deleteParam(curParam.getName());
 					}
 				}
+			}
 
-				if (!found) {
-					TaskRecord ntr = new TaskRecord();
-					ntr.setName(taskNameEnum.toString());
-					ntr.setSiteBean(theSite);
-					trList.add(ntr);
+			//  Находим и добавляем новые параметры
+			for (TaskParam inParam : inParams) {
+				boolean found=false;
+				for (TaskParam curParam : curSchedule.getParams()) {
+					if (inParam.getName().equals(curParam.getName())) {
+						found = true;
+					}
+				}
+				if (! found ) {
+					curSchedule.addParam(new TaskParam(inParam.getName(),inParam.getValue(),inParam.getType()));
 				}
 			}
 		}
-		return trList;
-	}
 
 
-	/**
-	 *    Возвращает список последних задач с разными именами для сайта
-	 * @param siteId идентификатор сайта
-	 * @return
-     */
-	public List<TaskRecord> getLastUserTR(String siteId) {
-		//	   JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		//
-		//	   String SQLStr =  "SELECT tr.*  FROM task_records tr" +
-		//			   " INNER JOIN" +
-		//			   "    (SELECT name, MAX(startTime) AS MaxDateTime FROM task_records WHERE site = ? GROUP BY name) maxTasks " +
-		//			   " ON tr.name = maxTasks.name " +
-		//			   "    AND tr.startTime = maxTasks.MaxDateTime " +
-		//			   " WHERE tr.site = ?";
-		//
-		//	   List recordList = jdbcTemplate.query(SQLStr,
-		//			   new BeanPropertyRowMapper(TaskRecord.class),
-		//			   theSite.getId(),
-		//			   theSite.getId()
-		//	   );
+		curSchedule.setEnable(schedule.isEnable());
+		currentTask.setSchedule(curSchedule);
+		//logger.trace("[updateTaskSchedule] New tasks schedule =  "+currentTask.getSchedule());
 
-		JPAQuery<?> query = new JPAQuery<Void>(entityManager);
-		QTaskRecord qtr = QTaskRecord.taskRecord;
-		QTaskRecord qtr2 = new QTaskRecord("neighbor");
-
-		List<TaskRecord> recordsList = query.select(qtr).from(qtr)
-				   .leftJoin(qtr2)
-				   .on(qtr.name.eq(qtr2.name)
-						   .and(qtr.startTime.lt(qtr2.startTime))
-						   .and(qtr.siteBean.id.eq(siteId))
-				   )
-			   .where(qtr2.isNull(),qtr.siteBean.id.eq(siteId))
-			   .fetch();
-
-		ArrayList<TaskRecord> arrayTR = new ArrayList<>();
-		for (TaskRecord tr: recordsList) {
-		   if (TaskNamesEnum.valueOf(tr.getName()).isUserTask()) {
-			   arrayTR.add(tr);
-		   }
+		if ( curSchedule.isEnable() ) {
+			logger.trace("[updateTaskSchedule] Run again schedule =  "+currentTask.getSchedule());
+			runScheduled(currentTask);
 		}
-		return arrayTR;
+		return currentTask;
 	}
 
-
-
-
-
+	/*---------------------------------------------------------------------------------------------
+	 *    Лог задач
+	 ---------------------------------------------------------------------------------------------*/
 
 	/**
-	 *    Возвращает последную по вермени задачу tName для сайта siteId
-	 * @param siteId идентификатор сайта
-	 * @param tName  имя задачи
-     * @return запись из базы кди найдено дибо null
-     */
-	public TaskRecord getLastUserTR(String siteId, String tName) {
-
-		for ( TaskRecord tr : getLastUserTR(siteId) ) {
-			if ( tr.getName().equalsIgnoreCase(tName)) {
-				return tr;
-			}
-		}
-		return null;
-	}
-
-
-
-	
-	/**
-	 *   Возвращает лог задачи для сайта
-	 *   
-	 * @param siteId
-	 * @param taskName
+	 * Возвращает логи выполнения задания
+	 * @param taskId
+	 * @param limit
+	 * @param offset
 	 * @return
 	 */
-	public List<TaskRecord> getTaskLog(String siteId, String taskName, long limit, long offset) {
+	public List<TaskRecord> getTaskLog(String taskId, long limit, long offset) {
 
 		// http://www.querydsl.com/static/querydsl/3.2.3/reference/html/ch02.html#jpa_integration
 		JPAQuery<?> query = new JPAQuery<Void>(entityManager);
 
 		List<TaskRecord> recordList = query.select(QTaskRecord.taskRecord).from(QTaskRecord.taskRecord)
-				.where(QTaskRecord.taskRecord.siteBean.id.eq(siteId)
-						.and(QTaskRecord.taskRecord.name.eq(taskName))
-						)
+				.where(QTaskRecord.taskRecord.scheduleId.eq(taskId))
 				.orderBy(QTaskRecord.taskRecord.stopTime.desc())
 				.offset(offset)
 				.limit(limit)
 				.fetch();
 
 		return recordList;
+	}
+
+	public List<TaskRecord> getTaskLog(String taskId) {
+
+		logger.trace("[getTaskLog] Request all TaskRecords for taskId=" + (taskId!=null?taskId:"null"));
+		// http://www.querydsl.com/static/querydsl/3.2.3/reference/html/ch02.html#jpa_integration
+		JPAQuery<?> query = new JPAQuery<Void>(entityManager);
+
+		List<TaskRecord> recordList = query.select(QTaskRecord.taskRecord).from(QTaskRecord.taskRecord)
+				.where(QTaskRecord.taskRecord.scheduleId.eq(taskId))
+				.orderBy(QTaskRecord.taskRecord.stopTime.desc())
+				.fetch();
+
+		return recordList;
+	}
+
+
+	public TaskRecord getTaskLastLog(String taskId) {
+
+		logger.trace("[getTaskLastLog] Request last tasks status taskId=" + (taskId!=null?taskId:"null"));
+		// http://www.querydsl.com/static/querydsl/3.2.3/reference/html/ch02.html#jpa_integration
+		JPAQuery<?> query = new JPAQuery<Void>(entityManager);
+
+		List<TaskRecord> recordList = query.select(QTaskRecord.taskRecord).from(QTaskRecord.taskRecord)
+				.where(QTaskRecord.taskRecord.scheduleId.eq(taskId))
+				.orderBy(QTaskRecord.taskRecord.stopTime.desc())
+				.offset(0)
+				.limit(1)
+				.fetch();
+
+		if ( recordList != null ) {
+			return recordList.get(0);
+		}
+		return null;
 	}
 
 }

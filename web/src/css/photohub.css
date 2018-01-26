@@ -1,7 +1,7 @@
 .status-succ {
   font-family: 'GothamProMedium', arial, helvetica, sans-serif;
   font-weight: 400;
-  color: #499b16;
+  color: #49b156;
 }
 .status-err {
   font-family: 'GothamProMedium', arial, helvetica, sans-serif;
@@ -18,13 +18,51 @@
   font-weight: 400;
   color: #1a2484;
 }
+a:focus,
+a:hover {
+  color: #337ab7;
+}
+.highlight {
+  color: #337ab7;
+}
 .bold {
   font-family: 'GothamProMedium', arial, helvetica, sans-serif;
   font-weight: 400;
 }
-a:focus,
-a:hover {
-  color: #337ab7;
+.form-group-sm .save-edit {
+  line-height: 30px;
+}
+.code {
+  font-family: monospace, "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter";
+  font-size: 13px;
+  font-style: normal;
+  font-variant: normal;
+}
+.code-block {
+  border-radius: 7px;
+  border: solid 1px #e5e4e8;
+  -webkit-box-shadow: inset 0px 0px 15px 0px #d8dee6;
+  -moz-box-shadow: inset 0px 0px 15px 0px #d8dee6;
+  box-shadow: inset 0px 0px 15px 0px #d8dee6;
+  padding: 10px 15px 10px;
+  padding-bottom: 25px;
+  box-sizing: border-box;
+  background-color: #f6faff;
+  margin-left: -4px;
+  margin-right: -4px;
+}
+.code-block .code-block-body {
+  min-height: 110px;
+}
+.code-block .nowrap {
+  overflow-x: scroll;
+  padding-bottom: 5px;
+}
+.code-block .header {
+  padding-bottom: 5px;
+}
+.code-block a.link {
+  padding: 0;
 }
 .nav > li > a {
   text-shadow: none;
@@ -497,6 +535,9 @@ a.link .rotate0 {
   padding-top: 5px;
   padding-bottom: 5px;
 }
+.styled-header-4 {
+  border-bottom: 2px solid #C1D9F1;
+}
 .gmap-frame {
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 2px 3px 7px rgba(0, 0, 0, 0.2);
@@ -525,6 +566,9 @@ a.link .rotate0 {
   border: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
+.modal .modal-dialog.wide {
+  width: 750px;
+}
 .modal .modal-content {
   border-radius: 6px;
 }
@@ -539,6 +583,13 @@ a.link .rotate0 {
   position: static;
   overflow-x: hidden;
   overflow-y: auto;
+}
+.modal .modal-body .form-group .descr-xs {
+  font-size: 11px;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 5px;
+  font-style: italic;
 }
 .modal .modal-body.condensed {
   padding-bottom: 25px;
@@ -774,26 +825,47 @@ a.link .rotate0 {
 }
 .panel.panel-default .panel-body-row {
   clear: both;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
   padding-left: 0;
 }
 .panel.panel-default .panel-body-row .row-label {
-  font-family: 'GothamProRegular', arial, helvetica, sans-serif;
   font-size: 14px;
   width: 22%;
   float: left;
   box-sizing: border-box;
-  padding-top: 1px;
   padding-left: 10px;
   padding-right: 10px;
 }
 .panel.panel-default .panel-body-row .row-data {
-  width: auto;
   box-sizing: border-box;
   float: left;
   padding-left: 10px;
   padding-right: 10px;
+  padding-bottom: 10px;
+  width: 60%;
+}
+.panel.panel-default .panel-body-row .row-data.wide {
+  width: 70%;
+}
+.panel.panel-default .panel-body-row .row-data .code-block {
+  margin-top: 2px;
+}
+.panel.panel-default .panel-body-row .inline-cell {
+  white-space: nowrap;
+  padding-right: 10px;
+}
+.panel.panel-default .panel-body-row .inline-line {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.panel.panel-default .panel-body-row .subrow {
+  padding-bottom: 10px;
+}
+.panel.panel-default .panel-body-row .subrow .row-data:last-of-type {
+  padding-bottom: 0px;
+}
+.panel.panel-default .panel-body-row .subrow:last-of-type {
+  padding-bottom: 0px;
 }
 .panel.left-side-panel .panel-heading {
   font-family: 'GothamProMedium', arial, helvetica, sans-serif;
@@ -1028,6 +1100,40 @@ body.formpage {
   padding: 0 3px;
   overflow: visible;
   white-space: nowrap;
+}
+form .form-group-sm {
+  margin-bottom: 10px;
+}
+form .form-group-sm label {
+  line-height: 30px;
+  text-align: right;
+}
+form .form-group-sm .form-control {
+  font-size: 14px;
+}
+.form-horizontal .input-replce {
+  padding-top: 7px;
+}
+.form-horizontal .form-group .form-inline .form-group:first-of-type {
+  padding-left: 0px;
+}
+.form-horizontal .form-group .form-inline .form-group:last-of-type {
+  padding-right: 0px;
+}
+.form-horizontal .form-group .form-inline .form-group {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+.form-horizontal .form-group .form-inline .form-group .input-group:first-of-type {
+  padding-left: 0px;
+}
+.form-horizontal .form-group .form-inline + div {
+  float: left;
+}
+.form-horizontal .form-group .form-inline + span {
+  float: left;
+  line-height: 30px;
+  padding-right: 5px;
 }
 .infinite-scrollbar {
   background-color: #808080;

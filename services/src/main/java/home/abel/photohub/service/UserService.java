@@ -163,9 +163,9 @@ public class UserService {
 		User user = userRepository.findOne(userId);
 		if (user == null) {
 			throw new UsernameNotFoundException("user not found");
-		}	
+		}
 		deleteUser(user);
-	}	
+	}
 		
 	/******************************************************************
 	 * Return currently authenticated UserDetails

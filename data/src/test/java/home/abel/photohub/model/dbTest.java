@@ -1,10 +1,11 @@
 package home.abel.photohub.model;
 
 import com.querydsl.jpa.JPAExpressions;
-import com.querydsl.sql.SQLExpressions;
-import home.abel.photohub.model.ModelConstants;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,10 @@ import javax.sql.DataSource;
 import com.github.springtestdbunit.DbUnitTestExecutionListener;
 import com.github.springtestdbunit.annotation.DatabaseSetup;
 
+import org.dbunit.database.DatabaseConnection;
+import org.dbunit.database.IDatabaseConnection;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -30,7 +35,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -42,13 +46,8 @@ import org.springframework.util.Assert;
 import org.slf4j.Logger;
 
 import static com.querydsl.core.group.GroupBy.*;
-import com.querydsl.core.Tuple;
-import com.querydsl.core.group.Group;
-import com.querydsl.core.group.GroupBy;
+
 import com.querydsl.jpa.impl.JPAQuery;
-import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.querydsl.core.types.Predicate;
-import com.querydsl.core.types.Projections;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes=home.abel.photohub.model.dbTest.dbContextCfg.class)
@@ -86,7 +85,7 @@ public class dbTest {
 	private UserRepository userRepository;	
 	
 	@Autowired
-	private TaskRepository taskRepository;	
+	private TaskRecordRepository taskRecordRepository;
 	
 	@Autowired
 	private ScheduleRepository scheduleRepository;
@@ -146,13 +145,13 @@ public class dbTest {
     	
     	TaskRecord record = new TaskRecord();
     	theSite.addTaskRecord(record);
-    	record = taskRepository.save(record);
+    	record = taskRecordRepository.save(record);
     	assertThat(record.getId()).isNotNull();
     	String trId = record.getId();
     	
     	siteRepository.delete(theSite);
     	
-    	record = taskRepository.findOne(trId);
+    	record = taskRecordRepository.findOne(trId);
     	assertThat(record).isNull();    	
     	
 	}
@@ -228,6 +227,14 @@ public class dbTest {
     	sch.setMinute("7");
     	scheduleRepository.save(sch);
 
+    	TaskParam tp =  new TaskParam();
+    	tp.setName("PARAM1");
+		tp.setValue("VALUE1");
+//		List<TaskParam> params = new ArrayList<>();
+//		params.add(tp);
+    	sch.addParam(tp);
+		scheduleRepository.save(sch);
+
     	List<Schedule> schList = scheduleRepository.findBySiteIdAndTaskName(theSite.getId(),scheduleName);
     	assertThat(schList).hasSize(1);
     	assertThat(schList.get(0).getSite()).isEqualToComparingFieldByField(theSite);
@@ -243,24 +250,44 @@ public class dbTest {
     	assertThat(schList).hasSize(0);
     	
     }
-	 
-    
-    
-    
-    
-    @Test
+
+	@Test
+	@Transactional
+	public  void scheduleParamsTest()  throws Exception{
+
+		Schedule schedule = scheduleRepository.findOne("1");
+		assertThat(schedule.getParams()).hasSize(2);
+
+		TaskParam param1 =  schedule.getParam("PARAM1");
+
+		String param1Name = param1.getName();
+		schedule.deleteParam(param1Name);
+
+		scheduleRepository.save(schedule);
+
+		schedule = scheduleRepository.findOne("1");
+		assertThat(schedule.getParams()).hasSize(1);
+
+	}
+
+
+
+
+	@Test
     @Transactional
-    public  void usersTest() {
+    public  void usersTest()  throws Exception{
 		User user = addUser("admin", "admin");
     	logger.info("Add user admin");
     	
 		final BCryptPasswordEncoder pwEncoder = new BCryptPasswordEncoder();
 		user.setPassword(pwEncoder.encode("Just test password"));
 	  	logger.info("Set user password");		
-		userRepository.save(user);	
+		userRepository.save(user);
+
+		//dumpDB();
     }
    
-	private User addUser(String username, String password) {
+	private User addUser(String username, String password) throws Exception {
 		User user = new User();
 		user.setUsername(username);
 		user.setPassword(new BCryptPasswordEncoder().encode(password));
@@ -415,13 +442,17 @@ public class dbTest {
 //		GROUP BY home) groupedtt
 //		ON tt.home = groupedtt.home
 //		AND tt.datetime = groupedtt.MaxDateTime
+	}
 
+	private void dumpDB() throws Exception {
 
-
-
-
+		java.sql.Connection con = dataSource.getConnection();
+		IDatabaseConnection connection = new DatabaseConnection(con);
+		IDataSet fullDataSet = connection.createDataSet();
+		FlatXmlDataSet.write(fullDataSet, new FileOutputStream("/tmp/full-dataset.xml"));
 
 	}
+
 	@AfterClass
 	public static void afterClass() {
 

@@ -1,6 +1,5 @@
 package home.abel.photohub.service;
 
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +10,7 @@ import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import home.abel.photohub.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,13 +24,6 @@ import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.connector.prototype.SiteCredentialInt;
 import home.abel.photohub.connector.prototype.SitePropertyInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
-import home.abel.photohub.model.Node;
-import home.abel.photohub.model.QNode;
-import home.abel.photohub.model.Site;
-import home.abel.photohub.model.SiteProperty;
-import home.abel.photohub.model.TaskRecord;
-import home.abel.photohub.model.TaskRepository;
-import home.abel.photohub.tasks.TaskNamesEnum;
 
 
 @Service
@@ -47,10 +40,9 @@ public class SiteService {
 	
 	@Autowired
 	private home.abel.photohub.model.SiteRepository siteRepo;
-	
+
 	@Autowired
-	private TaskRepository taskRepo;
-	
+	private TaskQueueService taskQService;
 	
 	@Autowired
 	ThreadPoolTaskExecutor threadPoolTaskExecutor;
@@ -66,9 +58,7 @@ public class SiteService {
 	
 	@PersistenceContext
 	private EntityManager em;
-	
-	@Autowired
-	ScheduleService scheduleService;
+
 	
 	public  SiteService () {
 
@@ -509,28 +499,20 @@ public class SiteService {
 	/**
 	 * Remove Site from db.
 	 * And remove all objects related to this site from db.
-	 * @param theSite - the name of site to be removed
+	 * @param theSite - the site db object for site to be removed
 	 * @throws Exception 
 	 */
 	@Transactional
 	public void removeSite(Site theSite) throws Exception {
 		if ((theSite == null) || (theSite.getId() == null)) 
 			throw new ExceptionInternalError("Remove site. Parameter Site is null or has no id.");
-		
-		
+
 		//  Clean task records abs schedules
 		logger.trace("[SiteService.removeSite] Stop sheduled tasks.");
-		for (TaskNamesEnum tname: TaskNamesEnum.values()) {
-			if (tname.isUserTask() && tname.isScheduled()) {	
-				scheduleService.removeTask(theSite.getId(), tname);
-			}
-		}
-		
-		//   Remove this site tasks log
-		logger.trace("[SiteService.removeSite] Clear tasks log.");
-		List<TaskRecord> taskList = scheduleService.getLog(theSite.getId());
-		taskRepo.delete(taskList);
-		
+
+		//  Stop abd remove all tasks for tis site
+		taskQService.stopTasksForSite(theSite);
+
 		//   Remove sites photo object
 		cleanSite(theSite);
 		
@@ -560,7 +542,7 @@ public class SiteService {
 	/** 
 	 *   Remove sites content
 	 *   
-	 * @param theSite
+	 * @param siteId Site id in db
 	 * @throws Exception
 	 */
 	@Transactional
@@ -574,7 +556,7 @@ public class SiteService {
 	/**
 	 *    Remode sites content
 	 *    
-	 * @param theSite
+	 * @param theSite db site object
 	 * @throws Exception
 	 */		
 	@Transactional
@@ -592,86 +574,7 @@ public class SiteService {
 		}
 	}
 	
-	/*=====================================================================================
-	 * 
-	 *     TASK RECORDING
-	 * 
-	 =====================================================================================*/
-	
-	/**
-	 *    Добавляе запись о выполнении задания в базу
-	 * 
-	 * @param record
-	 */
-	 public TaskRecord addTaskRecord(Site theSite, TaskRecord record) {
 
-		 if (theSite != null ) {
-			 theSite.addTaskRecord(record);
-			  //siteRepo.save(theSite);
-		 }
-//		 else {
-//			 taskRepo.save(record);
-//		 }
-		 record = taskRepo.save(record);
-		 return record;
-	 }
-	 
-	 /**
-	  *    Сохраняем изменения в записи о задаче
-	  * @param record
-	  */
-	 public void updateTaskRecord(TaskRecord record) {
-			 taskRepo.save(record);
-	 } 
-	 
-	
-	
-	/*=====================================================================================
-	 * 
-	 *     SITE SCANNING
-	 * 
-	 =====================================================================================*/
-	
-	/**
-	 * Start site scanning with default callback
-	 * @param theSite
-	 * @throws Throwable 
-	 */
-//	public void scanSite(Site theSite) throws Throwable {
-//		SiteConnectorInt connector =  getOrLoadConnector(theSite);
-//		SiteScanTask scanner = new SiteScanTask(theSite, photoSvc, connector);
-//		scanner.doScann(connector.getRootObjects(), null);
-//	}
-	
-	/**
-	 * Start site scanning by asynchronously
-	 * @param siteId
-	 * @throws Exception 
-	 * @throws Throwable 
-	 */
-//	public FutureBaseTask scanSiteAsync(Site theSite) throws Exception {
-//		if (theSite == null ) {
-//			throw new ExceptionInternalError("Site parameter cannot be null.");
-//		} else if ( ! theSite.getConnectorState().equalsIgnoreCase("CONNECT")) {
-//			throw new ExceptionInvalidArgument("Site with ID="+theSite+" not connected.");
-//		} else if (theSite.getRoot() == null) {
-//			throw new ExceptionInvalidArgument("Site with ID="+theSite+" has not a root store path defined.");
-//		}
-//		SiteConnectorInt connector =  getOrLoadConnector(theSite);
-//		SiteScanTask scannerTask = new SiteScanTask(theSite, photoSvc, connector);
-//		return scannerTask;
-//	}
-//	
-//	public FutureBaseTask scanSiteAsync(String siteId) throws Exception {
-//		Site theSite = siteRepo.findOne(siteId);
-//		if (theSite == null ) {
-//			throw new ExceptionInvalidArgument("Site with ID="+siteId+" not found.");
-//		} 
-// 		return scanSiteAsync(theSite);
-//	}
-//	
-	
-	
 	/*=============================================================================================
 	 * 
 	 *    Couple Site processing utilities

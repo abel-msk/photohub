@@ -149,12 +149,6 @@ public class HeaderBuilderService {
      */
     public  void printReqHeaders(HttpServletRequest request, String[] hdrPrintList) {
 
-	    //logger.trace("Print request headers");
-
-        //origin - http://localhost:63342
-        //user-agent
-        //referer
-        //host
 
         if ( hdrPrintList != null)
             for ( String printheaderName :hdrPrintList) {

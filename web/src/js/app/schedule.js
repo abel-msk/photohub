@@ -62,16 +62,26 @@ define(["jquery","logger","moment"],
         var TKN_MIN = "-min-tkn";
 
 
+
+        var defaultOptions = {
+            'el': null,
+            'cronObj': null,
+            'display':true
+        };
+
+
+
         function schedFormHTML(schedObj) {
 
-            var htmlStr = "<div style='padding-top:15px'></div>"+
-                "<div class='text-right row-label'>"+
-                "    <span style='line-height: 30px'>Period</span>"+
-                "</div>"+
-                ""+
-                "<form class='row-data form-inline'>"+
+            var htmlStr =
+                //"<div style='padding-top:15px'></div>"+
+                // "<div class='text-right row-label'>"+
+                // "    <span style='line-height: 30px'>Period</span>"+
+                // "</div>"+
+                // ""+
+                //"<form class='row-data form-inline'>"+
                 "    <div class='form-group form-group-sm'>"+
-                "        <select  class='form-control' id='"+schedObj.id+PERIOD_SEL+"' style='font-size: inherit'>"+
+                "        <select  class='form-control' id='"+schedObj.id+PERIOD_SEL+"' >"+
                 "            <option value='0' selected='selected'>Disabled</option>"+
                 "            <option value='1'>Hourly</option>"+
                 "            <option value='2'>Daily</option>"+
@@ -80,10 +90,10 @@ define(["jquery","logger","moment"],
                 "        </select>"+
                 "    </div>"+
                 ""+
-                "    <span id='"+schedObj.id+TKN_START+"' class=''>Start at:</span>"+
+                "    <span id='"+schedObj.id+TKN_START+"' class=''>&nbsp;Start at:</span>"+
 
                 "    <div class='form-group form-group-sm'>"+
-                "        <select  class='form-control' id='"+schedObj.id+DAYWEEK_SEL+"' style='font-size: inherit'>"+
+                "        <select  class='form-control' id='"+schedObj.id+DAYWEEK_SEL+"'>"+
                 "            <option value='*' selected='selected'>*</option>"+
                 "            <option value='1'>Mon</option>"+
                 "            <option value='2'>Tue</option>"+
@@ -94,7 +104,7 @@ define(["jquery","logger","moment"],
                 "            <option value='7'>Sun</option>"+
                 "        </select>"+
 
-                "        <select  class='form-control' id='"+schedObj.id+DAY_SEL+"' style='font-size: inherit'>"+
+                "        <select  class='form-control' id='"+schedObj.id+DAY_SEL+"' >"+
                 "            <option value='*' selected='selected'>*</option>";
 
                 for (var i = 1; i < 32; i++) {
@@ -105,10 +115,10 @@ define(["jquery","logger","moment"],
                 "        </select>"+
                 "    </div>"+
 
-                "    <span id='"+schedObj.id+TKN_DAY+"' class=''>day </span>"+
+                "    <span id='"+schedObj.id+TKN_DAY+"' class=''>day</span>"+
                 "    <div class='form-group form-group-sm'>"+
                 "        <div class='input-group'>"+
-                "            <select  class='form-control ' id='"+schedObj.id+HOUR_SEL+"' style='font-size: inherit'>"+
+                "            <select  class='form-control ' id='"+schedObj.id+HOUR_SEL+"'>"+
                 "                <option value='*' selected='selected'>*</option>"+
                 "                <option value='1'>01</option>"+
                 "                <option value='2'>02</option>"+
@@ -138,8 +148,8 @@ define(["jquery","logger","moment"],
                 "        </div>"+
                 "        <span id='"+schedObj.id+TKN_HOUR+"' class=''>hour</span>"+
                 ""+
-                "        <div class='form-group'>"+
-                "            <select  class='form-control ' id='"+schedObj.id+MIN_SEL+"' style='font-size: inherit'>"+
+                "        <div class='input-group'>"+
+                "            <select  class='form-control ' id='"+schedObj.id+MIN_SEL+"'>"+
                 "                <option value='*' selected='selected'>*</option>"+
                 "                <option value='0'>00</option>"+
                 "                <option value='5'>05</option>"+
@@ -156,8 +166,8 @@ define(["jquery","logger","moment"],
                 "            </select>"+
                 "        </div>"+
                 "        <span id='"+schedObj.id+TKN_MIN+"' class=''>min</span>"+
-                "    </div>"+
-                "</form>";
+                "    </div>";
+                //"</form>";
 
             return htmlStr;
 
@@ -232,6 +242,7 @@ define(["jquery","logger","moment"],
         //
         //     Упрощенная выгрузка из колонки рег эксп
         //     выбираем репвые цифрф (до спей символов) и возвращаем
+        //
         //---------------------------------------------------------------------------
         function cronValidateSimple(value,key) {
             try {
@@ -251,41 +262,52 @@ define(["jquery","logger","moment"],
 
         //---------------------------------------------------------------------------
         //
-        //     CLASS CronShEdit - генерирует форму задания рассписания
+        //     CLASS ScheduleEdit - генерирует форму задания рассписания
         //     обрабатывает редактирование
         //     выдает cron крон рассписание на ее основе.
         //
         //---------------------------------------------------------------------------
+        function ScheduleEdit(options) {
+            try {
+                this.options = $.extend(true, {}, defaultOptions, options || {});
 
-        function CronShEdit(htmlElId,cronObj) {
-            this.cronObj = cronObj;
-            this.schedObj = this.cron2sched(cronObj);
+                this.cronObj = this.options.cronObj;
+                this.schedObj = this.cron2sched(this.cronObj);
 
-             //   Генерируем HTML
-            $("#"+htmlElId).prepend(schedFormHTML(this.schedObj));
+                if (this.options.display) {
+                    //   Генерируем HTML
+                    $("#" + this.options.el).prepend(schedFormHTML(this.schedObj));
+
+                    //    Set on change listeners
+
+                    $('#' + this.schedObj.id + PERIOD_SEL).on('change', {'caller': this}, function (event) {
+                        event.data.caller.readForm(event.data.caller.schedObj);
+                        event.data.caller.refreshForm(event.data.caller.schedObj);
+                    });
+
+                    $('#' + this.schedObj.id + DAY_SEL).on('change', {'caller': this}, function (event) {
+                        event.data.caller.schedObj = event.data.caller.readForm(event.data.caller.schedObj);
+                    });
+
+                    $('#' + this.schedObj.id + DAYWEEK_SEL).on('change', {'caller': this}, function (event) {
+                        event.data.caller.schedObj = event.data.caller.readForm(event.data.caller.schedObj);
+                    });
+                    $('#' + this.schedObj.id + HOUR_SEL).on('change', {'caller': this}, function (event) {
+                        event.data.caller.schedObj = event.data.caller.readForm(event.data.caller.schedObj);
+                    });
+                    $('#' + this.schedObj.id + MIN_SEL).on('change', {'caller': this}, function (event) {
+                        event.data.caller.schedObj = event.data.caller.readForm(event.data.caller.schedObj);
+                    });
 
 
-            //    Set on change listeners
-
-            $('#'+this.schedObj.id+PERIOD_SEL).on('change',{'caller':this},function(event) {
-                event.data.caller.readForm(event.data.caller.schedObj);
-                event.data.caller.refreshForm(event.data.caller.schedObj);
-                });
-            $('#'+this.schedObj.id+DAYWEEK_SEL).on('change',{'caller':this},function(event) {
-                event.data.caller.schedObj = event.data.caller.readForm(event.data.caller.schedObj);
-                });
-            $('#'+this.schedObj.id+HOUR_SEL).on('change',{'caller':this},function(event) {
-                event.data.caller.schedObj = event.data.caller.readForm(event.data.caller.schedObj);
-                });
-            $('#'+this.schedObj.id+MIN_SEL).on('change',{'caller':this},function(event) {
-                event.data.caller.schedObj = event.data.caller.readForm(event.data.caller.schedObj);
-                });
-
-            //    Actualize  visibility and values
-            this.refreshForm(this.schedObj);
-
+                    //    Actualize  visibility and values
+                    this.refreshForm(this.schedObj);
+                }
+            }
+            catch (e) {
+                logger.debug("[ScheduleEdit.constructor] Error: ",e);
+            }
         }
-
 
         //---------------------------------------------------------------------------
         //
@@ -302,55 +324,61 @@ define(["jquery","logger","moment"],
         //
         //---------------------------------------------------------------------------
 
-        CronShEdit.prototype.cron2sched = function(cronObj) {
+        ScheduleEdit.prototype.cron2sched = function(cronObj) {
+            try {
 
-            // если установлен dayOfWeek  то тип расписания  weekly = 4
-            // если установлен dayOfMonth то тип расписания  monthly = 3
-            // если установлен hour       то тип расписания  daily = 2
-            // если установлен min        то тип расписания  hourly = 1
-            // в противном случае считаем что рассписание не установлено
+                // если установлен dayOfWeek  то тип расписания  weekly = 3
+                // если установлен dayOfMonth то тип расписания  monthly = 4
+                // если установлен hour       то тип расписания  daily = 2
+                // если установлен min        то тип расписания  hourly = 1
+                // в противном случае считаем что рассписание не установлено
 
-            var schedObj = {
-                'id': cronObj.id,
-                'type':0,
-                'day':"*",
-                'dayWeek':'*',
-                'hour':"*",
-                'min':"*"
-            };
+                var schedObj = {
+                    'id': cronObj.id,
+                    'type': 0,
+                    'day': "*",
+                    'dayWeek': '*',
+                    'hour': "*",
+                    'min': "*"
+                };
 
-            if ( ! cronObj.enable ) return schedObj;
+                if (!cronObj.enable) return schedObj;
 
-            var tmpVar  = cronValidateSimple(cronObj.minute,"minute");
-            if (tmpVar) {
-                schedObj.type = 1;
-                schedObj.min = parseInt(tmpVar/5)*5;
-            }
-            else return schedObj;
+                var tmpVar = cronValidateSimple(cronObj.minute, "minute");
+                if (tmpVar) {
+                    schedObj.type = 1;
+                    schedObj.min = parseInt(tmpVar / 5) * 5;
+                }
+                else return schedObj;
 
-            tmpVar  = cronValidateSimple(cronObj.hour,"hour");
-            if (tmpVar) {
-                schedObj.type = 2
-                schedObj.min = tmpVar;
-            }
-            else return schedObj;
+                tmpVar = cronValidateSimple(cronObj.hour, "hour");
+                if (tmpVar) {
+                    schedObj.type = 2
+                    schedObj.hour = tmpVar;
+                }
+                else return schedObj;
 
-            tmpVar  = cronValidateSimple(cronObj.dayOfMonth,"dayOfMonth");
-            if (tmpVar) {
-                schedObj.type = 3
-                schedObj.day = tmpVar;
+
+                tmpVar = cronValidateSimple(cronObj.dayOfWeek, "dayOfWeek");
+                if (tmpVar) {
+                    schedObj.type = 3
+                    schedObj.dayWeek = tmpVar;
+                    return schedObj;
+                }
+
+                tmpVar = cronValidateSimple(cronObj.dayOfMonth, "dayOfMonth");
+                if (tmpVar) {
+                    schedObj.type = 4
+                    schedObj.day = tmpVar;
+                    return schedObj;
+                }
+
                 return schedObj;
             }
-            tmpVar  = cronValidateSimple(cronObj.dayOfWeek,"dayOfWeek");
-            if (tmpVar) {
-                schedObj.type = 4
-                schedObj.dayWeek = tmpVar;
-                return schedObj;
+            catch (e) {
+                logger.debug("[ScheduleEdit.cron2sched] Error: ",e);
             }
-            return schedObj;
         };
-
-
 
         //---------------------------------------------------------------------------
         //
@@ -358,39 +386,70 @@ define(["jquery","logger","moment"],
         //    правил и ограничений нашего типа рассписания schedule
         //
         //---------------------------------------------------------------------------
-        CronShEdit.prototype.getNextDate = function() {
-            //var schedObj = this.cron2sched(cronObj);
-            var nextDate = "";
+        ScheduleEdit.prototype.getNextDate = function() {
+            try {
+                //var schedObj = this.cron2sched(cronObj);
+                var nextDate = "";
 
+                switch (parseInt(this.schedObj.type)) {
+                    case 0:
+                        return "";
+                    case 1:    // Hourly
+                        nextDate = moment().startOf('hour').add(this.schedObj.min, 'm');
+                        if (moment().isAfter(nextDate)) {
+                            nextDate = nextDate.add(1, 'h');
+                        }
+                        break;
+                    case 2:    // Daily
+                        nextDate = moment().startOf('day').add(this.schedObj.hour, 'h').add(this.schedObj.min, 'm');
+                        if (moment().isAfter(nextDate)) {
+                            nextDate = nextDate.add(1, 'd');
+                        }
+                        break;
+                    case 3:    // Weekly
+                        nextDate = moment().startOf('week').add(this.schedObj.dayWeek, 'w').add(this.schedObj.hour, 'h').add(this.schedObj.min, 'm');
+                        if (moment().isAfter(nextDate)) {
+                            nextDate = nextDate.add(1, 'w');
+                        }
+                        break;
+                    case 4:    // Monthly
+                        nextDate = moment().startOf('month').add(this.schedObj.day, 'd').add(this.schedObj.hour, 'h').add(this.schedObj.min, 'm');
+                        if (moment().isAfter(nextDate)) {
+                            nextDate = nextDate.add(1, 'М');
+                        }
+                        break;
+                }
+                return nextDate.format('DD/MM/YYYY HH:mm');
+            }
+            catch (e) {
+                logger.debug("[ScheduleEdit.getNextDate] Error: ",e);
+            }
+        };
+
+        //---------------------------------------------------------------------------
+        //     Возвращает текущее значений рассписание в читабельном виде
+        //---------------------------------------------------------------------------
+        ScheduleEdit.prototype.sched2text = function() {
+
+            var retStr = "";
             switch (parseInt(this.schedObj.type)) {
-                case 0: return "";
+                case 0:
+                    retStr = "Disabled";
+                    break;
                 case 1:    // Hourly
-                    nextDate = moment().startOf('hour').add(this.schedObj.min,'m');
-                    if ( moment().isAfter(nextDate)) {
-                        nextDate = nextDate.add(1, 'h');
-                    }
+                    retStr ="Hourly, every "+this.schedObj.min+" min.";
                     break;
                 case 2:    // Daily
-                    nextDate = moment().startOf('day').add(this.schedObj.hour,'h').add(this.schedObj.min,'m');
-                    if ( moment().isAfter(nextDate)) {
-                        nextDate = nextDate.add(1, 'd');
-                    }
+                    retStr ="Every day, at " + this.schedObj.hour+":" +this.schedObj.min+" ";
                     break;
-                case 3:    // Monthly
-                    nextDate = moment().startOf('month').add(this.schedObj.day,'d').add(this.schedObj.hour,'h').add(this.schedObj.min,'m');
-                    if ( moment().isAfter(nextDate)) {
-                        nextDate = nextDate.add(1, 'М');
-                    }
+                case 3:    // Weekly
+                    retStr ="Every "+ moment().isoWeekday(parseInt(this.schedObj.dayWeek)).format("dddd") + ", at "+this.schedObj.hour+":" +this.schedObj.min+" ";
                     break;
-                case 4:    // Weekly
-                    nextDate = moment().startOf('week').add(this.schedObj.dayWeek,'w').add(this.schedObj.hour,'h').add(this.schedObj.min,'m');
-                    if ( moment().isAfter(nextDate)) {
-                        nextDate = nextDate.add(1, 'w');
-                    }
+                case 4:    // Monthly
+                    retStr ="Every "+ this.schedObj.day + "day of month , at "+this.schedObj.hour+":" +this.schedObj.min+" ";
+                    break;
             }
-            return nextDate.format('llll');
-
-
+            return retStr;
         };
 
         //---------------------------------------------------------------------------
@@ -398,18 +457,22 @@ define(["jquery","logger","moment"],
         //     Устанавливаем новый CronObj
         //
         //---------------------------------------------------------------------------
-        CronShEdit.prototype.setCron = function(cronObj) {
+        ScheduleEdit.prototype.setCron = function(cronObj) {
             this.cronObj = cronObj;
             this.schedObj = this.cron2sched(cronObj);
             this.refreshForm(this.schedObj);
         };
+
         //---------------------------------------------------------------------------
         //
         //     Возвращаем подготовденый (измененный если редактировали)  cronObj
         //
         //---------------------------------------------------------------------------
-        CronShEdit.prototype.getCron = function() {
-            return this.sched2cron(this.schedObj,this.cronObj);
+        ScheduleEdit.prototype.getCron = function(cronObj) {
+            if (!cronObj) {
+                cronObj = this.cronObj;
+            }
+            return this.sched2cron(this.schedObj,cronObj);
         };
 
         //---------------------------------------------------------------------------
@@ -417,7 +480,7 @@ define(["jquery","logger","moment"],
         //     Кновертируем  shedObj в cronObj
         //
         //---------------------------------------------------------------------------
-        CronShEdit.prototype.sched2cron = function(schedObj,cronObj) {
+        ScheduleEdit.prototype.sched2cron = function(schedObj,cronObj) {
             cronObj.seconds = '1';
             cronObj.month = "*";
             cronObj.enable = true;
@@ -427,34 +490,34 @@ define(["jquery","logger","moment"],
                 case 0:    // Disable
                     cronObj.seconds = "*";
                     cronObj.minute = "*";
-                    cronObj.hours = "*";
+                    cronObj.hour = "*";
                     cronObj.dayOfMonth = "*";
                     cronObj.dayOfWeek = "*";
                     cronObj.enable = false;
                     break;
                 case 1:    // Hourly
                     cronObj.minute = schedObj.min;
-                    cronObj.hours = "*";
+                    cronObj.hour = "*";
                     cronObj.dayOfMonth = "*";
                     cronObj.dayOfWeek = "*";
                     break;
                 case 2:    // Daily
                     cronObj.minute = schedObj.min;
-                    cronObj.hours = schedObj.hour;
+                    cronObj.hour = schedObj.hour;
                     cronObj.dayOfMonth =  "*";
                     cronObj.dayOfWeek =  "*";
                     break;
-                case 3:    // Monthly
+                case 3:    // Weekly
                     cronObj.minute = schedObj.min;
-                    cronObj.hours = schedObj.hour;
+                    cronObj.hour = schedObj.hour;
+                    cronObj.dayOfMonth = "*";
+                    cronObj.dayOfWeek = schedObj.dayWeek;
+                    break;
+                case 4:    // Monthly
+                    cronObj.minute = schedObj.min;
+                    cronObj.hour = schedObj.hour;
                     cronObj.dayOfMonth = schedObj.day;
                     cronObj.dayOfWeek = "*";
-                    break;
-                case 4:    // Weekly
-                    cronObj.minute = schedObj.min;
-                    cronObj.hours = schedObj.hour;
-                    cronObj.dayOfMonth = "*";
-                    cronObj.dayOfWeek = schedObj.day;
                     break;
             }
             return cronObj;
@@ -468,66 +531,76 @@ define(["jquery","logger","moment"],
         //
         //---------------------------------------------------------------------------
 
-        CronShEdit.prototype.refreshForm = function(schedObj) {
+        ScheduleEdit.prototype.refreshForm = function(schedObj) {
+            try {
+                $('#' + schedObj.id + PERIOD_SEL).val(schedObj.type);
+                // $('#'+schedObj.id+TKN_START).show();
+                // $('#'+schedObj.id+TKN_DAY).show();
 
-            $('#'+schedObj.id+PERIOD_SEL).val(schedObj.type);
-            // $('#'+schedObj.id+TKN_START).show();
-            // $('#'+schedObj.id+TKN_DAY).show();
+                switch (parseInt(schedObj.type)) {
 
-            switch (parseInt(schedObj.type)) {
-
-                case 0:    // Disable
-                    $('#'+schedObj.id+TKN_START).hide();
-                    $('#'+schedObj.id+TKN_DAY).hide();
-                    $('#'+schedObj.id+TKN_HOUR).hide();
-                    $('#'+schedObj.id+TKN_MIN).hide();
-                    $('#'+schedObj.id+DAYWEEK_SEL).hide();
-                    $('#'+schedObj.id+DAY_SEL).hide();
-                    $('#'+schedObj.id+HOUR_SEL).hide();
-                    $('#'+schedObj.id+MIN_SEL).hide();
-                    break;
-                case 1:    // Hourly
-                    $('#'+schedObj.id+TKN_START).show();
-                    $('#'+schedObj.id+TKN_DAY).hide();
-                    $('#'+schedObj.id+TKN_HOUR).hide();
-                    $('#'+schedObj.id+TKN_MIN).show();
-                    $('#'+schedObj.id+DAYWEEK_SEL).hide();
-                    $('#'+schedObj.id+DAY_SEL).hide();
-                    $('#'+schedObj.id+HOUR_SEL).hide();
-                    $('#'+schedObj.id+MIN_SEL).show().val(schedObj.min);
-                    break;
-                case 2:    // Daily
-                    $('#'+schedObj.id+TKN_START).show();
-                    $('#'+schedObj.id+TKN_DAY).hide();
-                    $('#'+schedObj.id+TKN_HOUR).show();
-                    $('#'+schedObj.id+TKN_MIN).show();
-                    $('#'+schedObj.id+DAYWEEK_SEL).hide();
-                    $('#'+schedObj.id+DAY_SEL).hide();
-                    $('#'+schedObj.id+HOUR_SEL).show().val(schedObj.hour);
-                    $('#'+schedObj.id+MIN_SEL).show().val(schedObj.min);
-                    break;
-                case 3:    // Monthly
-                    $('#'+schedObj.id+TKN_START).show();
-                    $('#'+schedObj.id+TKN_DAY).show();
-                    $('#'+schedObj.id+TKN_HOUR).show();
-                    $('#'+schedObj.id+TKN_MIN).show();
-                    $('#'+schedObj.id+DAYWEEK_SEL).hide();
-                    $('#'+schedObj.id+DAY_SEL).show().val(schedObj.day);
-                    $('#'+schedObj.id+HOUR_SEL).show().val(schedObj.hour);
-                    $('#'+schedObj.id+MIN_SEL).show().val(schedObj.min);
-                    break;
-                case 4:    // Weekly
-                    $('#'+schedObj.id+TKN_START).show();
-                    $('#'+schedObj.id+TKN_DAY).show();
-                    $('#'+schedObj.id+TKN_HOUR).show();
-                    $('#'+schedObj.id+TKN_MIN).show();
-                    $('#'+schedObj.id+DAYWEEK_SEL).show().val(schedObj.dayWeek);
-                    $('#'+schedObj.id+DAY_SEL).hide().hide();
-                    $('#'+schedObj.id+HOUR_SEL).show().val(schedObj.hour);
-                    $('#'+schedObj.id+MIN_SEL).show().val(schedObj.min);
-                    break;
+                    case 0:    // Disable
+                        $('#' + schedObj.id + TKN_START).hide();
+                        $('#' + schedObj.id + TKN_DAY).hide();
+                        $('#' + schedObj.id + TKN_HOUR).hide();
+                        $('#' + schedObj.id + TKN_MIN).hide();
+                        $('#' + schedObj.id + DAYWEEK_SEL).hide();
+                        $('#' + schedObj.id + DAY_SEL).hide();
+                        //$('#'+schedObj.id+HOUR_SEL).parent(".input-group").hide();
+                        $('#' + schedObj.id + HOUR_SEL).parent(".input-group").hide();
+                        $('#' + schedObj.id + MIN_SEL).hide();
+                        break;
+                    case 1:    // Hourly
+                        $('#' + schedObj.id + TKN_START).show();
+                        $('#' + schedObj.id + TKN_DAY).hide();
+                        $('#' + schedObj.id + TKN_HOUR).hide();
+                        $('#' + schedObj.id + TKN_MIN).show();
+                        $('#' + schedObj.id + DAYWEEK_SEL).parent(".form-group").hide();
+                        $('#' + schedObj.id + DAYWEEK_SEL).hide();
+                        $('#' + schedObj.id + DAY_SEL).hide();
+                        $('#' + schedObj.id + HOUR_SEL).parent(".input-group").hide();
+                        $('#' + schedObj.id + MIN_SEL).show().val(schedObj.min);
+                        break;
+                    case 2:    // Daily
+                        $('#' + schedObj.id + TKN_START).show();
+                        $('#' + schedObj.id + TKN_DAY).hide();
+                        $('#' + schedObj.id + TKN_HOUR).show();
+                        $('#' + schedObj.id + TKN_MIN).show();
+                        $('#' + schedObj.id + DAYWEEK_SEL).parent(".form-group").hide();
+                        $('#' + schedObj.id + DAYWEEK_SEL).hide();
+                        $('#' + schedObj.id + DAY_SEL).hide();
+                        $('#' + schedObj.id + HOUR_SEL).val(schedObj.hour).parent(".input-group").show();
+                        $('#' + schedObj.id + MIN_SEL).show().val(schedObj.min);
+                        break;
+                    case 3:    // Weekly
+                        $('#' + schedObj.id + TKN_START).show();
+                        $('#' + schedObj.id + TKN_DAY).show();
+                        $('#' + schedObj.id + TKN_HOUR).show();
+                        $('#' + schedObj.id + TKN_MIN).show();
+                        $('#' + schedObj.id + DAYWEEK_SEL).parent(".form-group").show();
+                        $('#' + schedObj.id + DAYWEEK_SEL).show().val(schedObj.dayWeek);
+                        $('#' + schedObj.id + DAY_SEL).hide().hide();
+                        $('#' + schedObj.id + HOUR_SEL).val(schedObj.hour).parent(".input-group").show();
+                        $('#' + schedObj.id + MIN_SEL).show().val(schedObj.min);
+                        break;
+                    case 4:    // Monthly
+                        $('#' + schedObj.id + TKN_START).show();
+                        $('#' + schedObj.id + TKN_DAY).show();
+                        $('#' + schedObj.id + TKN_HOUR).show();
+                        $('#' + schedObj.id + TKN_MIN).show();
+                        $('#' + schedObj.id + DAYWEEK_SEL).parent(".form-group").show();
+                        $('#' + schedObj.id + DAYWEEK_SEL).hide();
+                        $('#' + schedObj.id + DAY_SEL).show().val(schedObj.day);
+                        $('#' + schedObj.id + HOUR_SEL).val(schedObj.hour).parent(".input-group").show();
+                        $('#' + schedObj.id + MIN_SEL).show().val(schedObj.min);
+                        break;
+                }
+            }
+            catch (e) {
+                logger.debug("[ScheduleEdit.refreshForm] Error: ",e);
             }
         };
+
 
         //---------------------------------------------------------------------------
         //
@@ -535,17 +608,18 @@ define(["jquery","logger","moment"],
         //
         //---------------------------------------------------------------------------
 
-        CronShEdit.prototype.readForm = function(schedObj) {
+        ScheduleEdit.prototype.readForm = function(schedObj) {
 
-            schedObj.type = $('#'+schedObj.id+PERIOD_SEL).val();
-            schedObj.dayWeek = $('#'+schedObj.id+DAYWEEK_SEL).val();
-            schedObj.day = $('#'+schedObj.id+DAY_SEL).val();
-            schedObj.hour = $('#'+schedObj.id+HOUR_SEL).val();
-            schedObj.min = $('#'+schedObj.id+MIN_SEL).val();
-
+            if (this.options.display) {
+                schedObj.type = $('#' + schedObj.id + PERIOD_SEL).val();
+                schedObj.dayWeek = $('#' + schedObj.id + DAYWEEK_SEL).val();
+                schedObj.day = $('#' + schedObj.id + DAY_SEL).val();
+                schedObj.hour = $('#' + schedObj.id + HOUR_SEL).val();
+                schedObj.min = $('#' + schedObj.id + MIN_SEL).val();
+            }
             return schedObj;
 
         };
 
-    return CronShEdit;
+    return ScheduleEdit;
 });

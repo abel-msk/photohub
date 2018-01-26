@@ -2,16 +2,9 @@ package home.abel.photohub.model;
 
 import java.io.Serializable;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.TableGenerator;
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -33,7 +26,7 @@ public class Schedule implements Serializable {
 
 	public Schedule() {	
 	}
-	
+
 	@Id	
 	@Column(columnDefinition = "BIGINT") 
     @GeneratedValue(strategy=GenerationType.TABLE, generator="SchedSeqGenerator")	
@@ -42,9 +35,13 @@ public class Schedule implements Serializable {
 	@JsonIgnore
 	@ManyToOne
 	private Site site = null;
-	
+
+
 	private String taskName;
-	
+
+	@OneToMany(cascade = CascadeType.ALL,mappedBy="schedule",fetch = FetchType.LAZY, orphanRemoval = true)
+	private List<TaskParam> params = null;
+
 	private String seconds = "*"; 
 	private String minute = "*";     //0-59
 	private String hour = "*";       //0-23
@@ -117,7 +114,55 @@ public class Schedule implements Serializable {
 	public void setEnable(boolean enable) {this.enable = enable;}
 	
 	public String toString() {
-		return seconds + " " + minute + " " + hour + " " + dayOfMonth + " " + month + " " + dayOfWeek;
+		return  taskName+"(id="+id+"|en="+enable+"|s="+seconds + "|m=" + minute + "|h=" + hour + "|d=" + dayOfMonth + "|M=" + month + "|dW=" + dayOfWeek+")";
 	}
-	
+	public String toCronString() {
+		return  seconds + " " + minute + " " + hour + " " + dayOfMonth + " " + month + " " + dayOfWeek;
+	}
+
+	public List<TaskParam> getParams() {
+		return params;
+	}
+
+	public void setParams(List<TaskParam> params) {
+		this.params = params;
+	}
+
+
+	public TaskParam addParam(TaskParam theParam) {
+		if (getParams() == null) {
+			this.params = new ArrayList<TaskParam>();
+		}
+		getParams().add(theParam);
+		theParam.setSchedule(this);
+		return theParam;
+	}
+
+
+	public TaskParam  getParam(String paramName) {
+		TaskParam paramValue = null;
+		if (this.params != null) {
+			for (TaskParam param : params) {
+				if (param.getName().equalsIgnoreCase(paramName)) {
+					paramValue =  param;
+					break;
+				}
+			}
+		}
+		return paramValue;
+	}
+
+	public TaskParam deleteParam(String paramName) {
+
+		if (this.params != null) {
+			for (TaskParam param : params) {
+				if (param.getName().equalsIgnoreCase(paramName)) {
+					params.remove(param);
+					return param;
+				}
+			}
+		}
+		return null;
+	}
+
 }

@@ -22,7 +22,11 @@ define(["jquery","api","modalDialog","form/veList","logger"],function($,Api,Dial
 
         this.propForm = new VEList({
             'element':PROP_LIST_AREA,
-            'btnElement':PROP_EDIT_BTN
+            'btnElement':PROP_EDIT_BTN,
+            'html':'<div class="row panel-body-row">' +
+                '<span class="row-label text-right">{name}</span>' +
+                '<div id="{id}" class="col-md-8 col-sm-8 data-row"></div>' +
+                '</div>'
         });
 
         $(PROP_EDIT_BTN).off('click')
