@@ -291,8 +291,11 @@ public class TaskFactory {
 
 		logger.trace("[createTask] create Task=" + taskName + ", for Site=" + Queue.site2Id(theSite)+", with Schedule=" +theSchedule );
 
+		if ( theSchedule.getParams() == null) {
+			theSchedule.setParams(new ArrayList<>());
+		}
 
-		if ( getTasksDescr(taskName.toString()) != null ) {
+		if (getTasksDescr(taskName.toString()) != null) {
 			Map<String, String> paramsTemplate = getTasksDescr(taskName.toString()).getParams();
 			if (paramsTemplate != null) {
 				for (String tParamName : paramsTemplate.keySet()) {

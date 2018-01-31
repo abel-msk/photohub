@@ -51,7 +51,7 @@ ext {
     distsDirStr = distsDir.getAbsolutePath()
     distribDirStr = distsDir.getAbsolutePath()
 
-    interfaceDistrDir = "${project.rootDir}" + '/interface/build'
+    interfaceDistrDir = "${project.rootDir}" + '/web/build'
 }
 
 allprojects {

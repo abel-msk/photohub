@@ -310,9 +310,6 @@ public class PhotoServiceTest {
 		System.out.println("//---------------   Create schedule Task 1 ID="+task1);
 
 
-
-
-
 		BaseTask task2 = taskFactory.createTask(TaskNamesEnum.TNAME_EMPTY.toString(),
 				theSite.getId(),
 				"*/5",

@@ -165,14 +165,19 @@ public class PhotoService {
 			theParentNode = nodeRepo.findOne(QNode.node.id.eq(parentId));
 			if (theParentNode == null) throw new ExceptionInvalidArgument("Cannot find node with id="+parentId);
 		}
-		
-		if (siteId != null) {
-			theSite = siteRepo.findOne(QSite.site.id.eq(siteId));
-			if (theSite == null) throw new ExceptionInvalidArgument("Cannot find site with id="+parentId);
-		} 
-		else {
-			throw new ExceptionInvalidArgument("Site argument cannot be null");
+
+		theSite = siteService.getSite(siteId);
+		if ( theSite == null) {
+			throw new ExceptionInvalidArgument("Cannot find site with id="+parentId);
 		}
+
+//		if (siteId != null) {
+//			theSite = siteRepo.findOne(QSite.site.id.eq(siteId));
+//			if (theSite == null) throw new ExceptionInvalidArgument("Cannot find site with id="+parentId);
+//		}
+//		else {
+//			throw new ExceptionInvalidArgument("Site argument cannot be null");
+//		}
 
 		Photo thePhoto = new Photo(ModelConstants.PHOTO_FOLDER, name, descr, theSite);	
 		Node theNode = new Node(thePhoto,theParentNode);
@@ -346,7 +351,7 @@ public class PhotoService {
 							 null, siteId);
 				}
 			}
-			logger.trace("[addPhoto]  Lookup Site. Id="+ siteId==null?"null":siteId );		
+			logger.trace("[addPhoto]  Lookup Site. Id="+ (siteId==null?"null":siteId));
 			if (siteId != null) {
 				theSite = siteRepo.findOne(QSite.site.id.eq(siteId));
 				if (theSite == null) throw new ExceptionInvalidArgument("Cannot find site with id="+parentId);
@@ -465,6 +470,7 @@ public class PhotoService {
 	 * @param siteId
 	 * @return
 	 */
+	@Transactional
 	public Node addObjectFromSite(PhotoObjectInt onSiteObject, String parentId, String siteId) throws ExceptionInvalidArgument, ExceptionPhotoProcess {
 		Site theSite = null;
 		Node theParentNode = null;
@@ -473,14 +479,17 @@ public class PhotoService {
 			theParentNode = nodeRepo.findOne(QNode.node.id.eq(parentId));
 			if (theParentNode == null) throw new ExceptionInvalidArgument("Cannot find node with id="+parentId);
 		}
-		
-		if (siteId != null) {
-			theSite = siteRepo.findOne(QSite.site.id.eq(siteId));
-			if (theSite == null) throw new ExceptionInvalidArgument("Cannot find site with id="+siteId);
 
-		} else {
-			throw new ExceptionInvalidArgument("Site argument cannot be null");
+		theSite = siteService.getSite(siteId);
+		if (theSite == null) {
+			throw new ExceptionInvalidArgument("Cannot find site with id=" + siteId);
 		}
+//			theSite = siteRepo.findOne(QSite.site.id.eq(siteId));
+//			if (theSite == null) throw new ExceptionInvalidArgument("Cannot find site with id="+siteId);
+//
+//		} else {
+//			throw new ExceptionInvalidArgument("Site argument cannot be null");
+//		}
 				
 		Photo thePhoto = convertToPhoto(onSiteObject, null, null);
 		thePhoto.setSiteBean(theSite);
@@ -496,9 +505,9 @@ public class PhotoService {
 		thePhoto = photoRepo.save(thePhoto);
 		Node theNode = new Node(thePhoto,theParentNode);
 		theNode = nodeRepo.save(theNode);
-		logger.debug("Add object from site, type="+
+		logger.debug("[addObjectFromSite] Add photo object, type="+
 				(thePhoto.getType()==ModelConstants.PHOTO_FOLDER?"folder":"photo")
-				+", create and save node='"+theNode+"', photo='"+thePhoto+"', site='"+thePhoto.getSiteBean()+"'");
+				+",node='"+theNode+"', photo='"+thePhoto+"', site='"+thePhoto.getSiteBean()+"'");
 		
 		return theNode;
 		

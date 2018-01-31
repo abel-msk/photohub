@@ -1,9 +1,21 @@
 package home.abel.photohub.connector.google;
 
+
+/**
+ *
+ *
+ *
+ *
+ * Exampl  goole photoobject for video:
+ *       https://picasaweb.google.com/data/entry/api/user/106296620586818474851/albumid/1000000418474851/photoid/6495328651351429234?prettyprint=true
+ *
+ */
+
 import java.awt.Dimension;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -31,7 +43,11 @@ import home.abel.photohub.connector.prototype.SiteConnectorInt;
 public class GooglePhotoObject extends BasePhotoObj {
     final Logger logger = LoggerFactory.getLogger(GooglePhotoObject.class);
     protected final int[] predefinedSizes = {94, 110, 128, 200, 220, 288, 320, 400, 512, 576, 640, 720, 800, 912, 1024, 1152, 1280, 1440, 1600};
-    
+
+    public final String MEDIA_TYPE_IMAGE = "image";
+	public final String MEDIA_TYPE_VIDEO = "video";
+
+
 	protected GoogleSiteConnector googleConnector = null;
 	protected PicasawebService service = null;
 	protected String objectId = null;
@@ -50,7 +66,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 		this.objectId = combinedObjectId.substring(combinedObjectId.indexOf('.')+1);
 		this.service = connector.getPicasaService();
 		this.thePhotoEntryObject = loadObject(this.albumId, this.objectId,null);
-		mediaInfo = loadImageInfo(thePhotoEntryObject);
+		mediaInfo = loadMainImageInfo(this.thePhotoEntryObject);
 		mediaToObjectInfo(mediaInfo);
 	}
 	
@@ -62,7 +78,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 		this.id = this.albumId + "." + this.objectId;
 		this.service = connector.getPicasaService();
 		this.thePhotoEntryObject = loadObject(this.albumId, this.objectId,null);
-		mediaInfo = loadImageInfo(thePhotoEntryObject);
+		mediaInfo = loadMainImageInfo(this.thePhotoEntryObject);
 		mediaToObjectInfo(mediaInfo);
 	}
 
@@ -74,7 +90,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 		this.id = this.albumId + "." + this.objectId;
 		this.service = connector.getPicasaService();
 		this.thePhotoEntryObject = entry;
-		mediaInfo = loadImageInfo(this.thePhotoEntryObject);
+		mediaInfo = loadMainImageInfo(this.thePhotoEntryObject);
 		mediaToObjectInfo(mediaInfo);
 	}
 	
@@ -103,68 +119,129 @@ public class GooglePhotoObject extends BasePhotoObj {
 				"/photoid/"+objectId+"?imgmax="+imgmax
 				);	
 		
-		logger.trace("[Google.loadObject] Load entry from url : " + entryUrl
+		logger.trace("[Google.loadObject] Load entry from url : " + entryUrl + "?prettyprint=true"
 				+", requested size="+ (imgSize==null?"Undefined":imgSize)
 				);
 		
 		PhotoEntry gPhoto = null;
 		try {
 			gPhoto = service.getEntry(entryUrl, PhotoEntry.class);
-		} catch (ServiceForbiddenException fe) {
+
+		//ServiceForbiddenException
+		} catch (ServiceException  fe) {
+			logger.warn("[Google.loadObject] Get entry error. "+ fe.getMessage());
 			try { //   Try to reconnect
-				this.connector.doConnect(null);
+				//this.connector.doConnect(null);
+				this.googleConnector.doConnect(null);
+				service = this.googleConnector.getPicasaService();
 				gPhoto = service.getEntry(entryUrl, PhotoEntry.class);
 			} catch (Exception e) {
-				throw new IOException(e);
+				throw new IOException("Cannot reconnect.",e);
 			}
 		}
 		return gPhoto;
 	}
-		
+
+
+
 	/**
-	 * 
+	 *
+	 *  Выбираем главный для этого объекта меда файл и генерируем для него инстанс класса : GoogleMediaObject
+	 *
+	 * @param thePhotoEntryObject
+	 * @return
+	 */
+	public GoogleMediaObject loadMainImageInfo(PhotoEntry thePhotoEntryObject) {
+
+		GoogleMediaObject  mediaFile  =  loadImageInfo(thePhotoEntryObject,null);
+		this.name = thePhotoEntryObject.getMediaGroup().getTitle().getPlainTextContent();
+		this.descr = thePhotoEntryObject.getMediaGroup().getDescription().getPlainTextContent();
+
+		if ((mediaFile.getMimeType() != null) && ( mediaFile.getType() != EnumMediaType.UNKNOWN)){
+			setType(mediaFile.getMimeType().substring(0,mediaFile.getMimeType().indexOf("/")));
+		}
+		else {
+			setType("unknown");
+		}
+
+		logger.trace("[Google.loadImageInfo] Load photo info:"
+				+ " mime type="+mediaFile.getMimeType()
+				+ " width="+mediaFile.getWidth()
+				+ ", height="+mediaFile.getHeight()
+				+ ", size="+mediaFile.getSize()
+				+ ", URL="+ mediaFile.getPath()
+		);
+
+		return mediaFile;
+	}
+
+	/**
+	 *
+	 *   Выбираем гляаный для этого  объекта медаф файл и генерируем для него инстанс класса : GoogleMediaObject
 	 *   Загружаем даный по фотографии в GoogleMediaObject объект
 	 *   
 	 * @param thePhotoEntryObject
 	 */
-	public GoogleMediaObject loadImageInfo(PhotoEntry thePhotoEntryObject)  {
-		
-	    this.name = thePhotoEntryObject.getMediaGroup().getTitle().getPlainTextContent();
-	    this.descr = thePhotoEntryObject.getMediaGroup().getDescription().getPlainTextContent();
-		
+	public GoogleMediaObject loadImageInfo(PhotoEntry thePhotoEntryObject, String mimeBaseType)  {
+
+		boolean sizeObtained = false;
 		GoogleMediaObject mediaFile = new GoogleMediaObject(this.getConnector());
-		mediaFile.setType(EnumMediaType.IMAGE_NET);
+
 		try {
 			mediaFile.setHeight(Long.valueOf(thePhotoEntryObject.getHeight()).intValue());
 			mediaFile.setWidth(Long.valueOf(thePhotoEntryObject.getWidth()).intValue());
-			mediaFile.setSize(thePhotoEntryObject.getSize());  
-			
+			mediaFile.setSize(thePhotoEntryObject.getSize());
+			sizeObtained = true;
+
 		} catch  (ServiceException fe) {
 			logger.warn("[Google.loadImageInfo] Cannot obtain image info : " + thePhotoEntryObject.getId());
 		}
 
-		//   Get media access URL
-    	for (  MediaContent content : thePhotoEntryObject.getMediaGroup().getContents()) {
-    		if ( content.getMedium().equalsIgnoreCase("image")) {
-    			try {
-    				mediaFile.setMimeType(content.getType());
-    				mediaFile.setPath(content.getUrl().toString());
-    				//this.srcUrl = new URL(content.getUrl().toString());	
-    			}
-    			catch (Exception e) {
-    				logger.warn("[Google.loadImageInfo] Cannot convert image source url : " + content.getUrl().toString() );
-    			}
-    			break;
-    		}
-    	}
-	    
-	    logger.trace("[Google.loadImageInfo] Load photo info:"
-	    		+ " width="+mediaFile.getWidth()
-	    		+ ", height="+mediaFile.getHeight()
-	    		+ ", size="+mediaFile.getSize()
-	    		+ ", URL="+ mediaFile.getPath()
-	    		);
-	    
+
+		//   Если мы знаем оригинальное разрешение то ищем файл с таким же.
+		//   Иначе ищем файл с максимальным.
+
+		int maxWidth = 0;
+		int maxHeight = 0;
+
+		for (MediaContent content : thePhotoEntryObject.getMediaGroup().getContents()) {
+			if ((mimeBaseType == null) || (content.getType().startsWith(mimeBaseType))) {
+				try {
+					if (sizeObtained) {
+						if ((content.getWidth() == mediaFile.getWidth()) && (content.getHeight() == mediaFile.getHeight())) {
+							mediaFile.setMimeType(content.getType());
+							mediaFile.setPath(content.getUrl().toString());
+						}
+					} else {
+						if ((content.getWidth() > maxWidth) && (content.getHeight() >= maxHeight)) {
+							mediaFile.setMimeType(content.getType());
+							mediaFile.setPath(content.getUrl().toString());
+						}
+					}
+				} catch (Exception e1) {
+					logger.warn("[Google.loadImageInfo] Cannot convert image source url : " + content.getUrl().toString());
+				}
+			}
+		}
+
+		//  Define object type in all places
+		//  Сохраняем значение типа метиа контента во всех вариантах
+
+		if ( mediaFile.getMimeType() != null) {
+			if ( mediaFile.getMimeType().startsWith("video")) {
+				mediaFile.setType(EnumMediaType.VIDEO_NET);
+			}
+			else if (mediaFile.getMimeType().startsWith("image")) {
+				mediaFile.setType(EnumMediaType.IMAGE_NET);
+			}
+			else {
+				mediaFile.setType(EnumMediaType.UNKNOWN);
+			}
+		}
+		else {
+			mediaFile.setType(EnumMediaType.UNKNOWN);
+		}
+
 	    return mediaFile;    	
 	}
 	
@@ -202,7 +279,9 @@ public class GooglePhotoObject extends BasePhotoObj {
 	public PhotoEntry getPhotoEntry() throws Exception{
 		if (thePhotoEntryObject == null) {
 			thePhotoEntryObject = loadObject(this.albumId, this.objectId,null);
-			loadImageInfo(thePhotoEntryObject);	
+			if ( mediaInfo == null ) {
+				loadMainImageInfo(thePhotoEntryObject);
+			}
 		}
 		return thePhotoEntryObject;
 	}
@@ -245,14 +324,14 @@ public class GooglePhotoObject extends BasePhotoObj {
 	public PhotoMetadataInt getMeta() throws Exception {
 		ExifTags  metas = getPhotoEntry().getExifTags();
 		BasePhotoMetadata metaDataObject = new BasePhotoMetadata();
-		
+
 		for ( ExifTag tag: metas.getExifTags()) {
 			if (tag.hasValue() && (tag.getName() != null)) {
 				try {
 					metaDataObject.setMetaTag(tagNameToEnum(tag.getName()),tag.getValue());
-					logger.trace("[getMeta] Get meta tag name " +tag.getName()+", value="+ tag.getValue());
+					//logger.trace("[getMeta] Get meta tag name " +tag.getName()+", value="+ tag.getValue());
 				} catch (Exception e) {
-					logger.warn("[getMeta] Cannot get tag="+(tag.getName()!=null?tag.getName():"NULL"));
+					//logger.warn("[getMeta] Cannot get tag="+(tag.getName()!=null?tag.getName():"NULL"));
 				}
 			}
 		}
@@ -263,11 +342,19 @@ public class GooglePhotoObject extends BasePhotoObj {
     		metaDataObject.setLongitude(geoPoint.getLongitude());
     		logger.trace("Photo geoLocation - Latitude=" + geoPoint.getLatitude() + ", Longitude=" + geoPoint.getLongitude() );
     	}
+
+
+		// Для видео файла дата создания мы устанавливаем  как датау загрузки в гугл.
+		if (getType().toUpperCase().startsWith("VIDEO")) {
+			metaDataObject.setCreationTime(new Date(this.thePhotoEntryObject.getPublished().getValue()));
+		}
+
+
 		return (PhotoMetadataInt)metaDataObject;
 	}
 
 	
-	/**---------------------------------------------------------------------
+	/*---------------------------------------------------------------------
 	 * 
 	 *    Image source processing
 	 * 
@@ -284,18 +371,17 @@ public class GooglePhotoObject extends BasePhotoObj {
 		return false;
 	}
 
-	
 	@Override 
 	public PhotoMediaObjectInt getMedia(EnumMediaType requestType) throws IOException {
-		mediaInfo.setType(EnumMediaType.IMAGE_NET);
+		GoogleMediaObject mediaInfo =  loadImageInfo(this.thePhotoEntryObject,requestType.getBaseTypeAsStr());
 		return mediaInfo;
 	}
 
-	
-	/**---------------------------------------------------------------------
-	 * 
+
+	/*---------------------------------------------------------------------
+	 *
 	 *    Thumbnail processing
-	 * 
+	 *
 	 ---------------------------------------------------------------------*/
 	@Override
 	public boolean hasThumbnailSource() {
@@ -309,21 +395,28 @@ public class GooglePhotoObject extends BasePhotoObj {
 	public PhotoMediaObjectInt getThumbnail(Dimension dim) throws IOException {
 		MediaContent mediaItem = null;
 		GoogleMediaObject mediaFile = null;
-		
+//
 		try {
 			mediaItem = getMediaItem(dim);
-		
-		} catch (com.google.gdata.util.ServiceForbiddenException fe) {
-			//   Try to reconnect
-			try {
-				this.connector.doConnect(null);
-				mediaItem = getMediaItem(dim);
-			} catch (Exception e) {
-				throw new IOException(e);
-			}
-		} catch (Exception e) {
-			throw new IOException(e);
 		}
+		catch (Exception e) {
+			throw new IOException(e.getMessage(),e);
+		}
+		//		catch (ServiceException | com.google.gdata.util.ServiceForbiddenException fe)
+//		} catch (ServiceException fe) {
+//			//   Try to reconnect
+//			try {
+//				this.googleConnector.doConnect(null);
+//				service = this.googleConnector.getPicasaService();
+//				mediaItem = getMediaItem(dim);
+//			} catch (Exception e) {
+//				throw new IOException("Cannot reconnect.",e);
+//			}
+//		}
+//
+//		catch (Exception e) {
+//			throw new IOException("Cannot load thumbnail.",e);
+//		}
 
 		if ( mediaItem != null) {
 			mediaFile = new GoogleMediaObject(this.getConnector());
@@ -337,19 +430,19 @@ public class GooglePhotoObject extends BasePhotoObj {
 		return mediaFile;
 	}
 		
-	/**---------------------------------------------------------------------
+	/*---------------------------------------------------------------------
 	 * 
 	 *    Utils
 	 * 
 	 ---------------------------------------------------------------------*/
-	
+
 	/** 
 	 * Load smallest PhotoEntry statisfyed requested dim 
 	 * @param dim
 	 * @return  contnet item with clsest size
 	 * @throws Exception
 	 */
-	protected MediaContent getMediaItem(Dimension dim) throws Exception {		
+	protected MediaContent getMediaItem(Dimension dim) throws Exception {
 		int scaleSize = 0;
 		
 		if ( getHeight() < getWidth()) {
@@ -369,6 +462,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 		}
 		
 		PhotoEntry smallImageEntry = loadObject(this.albumId, this.objectId, Integer.toString(scaleSize));
+
 		for (MediaContent contentItem : smallImageEntry.getMediaGroup().getContents()) {
 			if ( contentItem.getMedium().equals("image")) {
 				logger.trace("[Google.getMediaItem] Retrive image as thumbnail w="+contentItem.getWidth()+"/h="+contentItem.getHeight()+" " +
@@ -414,7 +508,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 		this.albumId= thisId.substring(1,thisId.indexOf('.'));
 		this.objectId = thisId.substring(thisId.indexOf('.')+1);
 		this.thePhotoEntryObject = loadObject(this.albumId, this.objectId,null);
-		loadImageInfo(this.thePhotoEntryObject);
+		loadMainImageInfo(this.thePhotoEntryObject);
 
 		return  (PhotoMediaObjectInt)this;
 	}

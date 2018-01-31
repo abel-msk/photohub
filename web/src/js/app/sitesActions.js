@@ -118,7 +118,7 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
                 logger.debug("[action.init] siteId cannot be null");
                 throw Error();
             }
-            currentSiteId = this.options.siteId;
+            //currentSiteId = this.options.siteId;
             //getStatus(this.options.siteId);
 
         }
@@ -169,6 +169,7 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
         //------------------------------------------------------------------------
         action.prototype.doClean = function() {
 
+            var caller = this;
             if (! this.options.siteId) {
                 logger.debug("[action.doScan] siteId cannot be null");
                 throw Error();
@@ -180,7 +181,7 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
                 'text':  "Are you sure want to remove all sites local data ?",
                 'buttons': {
                     'OK': function () {
-                        Api.cleanSite(this.options.siteId,
+                        Api.cleanSite(caller.options.siteId,
                             //  on Success
                             function (response) {
                                 logger.debug("[action.doClean] rc=" + response.rc);

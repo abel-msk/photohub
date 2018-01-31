@@ -57,7 +57,7 @@ test {
 ext {
     //  Google API      //v1-rev13-1.20.0 //v1-rev512-1.22.0 //v1-rev512-1.22.0/
     googleAPIServicesVersion = 'v1-rev512-1.22.0'
-    googleAPIClientVersion = '1.22.0'
+    googleAPIClientVersion = '1.+'
 }
 
 repositories {

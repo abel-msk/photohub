@@ -177,11 +177,10 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 	@Override
 	public SiteCredentialInt doConnect(URL callback) throws Exception {
 		this.callback = callback;
-		//setState(SiteStatusEnum.DISCONNECT);
 		SiteBaseCredential excahgeCread = new SiteBaseCredential(this);
 		logger.trace("[Google.doConnect] callback="+callback);
 		
-		//  Normal connection
+		//  Первичная авторизация и получение токена
 		if (callback != null)  {
 			//   Save callback url
 			apiKeys.setListenerUri(callback == null?GoogleAPIKeys.getDefaultUri():callback.toURI());
@@ -193,48 +192,44 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			}
 			logger.trace("Listener url = "+apiKeys.getListenerUri().toString()+", Auth receive type =" + excahgeCread.getAuthReceiveType().toString());
 		}
-		
-		//  callback not present, try reconect
-		else { 
-			
-		}
-		googleCred = googleAuthLib.initAuthFlow(apiKeys);		
-		
+
+
+		googleCred = googleAuthLib.initAuthFlow(apiKeys);
+		logger.trace("[Google.doConnect] googleCred = "+ (googleCred==null?"null":"not null") +  ",  STATE="+ getState());
 
 		//
 		//   У нас уже есть авторизационный токен и сайт не помечен как Disconnect
 		//   Восстанавливаем соединение		
 		if ((googleCred != null) && (getState() != SiteStatusEnum.DISCONNECT)) {
 			try { 
-				getProfile(); //  Проверяем  сокдинение если соединения нет то вылетаем по Exception и уст. DISCONECT
+				getProfile(); //  Проверяем  соединение если соединения нет то вылетаем по Exception и уст. DISCONECT
 				setState(SiteStatusEnum.CONNECT);
-				//excahgeCread.setState(SiteStatusEnum.CONNECT);
-				picasaService = new PicasawebService(GoogleSiteConnector.APPLICATION_NAME);	    
-				picasaService.setOAuth2Credentials(googleCred);	
+				picasaService = new PicasawebService(GoogleSiteConnector.APPLICATION_NAME);
+				picasaService.setOAuth2Credentials(googleCred);
+
+
 			} 
 			catch (Exception e){
+				logger.debug("[Google.doConnect] Соединениея нет. (проверка по getProfile)");
 				setState(SiteStatusEnum.DISCONNECT);
-				//excahgeCread.setState(SiteStatusEnum.DISCONNECT);
 			}
 		}
 		logger.trace("[Google.doConnect] googleCred = "+ (googleCred==null?"null":"not null") +  ",  STATE="+ getState());
 		
 		//
-		//   Не удалось восстановить соединение или его еще нет.  Идем на ваторизацию.
+		//   Не удалось восстановить соединение или его еще нет.  Идем на ааторизацию.
 		//   
 		if ((googleCred == null) || (getState() == SiteStatusEnum.DISCONNECT)) {
 			// Prepage exchange creadential for state = AUTH_WAIT
 			// And full up ExcahgeCread ro show to user for obtain auth token from google.
 			
 			setState(SiteStatusEnum.AUTH_WAIT);
-			//excahgeCread.setState(SiteStatusEnum.AUTH_WAIT);
 			excahgeCread.setUserMessage("Use this URL for access to Google authentication page. Check access permition for this application and receive auth code token.");
 			excahgeCread.setUserLoginFormUrl(googleAuthLib.getAuthUrl());	
 			logger.trace("[Google.doConnect] Do Reconnect. User login Form URL="+googleAuthLib.getAuthUrl() + ",  STATE="+ getState());
 		}
 		
 		excahgeCread.setState(getState());
-		//setState(excahgeCread.getState());
 		return (SiteCredentialInt)excahgeCread;
 	}
 	
@@ -244,7 +239,7 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 	 * 
 	 *   Берет авторизацтоный токен из объекта (SiteCredentialInt cred)
 	 *   И пытается  с ним авторизоваться у гугла. Если все ок 
-	 *    - сохраняет докен в файле для будущей авто загрузки и авто авторизации. 
+	 *    - сохраняет токен в файле для будущей авто загрузки и авто авторизации.
 	 *    
 	 * @param cred
 	 * @return

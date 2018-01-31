@@ -108,8 +108,8 @@ public class ScanTask extends BaseTask {
 					}
 				}
 			} catch (Exception ex) {
-				logger.error(ex.getMessage(),ex);
-				throw new ExceptionTaskAbort("Task " + this +" Aborted. " + ex.getMessage(),ex);
+				//logger.error(ex.getMessage(),ex);
+				throw new ExceptionTaskAbort(ex.getMessage(),ex);
 			}
 		logger.debug("[ScanTask.doScann] Finished success.");
 		}

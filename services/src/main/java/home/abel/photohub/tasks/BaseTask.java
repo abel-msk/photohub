@@ -194,7 +194,9 @@ public class BaseTask implements Runnable, Serializable {
 		}
 		catch (Throwable ex) {
 			setStatus(TaskStatusEnum.ERR,ex.getMessage());
-			throw new ExceptionTaskAbort("Task "+this+". Execution aborted due to error="+ex.getMessage());
+			String errStr = "Task "+this+". Execution aborted due to error="+ex.getMessage();
+			logger.error(errStr,ex);
+			throw new ExceptionTaskAbort(errStr,ex);
 		}
 		finally {
 			//logger.debug("[BaseTask.run] Execution completed.");

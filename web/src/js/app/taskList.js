@@ -417,6 +417,9 @@ define(["jquery","api","modalDialog","utils","logger","taskEdit","schedule","for
                 //statusColor = "status-succ";
                 statusColor = "highlight";
                 }
+            else if (status == "RUN") {
+                statusColor = "status-succ";
+            }
 
             //inline-descr
             $("#"+TASK_BLOCK+task.id+" #"+SCHED_TXT+task.id).text(scheduleObj.sched2text());
@@ -424,7 +427,9 @@ define(["jquery","api","modalDialog","utils","logger","taskEdit","schedule","for
 
             $("#"+TASK_BLOCK+task.id+" #"+DESCR_TXT+task.id).text(task.description);
             $("#"+TASK_BLOCK+task.id+" #"+LAST_PTR+task.id).addClass(statusColor);
-            $("#"+TASK_BLOCK+task.id+" #"+LAST_TXT+task.id).text(dateStr);
+            if ( task.taskRecord.stopTime ) {
+                $("#" + TASK_BLOCK + task.id + " #" + LAST_TXT + task.id).text(dateStr);
+            }
 
             $("#"+TASK_BLOCK+task.id+" #"+LOG_LINE+task.id).text(task.taskRecord.message);
 
@@ -445,7 +450,15 @@ define(["jquery","api","modalDialog","utils","logger","taskEdit","schedule","for
                     output.push('&nbsp;');
                 }
             });
-            $("#"+PARAM_PANEL+task.id).html(output.join(" "));
+
+            if ( output.length > 0 ) {
+                $("#" + PARAM_PANEL + task.id).html(output.join(" "));
+            }
+            else {
+                $("#"+PARAM_PANEL+task.id).html('&nbsp;');
+
+            }
+
         };
 
         return SitesTask;

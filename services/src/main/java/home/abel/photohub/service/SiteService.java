@@ -108,11 +108,14 @@ public class SiteService {
 	 * @return
 	 */
 	public Site getSite(String siteId){
-		Site theSite = siteRepo.findOne(siteId);
-		logger.debug("Get site "+ theSite +
-				", type=" + theSite.getConnectorType() +
-				", root=" + theSite.getRoot()
-				);
+		Site theSite = null;
+		if ( siteId != null ) {
+			theSite = siteRepo.findOne(siteId);
+//		logger.debug("Get site "+ theSite +
+//				", type=" + theSite.getConnectorType() +
+//				", root=" + theSite.getRoot()
+//				);
+		}
 		return theSite;
 	}
 

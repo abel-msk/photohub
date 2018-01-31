@@ -208,6 +208,7 @@ public class GoogleOAuth2 {
 //    		//  Has google user credential
 //    		//  try to connect for check actuality
 //    	}
+
     	  	
     	return this.credential;
     }

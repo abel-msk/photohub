@@ -49,7 +49,7 @@ public class Schedule implements Serializable {
 	private String month = "*";      //1-12
 	private String dayOfWeek= "*";   //0-6
 	private boolean enable = false;
-	
+	private String userDescr = "";
 
 	public String getId() {
 		return id;
@@ -112,6 +112,14 @@ public class Schedule implements Serializable {
 	}
 	public boolean isEnable() { return enable; }
 	public void setEnable(boolean enable) {this.enable = enable;}
+
+	public String getUserDescr() {
+		return userDescr;
+	}
+
+	public void setUserDescr(String userDescr) {
+		this.userDescr = userDescr;
+	}
 	
 	public String toString() {
 		return  taskName+"(id="+id+"|en="+enable+"|s="+seconds + "|m=" + minute + "|h=" + hour + "|d=" + dayOfMonth + "|M=" + month + "|dW=" + dayOfWeek+")";
