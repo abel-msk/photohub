@@ -36,11 +36,11 @@
 
  */
 
-define(["jquery","scroller/domUtils","logger","utils"],function($, DomUtils, logger, utils) {
+define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) {
     "use strict";
 
 
-    var DEBUG = true;
+    var DEBUG = false;
     var TRACE = false;
     var DEBUG_ITEM = '';
 
@@ -148,6 +148,26 @@ define(["jquery","scroller/domUtils","logger","utils"],function($, DomUtils, log
 
     //------------------------------------------------------------------------------------------
     //   Возвращает масив всех объектов добавленных в этот ряд.
+    //   Аозвращает масив объектов.
+    //   [
+    //       {
+    //             id
+    //             count     - зщзиция элемента от начала страницы
+    //             min       -  минимальная ширина объекта, пересчитано в процессе добавления
+    //             max       -  максивальная ширина объекта, пересчитано в процессе добавления
+    //             view      -  показывать или нет
+    //             mimeType  - image type
+    //             url       - url for load thumb image
+    //             height    - thumb height
+    //             width     - thumb width
+    //             aspect    -  aspect
+    //             drawWidth  -   Ширина которая будет установлена при отрисовке объекта (назначается при заполнении всего ряда)
+    //             drawHeight -   Высота которая будет установлена при отрисовке объекта. Выбирается единой для всего ряда.
+    // }
+    //       ...
+    //    ]
+
+
     //------------------------------------------------------------------------------------------
     Row.prototype.getRowObjects = function () {
         return this.rowObjects;
@@ -157,6 +177,20 @@ define(["jquery","scroller/domUtils","logger","utils"],function($, DomUtils, log
     //    Добавляем обект к текущему ряду.
     //    Возвращаем true если удалось добавить (влезло)
     //    иначе возвращаем false и не добавляем.
+    //
+    //    object  {
+    //             id
+    //             count     - зщзиция элемента от начала страницы
+    //             min
+    //             max
+    //             view      -  показывать или нет
+    //             mimeType  - image type
+    //             url       - url for load thumb image
+    //             height    - thumb height
+    //             width     - thumb width
+    //             aspect    -  aspect
+    //         }
+    //
     //------------------------------------------------------------------------------------------
     Row.prototype.append = function (object) {
         if (this.rowFull) return false;
@@ -319,6 +353,11 @@ define(["jquery","scroller/domUtils","logger","utils"],function($, DomUtils, log
                 this.rowObjects[i].element = this.createImgFrameEl(itemData);
                 rowFrame.appendChild(this.rowObjects[i].element);
 
+                var event = this.startEvent(this.rowObjects[i].element,itemData);
+                //rowFrame.dispatchEvent(event);
+                //document.body.dispatchEvent(event);
+
+
                 realRowHeight = Math.max(realRowHeight,parseInt(itemData.frameHeight));
                 curLeftPos += parseInt(itemData.frameWidth);
             }
@@ -377,6 +416,30 @@ define(["jquery","scroller/domUtils","logger","utils"],function($, DomUtils, log
         imgElement.innerHTML = strHTML;
         return imgElement;
     };
+
+
+    //------------------------------------------------------------------------------------------
+    //
+    //     Generate custom vent
+    //     insert photo_image_id
+    //     dispatch bubbling event from image-frame
+    //
+    //------------------------------------------------------------------------------------------
+    Row.prototype.startEvent = function(el,object) {
+
+        DEBUG && logger.debug("[Row.startEvent] dispatch event. id="+object.item.id);
+
+        var event = new CustomEvent("photorendered", {
+            bubbles: true,
+            cancelable: true,
+            detail: { 'id': object.item.id, 'element':object.item.element}
+        });
+
+        document.body.dispatchEvent(event);
+        //object.item.element.dispatchEvent(event);
+        return event;
+    };
+
 
     //------------------------------------------------------------------------------------------
     //

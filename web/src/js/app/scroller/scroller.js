@@ -146,6 +146,8 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                 //this.insertAtFirst(page.getElement());
                 var removedPage = Abstract.prototype.prepend.apply(this,[{'element': page.getElement(), 'data': page},true]);
 
+
+
                 DEBUG && logger.debug("[Scroller.prepend]  New page id=" + newPageId
                     + ", limit="+this.loadedPages[newPageId].limit
                     + ", offset="+options.offset
@@ -297,9 +299,9 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
         //
         //    _onScroll
         //    Вычисляем позицию центар видимой области в терминах смещения скролируемого документа
-        //    и ищейм врейм в которую она попадает.
-        //    ссылку на  объект для фрейм сохраняем для последующего возврата.
-        //    Вызывается как калбфесо для onScrollBefore
+        //    и ищейм фрейм в которую она попадает.
+        //    ссылку на  объект для фрейма сохраняем для последующего возврата.
+        //    Вызывается как callback для события onScrollBefore
         //
         //------------------------------------------------------------------------------------------------
         Scroller.prototype.onScrollBefore = function() {
@@ -332,6 +334,126 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
             catch (e) {
                 logger.debug("[Scroller.onScrollBefore] Error ",e);
             }
+        };
+
+        //------------------------------------------------------------------------------------------------
+        //
+        //    removeItem
+        //
+        //    При удаленииобъекта надо указать номер страницы и id объекта на странице
+        //    если номер страници  раньше чем первая видимая то сдвигаем все страницы вверх на 1 позицию
+        //    (изменяем offset)
+        //    Если объект на видимой странице, находим страницу с объектом,  вырезаем объект и изменяем размер страницы.
+        //    во всех последующие страницы сдвигаем на 1 (изменяем offset)
+        //
+        //    Параметры:
+        //        pageCount - порядковый номер страницы
+        //        itemId    - ID объекта (не порядковый номер)
+        //
+        //
+        //
+        //------------------------------------------------------------------------------------------------
+        Scroller.prototype.removeItem = function(itemId,pageId) {
+            try {
+                if (this._isBeforeViewed(pageId)) {
+                    this._shiftViewedPages(1);
+                    DEBUG && logger.debug("[Scroller.removeItem] Item=" + itemId + ", pageId=" + pageId + "  before all viewed page. Shift viewed.");
+                }
+                else if (!this._isAfterViewed(pageId)) {
+                    var page = this._getViewedPageById(pageId);
+                    var page = this._getViewedPageById(pageId);
+                    if (page) {
+                        page.removeItem(itemId);
+                        page.redraw();
+                    }
+                    else {
+                        logger.debug("[Scroller.removeItem] Cannot find page with ID=" + pageId, this.viewSlots);
+                        throw new Error("[Scroller.removeItem] Problems with pages counting. Page with ID=" + pageId);
+                    }
+                }
+            }
+            catch (e) {
+                    logger.trace("[Scroller.removeItem] Error:",e);
+            }
+        };
+
+        //------------------------------------------------------------------------------------------------
+        //
+        //   removePageItems
+        //
+        //   Удяляет список обектов из указанной страницы
+        //   Параметры:
+        //       itemsAr
+        //       [
+        //           ID_1,
+        //           ID_2,
+        //           ...
+        //       ]
+        //
+        //   ID_X -   image object id.
+        //
+        //------------------------------------------------------------------------------------------------
+        Scroller.prototype.removePageItems = function(itemsAr,pageId) {
+            try {
+                if (this._isBeforeViewed(pageId)) {
+                    this._shiftViewedPages(itemsAr.length);
+                    DEBUG && logger.debug("[Scroller.removePageItems] Shift by " + itemsAr.length + " items from non viewed page =" + pageId);
+                }
+                else if (!this._isAfterViewed(pageId)) {
+                    var page = this._getViewedPageById(pageId);
+                    if (page) {
+                        for (var item in itemsAr) {
+                            page.removeItem(itemsAr[item]);
+                        }
+                        DEBUG && logger.debug("[Scroller.removePageItems] Remove " + itemsAr.length + " items from viewed page =" + pageId);
+                        page.redraw();
+                    }
+                }
+            }
+            catch (e) {
+                logger.trace("[Scroller.removePageItems] Error:",e.stack);
+            }
+        };
+
+        //------------------------------------------------------------------------------------------------
+        //
+        //   Перерисовываем указанную станицу, если она звгружена
+        //
+        //------------------------------------------------------------------------------------------------
+
+        Scroller.prototype.redraw = function(pageId) {
+            this._getViewedPageById(pageId).redraw();
+        };
+
+        //------------------------------------------------------------------------------------------------
+        //
+        //------------------------------------------------------------------------------------------------
+
+        Scroller.prototype._isBeforeViewed = function(pageId) {
+            return parseInt(pageId) < parseInt(this.getFirstViewed().data.getId());
+        };
+
+        Scroller.prototype._isAfterViewed = function(pageId) {
+           return  parseInt(pageId) > parseInt(this.getLastViewed().data.getId());
+        };
+
+        Scroller.prototype._shiftViewedPages = function(delta) {
+            var ar = this.viewSlots.getArray();
+            for (var i = 0; i < ar.length; i++) {
+                if ( ar[i]) {
+                    ar[i].data.shiftPage(delta);
+                }
+            }
+        };
+
+        Scroller.prototype._getViewedPageById = function(pageId) {
+            var ar = this.viewSlots.getArray();
+            for (var i = 0; i < ar.length; i++) {
+                if (ar[i] && (ar[i].data.getId() === pageId)) {
+                    return ar[i].data;
+                }
+            }
+            return null;
         };
 
         //------------------------------------------------------------------------------------------------

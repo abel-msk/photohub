@@ -133,5 +133,22 @@ define(["jquery","logger","moment"],function ($,logger,moment) {
         return null;
     };
 
+
+    //------------------------------------------------------------------------------
+    //
+    //    Сканирует дерево DOM объекта от листа  помеченного элементом 'element'
+    //    к корню до момента когда найдется тег с классом  'className'
+    //
+    //    Возвращает найденный элемент либо   null  если сканирование поднялось до тега "body"
+    //
+    utilsObj.getParent = function(element,className) {
+        var res = element;
+        while((! res.classList.contains(className)) && (res.tagName != "body")) {
+            res = res.parentElement;
+        }
+        return res;
+    };
+
+
     return  utilsObj;
 });

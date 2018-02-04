@@ -124,6 +124,54 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
             );
         };
 
+        //--------------------------------------------------------------------------
+        //
+        //   Delete photo items
+        //
+        //     itemObject = {
+        //         pageOffset -   порядковы номер первой фотки на странице относительно общего начала списка при текущем фильтре
+        //         pageLimit  -   к-во фотографий на странице
+        //         pageId     -   id  страницы  (назначается во время отрисовки)
+        //         id         -   id  фотографии в  DB
+        //         pos        -   порядковый номер фотографии на странице
+        //     }
+        //
+        //   Params:
+        //       itemArray - is an object where each method return of itemObject where method name  id the ID of itemObject
+        //--------------------------------------------------------------------------
+
+        FilteredList.prototype.removeItems = function(itemArray) {
+
+            var sortedIndex = Object.keys(itemArray).sort(
+                function(a,b) {
+                    return itemArray[a].pageId - itemArray[b].pageId;
+                });
+            var curPage = -1;
+            var curPageItemsAR = [];
+
+            for (var i = 0; i < sortedIndex.length; i++) {
+                var pgId = itemArray[sortedIndex[i]].pageId;
+                if (pgId !== curPage ) {
+                    if (curPage >= 0  ) { //close array and start delete from one page.
+                        this.scroller.removePageItems(curPageItemsAR,curPage);
+                        curPageItemsAR = [];
+                    }
+                    curPage = pgId;
+                    curPageItemsAR.push(itemArray[sortedIndex[i]].id);
+                }
+                else {
+                    curPageItemsAR.push(itemArray[sortedIndex[i]].id);
+                }
+            }
+
+            // process last page
+            if ( curPageItemsAR.length > 0 ) {
+                this.scroller.removePageItems(curPageItemsAR,curPage);
+            }
+        };
+
+
+
         //------------------------------------------------------------------
         //
         //   destroy
@@ -132,7 +180,6 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
         FilteredList.prototype.destroy = function() {
             this.scroller.destroy();
         };
-
 
         return FilteredList;
     });

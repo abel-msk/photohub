@@ -27,7 +27,7 @@ define(["scroller/domUtils","logger"],function (DomUtils, logger) {
     }
 
     SlotsArray.prototype.length = function() {
-        return  this.LastIndex;
+        return  this.LastIndex + 1;
     };
 
     SlotsArray.prototype.append = function(object) {

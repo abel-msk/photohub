@@ -57,8 +57,8 @@
 
 
 define(["jquery","login","modalDialog","api","menu","filter",
-        "imageInfo","logger","upload","utils","viewImgLoader","bootstrap"],
-    function ($,Login,Dialog,api,Menu,Filter,ImageInfo,logger,Upload,Utils,ViewImgLoader) {
+        "imageInfo","logger","upload","utils","viewImgLoader","itemSelection","bootstrap"],
+    function ($,Login,Dialog,api,Menu,Filter,ImageInfo,logger,Upload,Utils,ViewImgLoader,ItemSelection) {
 
     function _getParent(element,className) {
         var res = element;
@@ -72,12 +72,14 @@ define(["jquery","login","modalDialog","api","menu","filter",
         console.log("APP START");
         "use strict";
 
+        var itemSelection = new  ItemSelection();
+
         var MENU_SELECTION = 'selection-submenu';
         var MENU_BASE = 'base-submenu';
         var MENU_FILTER = "filter-submenu";
         var SCROLLED_CATALOG = 'scroller-catalog';
         var UPLOAD_DIALOG_BTN = 'upload-panel';
-        var selectedItems = [];
+        //var selectedItems = [];
         var filter = null;
 
         var menu = new Menu(
@@ -91,12 +93,30 @@ define(["jquery","login","modalDialog","api","menu","filter",
             }
         );
 
-        $("body").on("menu.close",function(event,menuname) {
-            if ( menuname === MENU_SELECTION ) {
-                selectedItems = [];
-                $('.selected').toggleClass("selected", false);
-            }
-        });
+        $("body")
+            .off("menu.close")
+            .on("menu.close",function(event,menuname) {
+                if ( menuname === MENU_SELECTION ) {
+                    itemSelection.clean();
+                    $('.selected').toggleClass("selected", false);
+                }
+            })
+
+            .off("photorendered")
+            .on("photorendered",function(event) {
+
+                //logger.debug("[main.renderSelected] Got event for object for id="+event.detail.id+" event=",event);
+
+                renderSelected(event.detail.id,event.detail.element);
+            })
+            .off("click","#del-selected")
+            .on("click","#del-selected", function(event){
+                //logger.debug("[main.del-selected] Got event delete selected");
+                removeSelected();
+            });
+
+        ;
+
 
         var uploader = new Upload({
             'dialogId': UPLOAD_DIALOG_BTN,
@@ -138,18 +158,21 @@ define(["jquery","login","modalDialog","api","menu","filter",
         //   Image selection processing
         //------------------------------------------------------------
         $("#"+SCROLLED_CATALOG)
+            .off('click',"div.img-select")
             .on('click',"div.img-select",function(event) {
                 var imgFrame = _getParent(this,"img-frame");
                 logger.debug("[init.info.click] Got element:",imgFrame);
                 itemSelect(imgFrame);
                 event.stopImmediatePropagation();
             })
+            .off('click', '.img-info')
             .on('click', '.img-info', function (event) {
                 var imgFrame = _getParent(this,"img-frame");
                 logger.debug("[init.info.click] Got element:",imgFrame);
                 imageInfo.open(imgFrame, imgFrame.getAttribute('data-id'));
                 event.stopImmediatePropagation();
             })
+            .off('click', '.img-bg')
             .on('click', '.img-bg', function () {
                 var cs = getComputedStyle(this);
                 var imgFrame = _getParent(this,"img-frame");
@@ -191,18 +214,23 @@ define(["jquery","login","modalDialog","api","menu","filter",
             //
             //  Если этот элемент(фотка) уже выделен то снимаем выделение и удаляем из масива выделенных эл.
             //
+
+            //   DO UNSELECT
             if (isSelected) {
+                itemSelection.removeItem(itemId);
+
                 itemElement.classList.remove("selected");
 
-                for ( var i = 0; i < selectedItems.length; i++) {
-                    if (selectedItems[i].objectId == itemId) {
-                        selectedItems.splice(i,1);
-                        break;
-                    }
-                }
+                // for ( var i = 0; i < selectedItems.length; i++) {
+                //     if (selectedItems[i].objectId == itemId) {
+                //         selectedItems.splice(i,1);
+                //         break;
+                //     }
+                // }
+
                 //
                 //  Если больше не осталось выделенных елементов закрываем меню
-                if ( selectedItems.length <= 0 ) {
+                if ( itemSelection.length() <= 0 ) {
                     menu.closeMenu(MENU_SELECTION);
                 }
             }
@@ -210,23 +238,37 @@ define(["jquery","login","modalDialog","api","menu","filter",
             //
             //  Если элемент(Фотка) не выделен, то выделяем.
             //
-            else {
-                var itemCount = parseInt(_getParent(itemElement,"content-page").getAttribute("data-offset")) +
-                    parseInt(itemElement.getAttribute("data-count"));
 
-                selectedItems.push({
-                        'count': itemCount,
-                        'objectId': itemId
-                    });
+            //   DO SELECT
+            else {
+
+                itemSelection.putItem(itemElement);
+
+                // var itemCount = parseInt(_getParent(itemElement,"content-page").getAttribute("data-offset")) +
+                //     parseInt(itemElement.getAttribute("data-count"));
+                //
+                // selectedItems.push({
+                //         'count': itemCount,
+                //         'objectId': itemId
+                //     });
 
                 itemElement.classList.add("selected");
+
                 //
                 //   Во время выделения первого элемента открываем меню
-                if ( selectedItems.length  == 1)  menu.openMenu(MENU_SELECTION);
+                if (itemSelection.length() == 1)  menu.openMenu(MENU_SELECTION);
             }
         }
 
 
+
+        function renderSelected(id,element) {
+            //logger.debug("[main.renderSelected] Got event for object id="+id, element);
+            if ( itemSelection.getItem(id) ) {
+                element.classList.add("selected");
+            }
+
+        }
 
         function viewNext(offset) {
             if ( filter ) {
@@ -247,6 +289,28 @@ define(["jquery","login","modalDialog","api","menu","filter",
                         viewImgLoader.prepend(object.id, offset, mediaObj.width,mediaObj.height);
                     }
                 });
+            }
+        }
+
+        //------------------------------------------------------------------------
+        //
+        //  Check login and loaded catalog
+        //
+        //  Берет масив объектов описывающий выделенный элемент и передает его в Scroller
+
+        //------------------------------------------------------------------------
+        function removeSelected() {
+
+            if (filter && (! itemSelection.isEmpty())) {
+
+                var hashArray = itemSelection.getHash();
+
+                filter.getFilteredList().removeItems(itemSelection.getHash());
+
+
+                itemSelection.clean();
+                $('.selected').toggleClass("selected", false);
+                menu.closeMenu(MENU_SELECTION);
             }
         }
 

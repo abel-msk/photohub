@@ -48,7 +48,7 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
 
         "use strict";
 
-        var DEBUG = true;
+        var DEBUG = false;
         var TRACE = false;
 
         var STATE_FREE = 1;
@@ -146,7 +146,7 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
         //
         //------------------------------------------------------------------------------------------------
         ScrollerAbstract.prototype.getLastViewed = function() {
-            var i = this.viewSlots.length();
+            var i = this.viewSlots.length() - 1;
             while (i >= 0 ) {
                 if (this.viewSlots.getByPos(i)) return this.viewSlots.getByPos(i);
                 i-- ;
@@ -199,6 +199,19 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
             return this.o.viewport.scrollTop;
         };
 
+        // ScrollerAbstract.prototype.getFirst = function() {
+        //     for (var i = 0; i < this.viewSlots.length; i++) {
+        //         if (this.viewSlots[i]) return  this.viewSlots[i];
+        //     }
+        //     return null;
+        // };
+        //
+        // ScrollerAbstract.prototype.getLast = function() {
+        //     for (var i = this.viewSlots.length - 1 ; i >= 0; i--) {
+        //         if ( this.viewSlots[i] ) return  this.viewSlots[i];
+        //     }
+        //     return null;
+        // };
 
         ScrollerAbstract.prototype.destroy = function() {
             this.container.parentNode.removeChild(this.container);

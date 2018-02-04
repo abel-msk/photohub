@@ -50,7 +50,7 @@ define(["jquery","api","modalDialog","logger"],
 
         "use strict";
 
-        var DEBUG = true;
+        var DEBUG = false;
 
         var defaultOptions = {
             'triggerBindTag':'body',
