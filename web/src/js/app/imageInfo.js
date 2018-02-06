@@ -333,17 +333,29 @@ define(["jquery","logger","scroller/domUtils","utils","form/veList","modalDialog
         //$dlgObj.find("#info_image_name span.row-data").text(ImageObject.name);
         //$dlgObj.find("#info_image_descr span.row-data").text(ImageObject.descr);
 
-        VEList.prototype.rowHTML = function (tagId,name) {
-            return '<span class="row-label">'+name+'</span>' +
-            '<span id="'+tagId+'"class="row-data">Loading ...</span>'
-        };
+        // VEList.prototype.rowHTML = function (tagId,name) {
+        //     return '<span class="row-label">'+name+'</span>' +
+        //     '<span id="'+tagId+'"class="row-data">Loading ...</span>'
+        // };
 
         this.editableFields = new VEList({
-            'element':"#info_image_name span.row-data",
-            'btnElement':"#info_edit_btn"
+            //'element':"#info_image_name span.row-data",
+            'element':'#acc-name',
+            'btnElement':"#info_edit_btn",
+            'html' :
+                '<span class="row-label">{name}</span>' +
+                '<span id="{id}" class="row-data">Loading ...</span>'
+                // '<span id="info_image_name_pos" class="row-label">'+
+                // '    <span class="accordion-selector"> <i class="glyphicon glyphicon-play fa-rotate-90"></i> </span>'+
+                // '    <span>{name}</span>'+
+                // '</span>'+
+                // '<span id="{id}" class="row-data">Loading ...</span>'
+
+
+
         });
 
-        this.editableFields.push("Name:",ImageObject.name,"#info_image_name_pos");
+        this.editableFields.push("Name:",ImageObject.name,"#info_image_name");
         this.editableFields.push("Description:",ImageObject.descr,"#info_image_descr");
         this.editableFields.render();
 
