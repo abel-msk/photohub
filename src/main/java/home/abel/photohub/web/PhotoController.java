@@ -14,14 +14,7 @@ import home.abel.photohub.service.SiteService;
 import home.abel.photohub.service.ThumbService;
 import home.abel.photohub.utils.FileUtils;
 import home.abel.photohub.utils.InternetDateFormat;
-import home.abel.photohub.web.model.DefaultObjectResponse;
-import home.abel.photohub.web.model.DefaultPageResponse;
-import home.abel.photohub.web.model.DefaultResponse;
-import home.abel.photohub.web.model.ResponseFileUpload;
-import home.abel.photohub.web.model.ResponseObjectsListPage;
-import home.abel.photohub.web.model.ResponsePhotoAttr;
-import home.abel.photohub.web.model.ResponsePhotoObject;
-import home.abel.photohub.web.model.ResponsePhotoObjectFactory;
+import home.abel.photohub.web.model.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -206,20 +199,23 @@ public class PhotoController {
 
             MultipartFile file = HTTPrequest.getFile(uploadedFile);
 
-            String newTempFileName = null;
-            String newTempFileExt = null;
-            final int index = file.getOriginalFilename().lastIndexOf('.');
-            if (index >= 0) {
-            	newTempFileName  = file.getOriginalFilename().substring(1,index-1);
-            	newTempFileExt = file.getOriginalFilename().substring(index);
-            }
-            else {
-            	newTempFileName = file.getOriginalFilename();
-            	//  ПРоверить расширение по контент типу file.contentType
-            	newTempFileExt = "";
-            }
-                   
-            File tmpFile =  File.createTempFile(newTempFileName,newTempFileExt);
+//            String newTempFileName = null;
+//            String newTempFileExt = null;
+//            final int index = file.getOriginalFilename().lastIndexOf('.');
+//            if (index >= 0) {
+//            	newTempFileName  = file.getOriginalFilename().substring(1,index-1);
+//            	newTempFileExt = file.getOriginalFilename().substring(index);
+//            }
+//            else {
+//            	newTempFileName = file.getOriginalFilename();
+//            	//  ПРоверить расширение по контент типу file.contentType
+//            	newTempFileExt = "";
+//            }
+//
+//            File tmpFile =  File.createTempFile(newTempFileName,newTempFileExt);
+
+
+			File tmpFile = genTempFile(file.getOriginalFilename());
             file.transferTo(tmpFile);
             
     		try {
@@ -246,31 +242,55 @@ public class PhotoController {
 				headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
 		
 	}
+
+
 	
-	
-	
-	//TODO:
-	public File transferToTempFile(MultipartFile mpFile ) throws IOException   {
-		File tmpFile = null;
-        String newTempFileName = null;
-        String newTempFileExt = null;
-        final int index = mpFile.getOriginalFilename().lastIndexOf('.');
-        if (index >= 0) {
-        	newTempFileName  = mpFile.getOriginalFilename().substring(1,index-1);
-        	newTempFileExt = mpFile.getOriginalFilename().substring(index);
-        }
-        else {
-        	newTempFileName = mpFile.getOriginalFilename();
-        	//  ПРоверить расширение по контент типу file.contentType
-        	newTempFileExt = "";
-        }
-               
-        tmpFile =  File.createTempFile(newTempFileName,newTempFileExt);
-        mpFile.transferTo(tmpFile);
-        return tmpFile;
-        
+	protected File genTempFile(String originalFileName) throws IOException{
+		String newTempFileName = null;
+		String newTempFileExt = null;
+		final int index = originalFileName.lastIndexOf('.');
+		if (index >= 0) {
+			newTempFileName  = originalFileName.substring(1,index-1);
+			newTempFileExt = originalFileName.substring(index);
+		}
+		else {
+			newTempFileName = originalFileName;
+			//  ПРоверить расширение по контент типу file.contentType
+			newTempFileExt = "";
+		}
+
+		File tmpFile =  File.createTempFile(newTempFileName,newTempFileExt);
+		return tmpFile;
 	}
-	
+
+
+
+	//TODO:
+//	public File transferToTempFile(MultipartFile mpFile ) throws IOException   {
+//
+//		genTempFile( originalFileName )
+//
+//		File tmpFile = null;
+//        String newTempFileName = null;
+//        String newTempFileExt = null;
+//        final int index = mpFile.getOriginalFilename().lastIndexOf('.');
+//        if (index >= 0) {
+//        	newTempFileName  = mpFile.getOriginalFilename().substring(1,index-1);
+//        	newTempFileExt = mpFile.getOriginalFilename().substring(index);
+//        }
+//        else {
+//        	newTempFileName = mpFile.getOriginalFilename();
+//        	//  ПРоверить расширение по контент типу file.contentType
+//        	newTempFileExt = "";
+//        }
+//
+//        tmpFile =  File.createTempFile(newTempFileName,newTempFileExt);
+//
+//        mpFile.transferTo(tmpFile);
+//        return tmpFile;
+//
+//	}
+//
 	
 	
 	
@@ -330,8 +350,9 @@ public class PhotoController {
 		if (theSiteId == null) theSiteId = theParentNode.getPhoto().getSiteBean().getId();
 		String imageFileOrigName  = FilenameUtils.getName(multiPart.getOriginalFilename());
 		if ( theName == null ) theName = imageFileOrigName;
-		
-		File tmpFile = transferToTempFile(multiPart);
+
+		File tmpFile = genTempFile(multiPart.getOriginalFilename());
+		multiPart.transferTo(tmpFile);
 		try {
 			theNewNode = photoService.addPhoto(tmpFile, theName, theDescr, inputParentId, theSiteId);
 		} catch (Exception e) {
@@ -381,8 +402,10 @@ public class PhotoController {
 		if (theSiteId == null) theSiteId = theParentNode.getPhoto().getSiteBean().getId();
 		String imageFileOrigName  = FilenameUtils.getName(multiPart.getOriginalFilename());
 		if (theName == null) theName = imageFileOrigName;
-		
-		File tmpFile = transferToTempFile(multiPart);
+
+		File tmpFile = genTempFile(multiPart.getOriginalFilename());
+		multiPart.transferTo(tmpFile);
+
 		try {
 			theNewNode = photoService.addPhoto(tmpFile, theName, theDescr, inputParentId, theSiteId);
 		} catch (Exception e) {
@@ -450,10 +473,60 @@ public class PhotoController {
 	 *  Handle request for  DELETE photo object  
 	 * 
 	 =============================================================================================*/
+//	@RequestMapping(value = "/object/{id}", method = RequestMethod.OPTIONS)
+//	ResponseEntity<String> acceptDeleteObjectSub(HttpServletRequest request) throws IOException, ServletException {
+//    	logger.debug("Request OPTION  for /object/");
+//	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+//	}
+
+	/**
+	 * 		Multiple objects delete
+	 * @param HTTPrequest
+	 * @param HTTPresponse
+	 * @param forseDelete
+	 * @param objList  list of objects node ids for requested object to delete
+	 * @return  List ob processed objects with their id and processing result status
+	 * @throws Throwable
+	 */
+	@RequestMapping(value = "/objects", method = RequestMethod.DELETE, produces="application/json")
+	ResponseEntity<DefaultObjectResponse<List<BatchResult>>> batchDeletePhotoObject(
+	        final HttpServletRequest HTTPrequest,
+	        final HttpServletResponse HTTPresponse,
+			@RequestParam(value ="recursive", required = false, defaultValue = "false") boolean forseDelete,
+			@RequestBody List<String> objList
+			) throws Throwable
+	{
+		List<BatchResult> processObjs = new ArrayList<>();
+
+		for (String objId: objList) {
+			BatchResult result = new BatchResult();
+			result.setId(objId);
+			processObjs.add(result);
+
+			try {
+				photoService.deleteObject(objId, forseDelete);
+				result.setStatus(BatchResult.STATUS_OK);
+			}
+			catch (Exception e) {
+				result.setStatus(1);
+				result.setMessage("Object delete error: "+e.getMessage());
+				logger.warn("[batchDeleteObjects] Cannot delete object id="+objId,e);
+			}
+		}
+
+		DefaultObjectResponse<List<BatchResult>> response = new DefaultObjectResponse<>(
+				"Process completed.", 0, processObjs
+		);
+
+		return new ResponseEntity<>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
+	}
+
+
+
 	@RequestMapping(value = "/object/{id}", method = RequestMethod.OPTIONS)
-	ResponseEntity<String> acceptDeleteObjectSub(HttpServletRequest request) throws IOException, ServletException {
-    	logger.debug("Request OPTION  for /object/");
-	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+	ResponseEntity<String> deletePhotoObject(HttpServletRequest request) throws IOException, ServletException {
+		logger.debug("Request OPTION  for /object/");
+		return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
 	}
 	/**
 	 * Delete object by ID
@@ -463,39 +536,36 @@ public class PhotoController {
 	 * @return
 	 * @throws Throwable
 	 */
-	@RequestMapping(value = "/object/{id}", method = RequestMethod.DELETE, produces="application/json") 
+	@RequestMapping(value = "/object/{id}", method = RequestMethod.DELETE, produces="application/json")
 	ResponseEntity<DefaultResponse> deleteObject(
-	        final HttpServletRequest HTTPrequest,
-	        final HttpServletResponse HTTPresponse,
+			final HttpServletRequest HTTPrequest,
+			final HttpServletResponse HTTPresponse,
 			@PathVariable("id") String objectId,
-			@RequestParam(value ="recursive", required = false, defaultValue = "false") boolean forseDelete, 
-			@RequestParam(value ="withFile", required = false, defaultValue = "false") boolean withFile 
-			) throws Throwable
-	{ 
-		logger.debug(">>> Request DELETE for /object/" + objectId + ", options=[recursive="+forseDelete+"]");	
-		//Node theNode  = photoService.getPhotoInfo(objetId);
+			@RequestParam(value ="recursive", required = false, defaultValue = "false") boolean forseDelete,
+			@RequestParam(value ="withFile", required = false, defaultValue = "false") boolean withFile
+	) throws Throwable
+	{
 		photoService.deleteObject(objectId,forseDelete);
 		DefaultResponse response = new DefaultResponse("Object deleted",0);
-		logger.debug("<<< Delete ok");	
 		return new ResponseEntity<DefaultResponse>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
 	}
-	
-//	@RequestMapping(value = "/object/**/{id}", method = RequestMethod.DELETE, produces="application/json") 
-//	ResponseEntity<DefaultResponse> deleteFoldersObject(
-//	        final HttpServletRequest HTTPrequest,
-//	        final HttpServletResponse HTTPresponse,
-//			@PathVariable("id") String objectId,
-//			@RequestParam(value ="recursive", required = false, defaultValue = "false") boolean forseDelete,
-//			@RequestParam(value ="withFile", required = false, defaultValue = "false") boolean withFile 
-//			) throws Throwable
-//	{ 
-//		logger.debug(">>> Request DELETE for /object/**/" + objectId + ", options=[recursive="+forseDelete+"]");	
-//		photoService.deleteObject(objectId,forseDelete);
-//		DefaultResponse response = new DefaultResponse("Object deleted",0);
-//		logger.debug("<<< DELETE: Object " + objectId + " deleted");	
-//		return new ResponseEntity<DefaultResponse>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
-//	}
-	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/*=============================================================================================
 	 *
 	 *     Handle request for  UPLOAD new thumb

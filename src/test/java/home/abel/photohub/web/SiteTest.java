@@ -11,15 +11,13 @@ import home.abel.photohub.tasks.BaseTask;
 import home.abel.photohub.tasks.TaskDescription;
 import home.abel.photohub.tasks.TaskNamesEnum;
 import home.abel.photohub.tasks.TaskStatusEnum;
+import home.abel.photohub.web.model.BatchResult;
 import home.abel.photohub.web.model.DefaultObjectResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.servlet.http.Cookie;
 
@@ -39,6 +37,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.web.FilterChainProxy;
@@ -51,7 +50,9 @@ import org.springframework.test.context.transaction.TransactionalTestExecutionLi
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -270,6 +271,11 @@ public class SiteTest   {
 		}
 	}
 
+	/**
+	 * Test Base site operations
+	 * @throws Throwable
+	 */
+
 	@Test
 	public void testSiteCreation() throws Throwable {
 
@@ -376,6 +382,10 @@ public class SiteTest   {
 	}
 
 
+	/**
+	 * Test Shedule object processing
+	 * @throws Throwable
+	 */
 	@Test
 	public void testTaskSchedule() throws Throwable {
 
@@ -435,7 +445,6 @@ public class SiteTest   {
 				new TypeReference<DefaultObjectResponse<BaseTask>>() { });
 		BaseTask task1 = ObjectResponse2.getObject();
 
-
 		int count = 0;
 		String status = "RUN";
 		//	Check  while task running
@@ -446,17 +455,11 @@ public class SiteTest   {
 			Assert.isTrue(count < 20, "[testTaskSchedule]  Scheduled task does not started. Task="+task1);
 		}
 
-
 		//  List tasks
 
 		List<BaseTask> tasksList = getTasksList(cookies,TEST_SITE_ID);
 
-
-
-
-
 		//	Update task
-		///site/{id}/task/{tid}/schedule
 
 		schedule = task1.getSchedule();
 		schedule.setSeconds("*/10");
@@ -478,19 +481,11 @@ public class SiteTest   {
 		//	Stop Task
 		result = apiDeleteRequest(cookies,
 				"/api/site/"+TEST_SITE_ID+"/task/"+task1.getId(),
+				null,
 				true
 		);
 
 		tasksList = getTasksList(cookies,TEST_SITE_ID);
-
-//		result =  apiGetRequest(cookies,
-//				"/api/site/"+TEST_SITE_ID+"/tasks",
-//				true
-//		);
-//		DefaultObjectResponse<Map<String,BaseTask>> ObjectResponse4 = mapper.readValue(
-//				result.getResponse().getContentAsString(),
-//				new TypeReference<DefaultObjectResponse<Map<String,BaseTask>>>() { });
-//		Map<String,BaseTask> tasksList = ObjectResponse4.getObject();
 
 		String taskid = task1.getId();
 
@@ -502,10 +497,55 @@ public class SiteTest   {
 					}
 				}
 		);
-
 	}
 
 
+	/**
+	 * Batch deletion test
+	 * @throws Throwable
+	 */
+	@Test
+	public void testBatchDelete() throws Throwable {
+
+		System.out.println("\n------ Test: testBatchDelete ------\n");
+
+
+		List<String> objList = new ArrayList<>();
+		objList.add("4");
+		objList.add("6");
+
+		Cookie[] cookies = null;
+
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			cookies = httpAuth("admin", "admin");
+		}
+		catch (ExceptionAccessDeny e) {
+			Assert.isTrue(true, "Authentication for user Admin failed. " +  e.getMessage());
+		}
+
+		MvcResult result = apiDeleteRequest(cookies,
+				"/api/objects",
+				mapper.writeValueAsString(objList),
+				true
+		);
+
+		DefaultObjectResponse<List<BatchResult>> ObjectResponse3 = mapper.readValue(
+				result.getResponse().getContentAsString(),
+				new TypeReference<DefaultObjectResponse<List<BatchResult>>>() { });
+
+		List<BatchResult> resultList = ObjectResponse3.getObject();
+
+		assertThat(resultList).hasSize(2);
+		assertThat(resultList).doNotHave(
+				new Condition<BatchResult>() {
+					@Override
+					public boolean matches(BatchResult retObj) {
+						return retObj.getStatus() > 0;
+					}
+				}
+		);
+	}
 
 
 
@@ -554,14 +594,19 @@ public class SiteTest   {
 	}
 
 
-	public MvcResult apiDeleteRequest(Cookie[] cookies, String path, boolean isPrint) throws Throwable {
+	public MvcResult apiDeleteRequest(Cookie[] cookies, String path, String jsonBody, boolean isPrint) throws Throwable {
 		MvcResult result = null;
-		result = mockMvc.perform
-				(
-						delete(path)
-								.cookie(cookies)
-								.contentType(MediaType.APPLICATION_JSON)
-				)
+
+
+		MockHttpServletRequestBuilder reqBody = delete(path)
+				.cookie(cookies)
+				.contentType(MediaType.APPLICATION_JSON);
+
+		if ( jsonBody != null ) {
+			reqBody = reqBody.content(jsonBody);
+		}
+
+		result = mockMvc.perform(reqBody)
 				.andExpect(status().isOk())
 				.andReturn();
 
