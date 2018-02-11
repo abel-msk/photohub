@@ -43,16 +43,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -60,7 +51,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
-
+@CrossOrigin
 @RestController
 @RequestMapping("/api")
 //@Controller
@@ -199,22 +190,6 @@ public class PhotoController {
 
             MultipartFile file = HTTPrequest.getFile(uploadedFile);
 
-//            String newTempFileName = null;
-//            String newTempFileExt = null;
-//            final int index = file.getOriginalFilename().lastIndexOf('.');
-//            if (index >= 0) {
-//            	newTempFileName  = file.getOriginalFilename().substring(1,index-1);
-//            	newTempFileExt = file.getOriginalFilename().substring(index);
-//            }
-//            else {
-//            	newTempFileName = file.getOriginalFilename();
-//            	//  ПРоверить расширение по контент типу file.contentType
-//            	newTempFileExt = "";
-//            }
-//
-//            File tmpFile =  File.createTempFile(newTempFileName,newTempFileExt);
-
-
 			File tmpFile = genTempFile(file.getOriginalFilename());
             file.transferTo(tmpFile);
             
@@ -264,270 +239,244 @@ public class PhotoController {
 	}
 
 
-
-	//TODO:
-//	public File transferToTempFile(MultipartFile mpFile ) throws IOException   {
-//
-//		genTempFile( originalFileName )
-//
-//		File tmpFile = null;
-//        String newTempFileName = null;
-//        String newTempFileExt = null;
-//        final int index = mpFile.getOriginalFilename().lastIndexOf('.');
-//        if (index >= 0) {
-//        	newTempFileName  = mpFile.getOriginalFilename().substring(1,index-1);
-//        	newTempFileExt = mpFile.getOriginalFilename().substring(index);
-//        }
-//        else {
-//        	newTempFileName = mpFile.getOriginalFilename();
-//        	//  ПРоверить расширение по контент типу file.contentType
-//        	newTempFileExt = "";
-//        }
-//
-//        tmpFile =  File.createTempFile(newTempFileName,newTempFileExt);
-//
-//        mpFile.transferTo(tmpFile);
-//        return tmpFile;
-//
-//	}
-//
-	
-	
 	
 	/*=============================================================================================
 	 *
-	 *  Handle request for  ADD PHOTO object to FOLDER  ( upload )
+	 *    DEPRICATED Handle request for  ADD PHOTO object to FOLDER  ( upload )
 	 * 
-	 *    OLD WAY TO LOAD& WILL DEPRICATED
+	 *    OLD WAY TO UPLOAD
 	 *    
 	 =============================================================================================*/
-	/**
-	 * Upload photo place it to coresponding folder on local site.
-	 * Create thumbnail, create  Node  and photoObject in db. 
-	 * Return ObjectInfo   for newly created object
-	 * 
-	 * Also replay to option request.
-	 * 
-	 * @throws Exception 
-	 */
-	@RequestMapping(value = "/object/{id}/upload", method = RequestMethod.OPTIONS)
-	ResponseEntity<String> acceptUpload(HttpServletRequest request) throws IOException, ServletException {
-    	logger.debug("Request OPTION  for /object/{id}/upload");
-	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
-	}
+//	/**
+//	 * Upload photo place it to coresponding folder on local site.
+//	 * Create thumbnail, create  Node  and photoObject in db.
+//	 * Return ObjectInfo   for newly created object
+//	 *
+//	 * Also replay to option request.
+//	 *
+//	 * @throws Exception
+//	 */
+//	@RequestMapping(value = "/object/{id}/upload", method = RequestMethod.OPTIONS)
+//	ResponseEntity<String> acceptUpload(HttpServletRequest request) throws IOException, ServletException {
+//    	logger.debug("Request OPTION  for /object/{id}/upload");
+//	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+//	}
+//
+//	/**
+//	 * Upload image file and place it as Object in 'parentId' folder
+//	 * @param inputParentId
+//	 * @param theName
+//	 * @param theDescr
+//	 * @param theSiteId
+//	 * @param multiPart
+//	 * @return
+//	 * @throws Exception
+//	 */
+//	@RequestMapping(value = "/object/{id:[\\d]+}/upload", method = RequestMethod.POST,
+//				headers = "content-type=multipart/form-data",
+//				produces="application/json")
+//	@ResponseBody
+//	public ResponseEntity<ResponseFileUpload> uploadMultipart(
+//	        final HttpServletRequest HTTPrequest,
+//	        final HttpServletResponse HTTPresponse,
+//			@PathVariable("id") String inputParentId,
+//			@RequestParam(value = "name", required = false)  String theName,
+//			@RequestParam(value = "descr", required = false)  String theDescr,
+//			@RequestParam(value = "siteId", required = false)  String theSiteId,
+//	        @RequestParam("file") final MultipartFile multiPart) throws Exception {
+//
+//		logger.debug(">>> Request /upload, content-type=multipart/form-data, form-data=[parentId = " +
+//				inputParentId + "siteId =" + theSiteId + ", file = " + multiPart.getOriginalFilename() + "]");
+//		Node theNewNode = null;
+//		Node theParentNode = photoService.getNodeById(inputParentId);
+//
+//		if ((theParentNode == null) && (theSiteId == null))
+//			throw new ExceptionInvalidRequest("Requests param error.  Parent object id and  site is cannot be null at the same time");
+//
+//		if (theSiteId == null) theSiteId = theParentNode.getPhoto().getSiteBean().getId();
+//		String imageFileOrigName  = FilenameUtils.getName(multiPart.getOriginalFilename());
+//		if ( theName == null ) theName = imageFileOrigName;
+//
+//		File tmpFile = genTempFile(multiPart.getOriginalFilename());
+//		multiPart.transferTo(tmpFile);
+//		try {
+//			theNewNode = photoService.addPhoto(tmpFile, theName, theDescr, inputParentId, theSiteId);
+//		} catch (Exception e) {
+//			throw new ExceptionInvalidRequest("Cannot add image file : " + multiPart.getOriginalFilename() + ", error : " + e.getLocalizedMessage(),e);
+//		}
+//		finally {
+//			if ( tmpFile != null ) {
+//				tmpFile.delete();
+//			}
+//		}
+//
+//		ResponseFileUpload response = new ResponseFileUpload("File processed successfully",multiPart.getOriginalFilename(),theNewNode.getId(),0);
+//		response.setObject(photoObjFactory.getPhotoObject(theNewNode));
+//		logger.debug("<<<  Upload OK");
+//	    HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
+//	    return new ResponseEntity<ResponseFileUpload>(response,headers, HttpStatus.OK);
+//	}
 	
-	/**
-	 * Upload image file and place it as Object in 'parentId' folder
-	 * @param inputParentId
-	 * @param theName
-	 * @param theDescr
-	 * @param theSiteId
-	 * @param multiPart
-	 * @return
-	 * @throws Exception
-	 */
-	@RequestMapping(value = "/object/{id:[\\d]+}/upload", method = RequestMethod.POST, 
-				headers = "content-type=multipart/form-data",
-				produces="application/json")
-	@ResponseBody
-	public ResponseEntity<ResponseFileUpload> uploadMultipart(
-	        final HttpServletRequest HTTPrequest,
-	        final HttpServletResponse HTTPresponse,
-			@PathVariable("id") String inputParentId,
-			@RequestParam(value = "name", required = false)  String theName,
-			@RequestParam(value = "descr", required = false)  String theDescr,
-			@RequestParam(value = "siteId", required = false)  String theSiteId,
-	        @RequestParam("file") final MultipartFile multiPart) throws Exception {
-		
-		logger.debug(">>> Request /upload, content-type=multipart/form-data, form-data=[parentId = " +
-				inputParentId + "siteId =" + theSiteId + ", file = " + multiPart.getOriginalFilename() + "]");	
-		Node theNewNode = null;
-		Node theParentNode = photoService.getNodeById(inputParentId);
-		
-		if ((theParentNode == null) && (theSiteId == null)) 
-			throw new ExceptionInvalidRequest("Requests param error.  Parent object id and  site is cannot be null at the same time");
-		
-		if (theSiteId == null) theSiteId = theParentNode.getPhoto().getSiteBean().getId();
-		String imageFileOrigName  = FilenameUtils.getName(multiPart.getOriginalFilename());
-		if ( theName == null ) theName = imageFileOrigName;
-
-		File tmpFile = genTempFile(multiPart.getOriginalFilename());
-		multiPart.transferTo(tmpFile);
-		try {
-			theNewNode = photoService.addPhoto(tmpFile, theName, theDescr, inputParentId, theSiteId);
-		} catch (Exception e) {
-			throw new ExceptionInvalidRequest("Cannot add image file : " + multiPart.getOriginalFilename() + ", error : " + e.getLocalizedMessage(),e);
-		}
-		finally {
-			if ( tmpFile != null ) {
-				tmpFile.delete();
-			}
-		}
-		
-		ResponseFileUpload response = new ResponseFileUpload("File processed successfully",multiPart.getOriginalFilename(),theNewNode.getId(),0);
-		response.setObject(photoObjFactory.getPhotoObject(theNewNode));
-		logger.debug("<<<  Upload OK");	
-	    HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
-	    return new ResponseEntity<ResponseFileUpload>(response,headers, HttpStatus.OK);
-	}
-	
-	/**
-	 * Create new object under the inputParentId object (as group or object)
-	 * @param inputParentId
-	 * @param multiPart
-	 * @return
-	 * @throws Exception
-	 */
-	@RequestMapping(value = "/object/{id:[\\d]+}", method = RequestMethod.POST, produces="application/json") 
-	public ResponseEntity<ResponseFileUpload> setObject(
-	        final HttpServletRequest HTTPrequest,
-	        final HttpServletResponse HTTPresponse,
-			@PathVariable("id") final String inputParentId,
-			@RequestParam(value = "name", required = false)  String theName,
-			@RequestParam(value = "descr", required = false) final String theDescr,
-			@RequestParam(value = "site", required = false)  String theSiteId,
-	        @RequestParam("file") final MultipartFile multiPart) throws Exception {
-		
-		logger.debug(">>> Request /object/"+inputParentId+", content-type=multipart/form-data, form-data=[parentId = " + inputParentId + 
-				", name = " + theName +
-				", descr = " + theDescr +
-				", file = " + multiPart.getOriginalFilename() + "]");	
-		
-		Node theNewNode = null;
-		Node theParentNode = photoService.getNodeById(inputParentId);
-		
-		if ((theParentNode == null) && (theSiteId == null)) 
-			throw new ExceptionInvalidRequest("Requests param error.  Parent object id and  site is cannot be null at the same time");
-		
-		if (theSiteId == null) theSiteId = theParentNode.getPhoto().getSiteBean().getId();
-		String imageFileOrigName  = FilenameUtils.getName(multiPart.getOriginalFilename());
-		if (theName == null) theName = imageFileOrigName;
-
-		File tmpFile = genTempFile(multiPart.getOriginalFilename());
-		multiPart.transferTo(tmpFile);
-
-		try {
-			theNewNode = photoService.addPhoto(tmpFile, theName, theDescr, inputParentId, theSiteId);
-		} catch (Exception e) {
-			throw new ExceptionInvalidRequest("Cannot add image file : " + multiPart.getOriginalFilename() + ", error : " + e.getLocalizedMessage(),e);
-		}	
-		finally {
-			if ( tmpFile != null ) {
-				tmpFile.delete();
-			}
-		}
-		
-		ResponseFileUpload response = new ResponseFileUpload("File processed successfully",multiPart.getOriginalFilename(),theNewNode.getId(),0);
-		response.setObject(photoObjFactory.getPhotoObject(theNewNode));
-		logger.debug("<<<  Upload OK");	
-	    HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
-	    return new ResponseEntity<ResponseFileUpload>(response,headers, HttpStatus.OK);	
-	}
+//	/**
+//	 * Create new node object as child of inputParentId node (as group or object)
+//	 * @param inputParentId parent node id
+//	 * @param multiPart
+//	 * @return
+//	 * @throws Exception
+//	 */
+//	@RequestMapping(value = "/object/{id:[\\d]+}", method = RequestMethod.POST, produces="application/json")
+//	public ResponseEntity<ResponseFileUpload> setObject(
+//	        final HttpServletRequest HTTPrequest,
+//	        final HttpServletResponse HTTPresponse,
+//			@PathVariable("id") final String inputParentId,
+//			@RequestParam(value = "name", required = false)  String theName,
+//			@RequestParam(value = "descr", required = false) final String theDescr,
+//			@RequestParam(value = "site", required = false)  String theSiteId,
+//	        @RequestParam("file") final MultipartFile multiPart) throws Exception {
+//
+//		logger.debug(">>> Request /object/"+inputParentId+", content-type=multipart/form-data, form-data=[parentId = " + inputParentId +
+//				", name = " + theName +
+//				", descr = " + theDescr +
+//				", file = " + multiPart.getOriginalFilename() + "]");
+//
+//		Node theNewNode = null;
+//		Node theParentNode = photoService.getNodeById(inputParentId);
+//
+//		if ((theParentNode == null) && (theSiteId == null))
+//			throw new ExceptionInvalidRequest("Requests param error.  Parent object id and  site is cannot be null at the same time");
+//
+//		if (theSiteId == null) theSiteId = theParentNode.getPhoto().getSiteBean().getId();
+//		String imageFileOrigName  = FilenameUtils.getName(multiPart.getOriginalFilename());
+//		if (theName == null) theName = imageFileOrigName;
+//
+//		File tmpFile = genTempFile(multiPart.getOriginalFilename());
+//		multiPart.transferTo(tmpFile);
+//
+//		try {
+//			theNewNode = photoService.addPhoto(tmpFile, theName, theDescr, inputParentId, theSiteId);
+//		} catch (Exception e) {
+//			throw new ExceptionInvalidRequest("Cannot add image file : " + multiPart.getOriginalFilename() + ", error : " + e.getLocalizedMessage(),e);
+//		}
+//		finally {
+//			if ( tmpFile != null ) {
+//				tmpFile.delete();
+//			}
+//		}
+//
+//		ResponseFileUpload response = new ResponseFileUpload("File processed successfully",multiPart.getOriginalFilename(),theNewNode.getId(),0);
+//		response.setObject(photoObjFactory.getPhotoObject(theNewNode));
+//		logger.debug("<<<  Upload OK");
+//	    HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
+//	    return new ResponseEntity<ResponseFileUpload>(response,headers, HttpStatus.OK);
+//	}
 	
 	/*=============================================================================================
 	 *
 	 *    Handle request for  CREATE folder
 	 * 
 	 =============================================================================================*/	
-	@RequestMapping(value = "/object/{parentId}/create", method = RequestMethod.OPTIONS)
-	ResponseEntity<String> acceptCreateFolder(HttpServletRequest request) throws IOException, ServletException {
-    	logger.debug("Request OPTION  for /object/{parentId}/create");
-	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
-	}
-
-	@RequestMapping(value = "/object/{parentId}/create", method = RequestMethod.POST, 
-			produces="application/json")
-	@ResponseBody
-	public ResponseEntity<DefaultObjectResponse<ResponsePhotoObject>> createFolder(
-	        final HttpServletRequest HTTPrequest,
-	        final HttpServletResponse HTTPresponse,
-	        @PathVariable("parentId") String parentId,
-	        @RequestParam("name") String objName,
-			@RequestParam(value = "site", required = false)  String theSiteId,
-			@RequestParam(value ="descr", required = false, defaultValue = "") String objDescription) throws Exception {
-		
-		logger.debug(">>> Request /object/"+parentId+"/create,  options=[" + 
-				"parentId = " + parentId + 
-				", name = " + objName +
-				", descr = " + objDescription +
-				"]");	
-		
-		Node theParentNode = photoService.getNodeById(parentId);
-		
-		if ((theParentNode == null) && (theSiteId == null)) 
-			throw new ExceptionInvalidRequest("Requests param error.  Parent object id and  site is cannot be null at the same time");
-		
-		if (theSiteId == null) theSiteId = theParentNode.getPhoto().getSiteBean().getId();
-		
-		Node theNode = photoService.addFolder(objName, objDescription, parentId, theSiteId);
-		DefaultObjectResponse<ResponsePhotoObject> response = new DefaultObjectResponse<ResponsePhotoObject>("Folder created successfully",0);
-		if (theNode != null) {
-			response.setObject(photoObjFactory.getPhotoObject(theNode));
-		}
-		logger.debug("<<<  Created OK");	
-		return new ResponseEntity<DefaultObjectResponse<ResponsePhotoObject>>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);		
-	}
+//	@RequestMapping(value = "/object/{parentId}/create", method = RequestMethod.OPTIONS)
+//	ResponseEntity<String> acceptCreateFolder(HttpServletRequest request) throws IOException, ServletException {
+//    	logger.debug("Request OPTION  for /object/{parentId}/create");
+//	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+//	}
+//
+//	@RequestMapping(value = "/object/{parentId}/create", method = RequestMethod.POST,
+//			produces="application/json")
+//	@ResponseBody
+//	public ResponseEntity<DefaultObjectResponse<ResponsePhotoObject>> createFolder(
+//	        final HttpServletRequest HTTPrequest,
+//	        final HttpServletResponse HTTPresponse,
+//	        @PathVariable("parentId") String parentId,
+//	        @RequestParam("name") String objName,
+//			@RequestParam(value = "site", required = false)  String theSiteId,
+//			@RequestParam(value ="descr", required = false, defaultValue = "") String objDescription) throws Exception {
+//
+//		logger.debug(">>> Request /object/"+parentId+"/create,  options=[" +
+//				"parentId = " + parentId +
+//				", name = " + objName +
+//				", descr = " + objDescription +
+//				"]");
+//
+//		Node theParentNode = photoService.getNodeById(parentId);
+//
+//		if ((theParentNode == null) && (theSiteId == null))
+//			throw new ExceptionInvalidRequest("Requests param error.  Parent object id and  site is cannot be null at the same time");
+//
+//		if (theSiteId == null) theSiteId = theParentNode.getPhoto().getSiteBean().getId();
+//
+//		Node theNode = photoService.addFolder(objName, objDescription, parentId, theSiteId);
+//		DefaultObjectResponse<ResponsePhotoObject> response = new DefaultObjectResponse<ResponsePhotoObject>("Folder created successfully",0);
+//		if (theNode != null) {
+//			response.setObject(photoObjFactory.getPhotoObject(theNode));
+//		}
+//		logger.debug("<<<  Created OK");
+//		return new ResponseEntity<DefaultObjectResponse<ResponsePhotoObject>>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
+//	}
 		
 	/*=============================================================================================
 	 *
 	 *  Handle request for  DELETE photo object  
 	 * 
 	 =============================================================================================*/
-//	@RequestMapping(value = "/object/{id}", method = RequestMethod.OPTIONS)
-//	ResponseEntity<String> acceptDeleteObjectSub(HttpServletRequest request) throws IOException, ServletException {
-//    	logger.debug("Request OPTION  for /object/");
-//	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
-//	}
+
+	@RequestMapping(value = "/objects", method = RequestMethod.OPTIONS)
+	ResponseEntity<String> acceptDeletBatch(HttpServletRequest request) throws IOException, ServletException {
+		return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+	}
+
 
 	/**
 	 * 		Multiple objects delete
 	 * @param HTTPrequest
 	 * @param HTTPresponse
-	 * @param forseDelete
-	 * @param objList  list of objects node ids for requested object to delete
+	 * @param forseDelete Recursively delete if object if object is folder
+	 * @param objList  list photo ids need to delete
 	 * @return  List ob processed objects with their id and processing result status
 	 * @throws Throwable
 	 */
 	@RequestMapping(value = "/objects", method = RequestMethod.DELETE, produces="application/json")
-	ResponseEntity<DefaultObjectResponse<List<BatchResult>>> batchDeletePhotoObject(
+	ResponseEntity<DefaultObjectResponse<List<BatchResult>>> deleteObjectsBatch(
 	        final HttpServletRequest HTTPrequest,
 	        final HttpServletResponse HTTPresponse,
 			@RequestParam(value ="recursive", required = false, defaultValue = "false") boolean forseDelete,
 			@RequestBody List<String> objList
 			) throws Throwable
 	{
-		List<BatchResult> processObjs = new ArrayList<>();
+		List<BatchResult> processObj = new ArrayList<>();
 
 		for (String objId: objList) {
 			BatchResult result = new BatchResult();
 			result.setId(objId);
-			processObjs.add(result);
+			processObj.add(result);
 
-			try {
-				photoService.deleteObject(objId, forseDelete);
-				result.setStatus(BatchResult.STATUS_OK);
-			}
-			catch (Exception e) {
-				result.setStatus(1);
-				result.setMessage("Object delete error: "+e.getMessage());
-				logger.warn("[batchDeleteObjects] Cannot delete object id="+objId,e);
+			//   Get all nodes for this photo and delete them all.
+			Photo thePhoto = photoService.getPhotoById(objId);
+			for (Node objNode  : thePhoto.getNodes() ) {
+				try {
+					photoService.deleteObject(objNode, forseDelete, true);
+					result.setStatus(BatchResult.STATUS_OK);
+				} catch (Exception e) {
+					result.setStatus(1);
+					result.setMessage("Object delete error: " + e.getMessage());
+					logger.warn("[batchDeleteObjects] Cannot delete object id=" + thePhoto, e);
+				}
 			}
 		}
 
 		DefaultObjectResponse<List<BatchResult>> response = new DefaultObjectResponse<>(
-				"Process completed.", 0, processObjs
+				"Process completed.", 0, processObj
 		);
 
 		return new ResponseEntity<>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
 	}
 
 
-
 	@RequestMapping(value = "/object/{id}", method = RequestMethod.OPTIONS)
-	ResponseEntity<String> deletePhotoObject(HttpServletRequest request) throws IOException, ServletException {
-		logger.debug("Request OPTION  for /object/");
+	ResponseEntity<String> acceptDelet(HttpServletRequest request) throws IOException, ServletException {
 		return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
 	}
+
 	/**
 	 * Delete object by ID
 	 * @param objectId  object node id for requested object
@@ -552,62 +501,48 @@ public class PhotoController {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	/*=============================================================================================
 	 *
 	 *     Handle request for  UPLOAD new thumb
 	 * 
 	 =============================================================================================*/
-	@RequestMapping(value = "/object/{id:[\\d]+}/thumb", method = RequestMethod.POST, 
-			headers = "content-type=multipart/form-data",
-			produces="application/json")
-	@ResponseBody
-	public ResponseEntity<ResponseFileUpload> uploadThumbnail(
-	        final HttpServletRequest HTTPrequest,
-	        final HttpServletResponse HTTPresponse,
-			@PathVariable("id") String objectId,
-	        @RequestParam("file") final MultipartFile multiPart) throws Exception {
-		ResponseFileUpload response = null;
-		
-		logger.debug(">>> Request UPLOAD  for /object/"+objectId+"/thumb, content-type=multipart/form-data, file = " + multiPart.getOriginalFilename() + "]");	
-		if ( ! multiPart.isEmpty()) {
-			//  Check are object exist
-			Node theNode = photoService.getNodeById(objectId);
-			File tempImageFile = File.createTempFile(
-					FilenameUtils.removeExtension(multiPart.getOriginalFilename()) +  Long.toString(System.nanoTime()),
-					"." + FilenameUtils.getExtension(multiPart.getOriginalFilename()));
-			try {
-				// Save thumb object to temp file
-				multiPart.transferTo(tempImageFile);
-				logger.debug("Done file upload to : " + tempImageFile.getAbsolutePath());
-				thumbService.setThumb(tempImageFile.getAbsolutePath(), theNode.getPhoto());
-			} catch (Exception e) {
-				logger.error("Cannot set new thumbnail from image file : " + tempImageFile + ",  error : " + e.getLocalizedMessage());
-				throw new Exception(e);
-			}	
-			finally {
-				FileUtils.fileDelete(tempImageFile,true);			
-			}
-			response = new ResponseFileUpload("File processed successfully",multiPart.getOriginalFilename(),0);
-			response.setObject(photoObjFactory.getPhotoObject(theNode));
-		} else {
-			response = new ResponseFileUpload("Nothing to process",multiPart.getOriginalFilename(),0);
-		}
-		return new ResponseEntity<ResponseFileUpload>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
-	}
+//	@RequestMapping(value = "/object/{id:[\\d]+}/thumb", method = RequestMethod.POST,
+//			headers = "content-type=multipart/form-data",
+//			produces="application/json")
+//	@ResponseBody
+//	public ResponseEntity<ResponseFileUpload> uploadThumbnail(
+//	        final HttpServletRequest HTTPrequest,
+//	        final HttpServletResponse HTTPresponse,
+//			@PathVariable("id") String objectId,
+//	        @RequestParam("file") final MultipartFile multiPart) throws Exception {
+//		ResponseFileUpload response = null;
+//
+//		logger.debug(">>> Request UPLOAD  for /object/"+objectId+"/thumb, content-type=multipart/form-data, file = " + multiPart.getOriginalFilename() + "]");
+//		if ( ! multiPart.isEmpty()) {
+//			//  Check are object exist
+//			Node theNode = photoService.getNodeById(objectId);
+//			File tempImageFile = File.createTempFile(
+//					FilenameUtils.removeExtension(multiPart.getOriginalFilename()) +  Long.toString(System.nanoTime()),
+//					"." + FilenameUtils.getExtension(multiPart.getOriginalFilename()));
+//			try {
+//				// Save thumb object to temp file
+//				multiPart.transferTo(tempImageFile);
+//				logger.debug("Done file upload to : " + tempImageFile.getAbsolutePath());
+//				thumbService.setThumb(tempImageFile.getAbsolutePath(), theNode.getPhoto());
+//			} catch (Exception e) {
+//				logger.error("Cannot set new thumbnail from image file : " + tempImageFile + ",  error : " + e.getLocalizedMessage());
+//				throw new Exception(e);
+//			}
+//			finally {
+//				FileUtils.fileDelete(tempImageFile,true);
+//			}
+//			response = new ResponseFileUpload("File processed successfully",multiPart.getOriginalFilename(),0);
+//			response.setObject(photoObjFactory.getPhotoObject(theNode));
+//		} else {
+//			response = new ResponseFileUpload("Nothing to process",multiPart.getOriginalFilename(),0);
+//		}
+//		return new ResponseEntity<ResponseFileUpload>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
+//	}
 	
 	
 	/*=============================================================================================

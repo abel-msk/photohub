@@ -14,6 +14,7 @@ import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 import com.github.springtestdbunit.TransactionDbUnitTestExecutionListener;
+import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.connector.prototype.SiteCredentialInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
 import home.abel.photohub.model.*;
@@ -535,7 +536,7 @@ public class PhotoServiceTest {
 		String rootPhotoId = thePhoto.getId();
 		assertThat(rootPhotoId).isNotNull();
 		
-		//  Upload photo object unde the rootNode folder
+		//  Upload photo object under the rootNode folder
 		Node  theNewNode = photoService.addPhoto(new File(TMP_IMAGE_FILE), RESOURCE_IMAGE_FN, "", rootNode.getId(), theSite.getId());
 		assertThat(theNewNode.getPhoto().getUnicId()).isNotNull();
 		Iterable<Photo> phList = photoRepo.findAll(QPhoto.photo.siteBean.id.eq(defSiteId));
@@ -600,7 +601,16 @@ public class PhotoServiceTest {
     	
 		userService.deleteUser(currentUser);
     }
-	
+
+
+
+	@Test
+	public void deleteOnSiteTest()  throws Exception {
+		Site theSite =  siteService.getSite("2");
+		Node  theNewNode = photoService.addPhoto(new File(TMP_IMAGE_FILE), RESOURCE_IMAGE_FN, "", null, theSite.getId());
+		photoService.deleteObject(theNewNode,true,true);
+	}
+
 
     private void dumpDB() throws Exception {
 		

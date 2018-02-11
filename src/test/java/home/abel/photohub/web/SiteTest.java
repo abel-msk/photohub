@@ -3,10 +3,9 @@ package home.abel.photohub.web;
 import com.github.springtestdbunit.DbUnitTestExecutionListener;
 import com.github.springtestdbunit.TransactionDbUnitTestExecutionListener;
 import com.github.springtestdbunit.annotation.DatabaseSetup;
+import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.model.*;
-import home.abel.photohub.service.ConfigService;
-import home.abel.photohub.service.TaskQueueService;
-import home.abel.photohub.service.UserService;
+import home.abel.photohub.service.*;
 import home.abel.photohub.tasks.BaseTask;
 import home.abel.photohub.tasks.TaskDescription;
 import home.abel.photohub.tasks.TaskNamesEnum;
@@ -140,6 +139,10 @@ public class SiteTest   {
     @Autowired MockHttpServletRequest request;
     @Autowired ConfigService configService;
 	@Autowired TaskQueueService taskQueue;
+	@Autowired
+	SiteService siteService;
+	@Autowired
+	PhotoService photoService;
 
 //	@Autowired
 //	private TaskRecordRepository taskRepository;
@@ -163,6 +166,9 @@ public class SiteTest   {
 	public static final String TMP_IMAGE_FILE = "/tmp/photo1.JPG";
 	public final static String TMP_ROOT_PATH = "/tmp/photohub_test_2";
 
+	public final static String TMP_IMAGE_FULLPATH = TMP_ROOT_PATH + File.separator + TEST_FOLDER_NAME + File.separator + RESOURCE_IMAGE_FN;
+
+
 	public final static String TEST_SITE_ID = "2";
 	
     
@@ -173,7 +179,9 @@ public class SiteTest   {
 	@Before
 	public void before() throws Throwable {
 
-		System.out.println("\n------ Before test running ------");
+		System.out.println("------------------------------------------------------------------------");
+		System.out.println("\t Before is invoked");
+		System.out.println("------------------------------------------------------------------------");
 
 		if( ! firstRun ) {
 			configService.Init();
@@ -201,26 +209,46 @@ public class SiteTest   {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
         		.addFilter(filterChain)
                 .build();
-	}
 
-	@BeforeClass
-	public static  void beforeClass() throws Exception {
-		//Add auth user service
+
+
+		//    Prepare image file
+
 		File newFolder = new File(TMP_ROOT_PATH + File.separator + TEST_FOLDER_NAME);
 		if ( ! newFolder.exists() ) {
 			newFolder.mkdirs();
 		}
+		System.out.println("Create temp directory: " + newFolder.getAbsolutePath());
 
 		URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(RESOURCE_IMAGE_FN);
-		String sampeImagePath =  resourceUrl.toURI().getPath();
-		File sampeImageFile = new File(sampeImagePath);
+		String sampleImagePath =  resourceUrl.toURI().getPath();
+		File sampleImageFile = new File(sampleImagePath);
 
 		File imgFile = new  File(newFolder.getAbsolutePath() +  File.separator + RESOURCE_IMAGE_FN) ;
 		if ( ! imgFile.exists()) {
-			FileUtils.copyFile(sampeImageFile,imgFile);
-			System.out.println("Copy file " + imgFile.getAbsolutePath());
+			FileUtils.copyFile(sampleImageFile,imgFile);
+			System.out.println("Copy file exist : from "+sampleImageFile.getAbsolutePath()+", to " + imgFile.getAbsolutePath());
+
+			//System.out.println("Copy file " + imgFile.getAbsolutePath());
 			imgFile.deleteOnExit();
 		}
+		else {
+			System.out.println("Image file exist on place: " + imgFile.getAbsolutePath());
+		}
+
+
+		//  Prepare  folder for  for LocalSite
+		File rootPath = new File(SITE_ROOT_PATH);
+		if ( ! rootPath.exists() ) {
+			rootPath.mkdirs();
+		}
+		System.out.println("Create Local site root path: " + rootPath.getAbsolutePath());
+	}
+
+	@BeforeClass
+	public static  void beforeClass() throws Exception {
+		//System.out.println("\n*** beforeClass is invoked");
+
 	}
 
 	@AfterClass
@@ -510,9 +538,28 @@ public class SiteTest   {
 		System.out.println("\n------ Test: testBatchDelete ------\n");
 
 
+
+		Site theSite =  siteService.getSite("2");
+
+		SiteConnectorInt connector = siteService.getOrLoadConnector(theSite);
+		Node theNode1 = photoService.addPhoto(
+				new File (TMP_IMAGE_FULLPATH),
+				"test1.jpg",
+				"",
+				null,
+				theSite.getId());
+		Node theNode2 = photoService.addPhoto(
+				new File (TMP_IMAGE_FULLPATH),
+				"test2.jpg",
+				"",
+				null,
+				theSite.getId());
+
+
+
 		List<String> objList = new ArrayList<>();
-		objList.add("4");
-		objList.add("6");
+		objList.add(theNode1.getPhoto().getId());
+		objList.add(theNode2.getPhoto().getId());
 
 		Cookie[] cookies = null;
 

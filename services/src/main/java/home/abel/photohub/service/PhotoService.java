@@ -16,6 +16,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import home.abel.photohub.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,15 +48,6 @@ import home.abel.photohub.connector.prototype.PhotoMetadataInt;
 import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
-import home.abel.photohub.model.Media;
-import home.abel.photohub.model.ModelConstants;
-import home.abel.photohub.model.Node;
-import home.abel.photohub.model.Photo;
-import home.abel.photohub.model.QNode;
-import home.abel.photohub.model.QPhoto;
-import home.abel.photohub.model.QSite;
-import home.abel.photohub.model.QTaskRecord;
-import home.abel.photohub.model.Site;
 import home.abel.photohub.utils.FileUtils;
 import home.abel.photohub.utils.image.ImageMetadataProcessor;
 
@@ -102,16 +94,16 @@ public class PhotoService {
 	PlatformTransactionManager txManager;
 	
 	@Autowired
-	private home.abel.photohub.model.PhotoRepository photoRepo;
+	private PhotoRepository photoRepo;
 	
 	@Autowired
-	private home.abel.photohub.model.SiteRepository siteRepo;
+	private SiteRepository siteRepo;
 	
 	@Autowired
-	private home.abel.photohub.model.NodeRepository nodeRepo;
+	private NodeRepository nodeRepo;
 	
 	@Autowired
-	private home.abel.photohub.service.ConfigService conf;
+	private ConfigService conf;
 	
 	@Autowired 	
 	private ThumbService thumbService;
@@ -179,7 +171,7 @@ public class PhotoService {
 //			throw new ExceptionInvalidArgument("Site argument cannot be null");
 //		}
 
-		Photo thePhoto = new Photo(ModelConstants.PHOTO_FOLDER, name, descr, theSite);	
+		Photo thePhoto = new Photo(ModelConstants.OBJ_FOLDER, name, descr, theSite);	
 		Node theNode = new Node(thePhoto,theParentNode);
 		
 		//photoRepo.save(thePhoto);
@@ -353,7 +345,7 @@ public class PhotoService {
 			}
 			logger.trace("[addPhoto]  Lookup Site. Id="+ (siteId==null?"null":siteId));
 			if (siteId != null) {
-				theSite = siteRepo.findOne(QSite.site.id.eq(siteId));
+				theSite = siteRepo.findOne(siteId);
 				if (theSite == null) throw new ExceptionInvalidArgument("Cannot find site with id="+parentId);
 	
 			} else {
@@ -365,7 +357,7 @@ public class PhotoService {
 			//
 			logger.trace("[addPhoto]  Create DB phot's object");
 			//   Создаем объекты в базе для файла (фото объекта)
-			thePhoto = new Photo(ModelConstants.PHOTO_SINGLE, name, descr, theSite);
+			thePhoto = new Photo(ModelConstants.OBJ_SINGLE, name, descr, theSite);
 			
 			//  Create Node object for this photo object
 			theNode = new Node(thePhoto,theParentNode);
@@ -464,6 +456,8 @@ public class PhotoService {
 	/**
 	 * 
 	 *		Load photo object from site, create and save corresponding node in DB
+	 *	    Функция вызывается при сканировании сайта. Каждй объект (image filder video) добавляется в базу и для
+	 *	    каждого объекта скачивается и сохраняется  иконка.
 	 * 
 	 * @param onSiteObject
 	 * @param parentId
@@ -484,82 +478,96 @@ public class PhotoService {
 		if (theSite == null) {
 			throw new ExceptionInvalidArgument("Cannot find site with id=" + siteId);
 		}
-//			theSite = siteRepo.findOne(QSite.site.id.eq(siteId));
-//			if (theSite == null) throw new ExceptionInvalidArgument("Cannot find site with id="+siteId);
-//
-//		} else {
-//			throw new ExceptionInvalidArgument("Site argument cannot be null");
-//		}
-				
+
+		//--------------------------------------------------------------------------
+		//     Load object information metadata and media info
+		//     Звгружаем  информацию по объекту плюс метаданные и медиаинфо
+		//--------------------------------------------------------------------------
 		Photo thePhoto = convertToPhoto(onSiteObject, null, null);
 		thePhoto.setSiteBean(theSite);
 		//thePhoto = photoRepo.save(thePhoto);
 		
 		try { 
 			thePhoto = photoRepo.save(thePhoto);
+			//--------------------------------------------------------------------------
+			//    load thumbnail inf^ and generate name based on the photo id
+			//--------------------------------------------------------------------------
 			thumbService.uploadThumbnail(onSiteObject,thePhoto);
 		} catch (IOException e) {
 			throw new ExceptionPhotoProcess("Cannot create thumbnail.",e);
 		}
-		
+
+		//--------------------------------------------------------------------------
+		//    Finally  generate Nod and links all together
+		//--------------------------------------------------------------------------
 		thePhoto = photoRepo.save(thePhoto);
 		Node theNode = new Node(thePhoto,theParentNode);
 		theNode = nodeRepo.save(theNode);
 		logger.debug("[addObjectFromSite] Add photo object, type="+
-				(thePhoto.getType()==ModelConstants.PHOTO_FOLDER?"folder":"photo")
+				(thePhoto.getType()==ModelConstants.OBJ_FOLDER?"folder":"photo")
 				+",node='"+theNode+"', photo='"+thePhoto+"', site='"+thePhoto.getSiteBean()+"'");
 		
 		return theNode;
 		
 	}
-	/**
-	 * 
-	 *   Extract Media info datas and add to db' Photo object.
-	 * 
-	 * @param sitesPhotoObject
-	 * @param thePhoto
-	 * @return
-	 * @throws ExceptionPhotoProcess
-	 */
-	public Media convertMediaInfo(PhotoObjectInt sitesPhotoObject, Photo thePhoto) throws ExceptionPhotoProcess  {
-		logger.debug("[convertMediaInfo] Extract objects media and save to DB entity=" +thePhoto);
-		PhotoMediaObjectInt mObject = null;
-		Media dbMObject = null;
-		
-		if ((thePhoto != null) && ( ! sitesPhotoObject.isFolder()) ) {
-			mObject = null;
-			try {
-				logger.trace("[convertMediaInfo] Load objects media info.");
-				mObject =  sitesPhotoObject.getMedia(EnumMediaType.IMAGE);
-			} catch (Exception e) {
-				throw new ExceptionPhotoProcess("ERROR:  Extract image metadata. "+e.getMessage(),e);
-			}
-			
-			if (mObject == null) {
-				logger.warn("Cannot retrieve media info from object Object="+sitesPhotoObject.getId());
-			}
-			else {
-				logger.trace("[convertMediaInfo] Create local media object");
-				dbMObject = new Media();
-				dbMObject.setType(ModelConstants.MEDIA_PHOTO);
-				dbMObject.setHeight(mObject.getHeight());
-				dbMObject.setWidth(mObject.getWidth());
-				dbMObject.setSize(mObject.getSize());
-				dbMObject.setMimeType(mObject.getMimeType());
-				dbMObject.setPath(mObject.getPath());
-				if ( mObject.getType() == EnumMediaType.IMAGE_FILE ) {
-					dbMObject.setAccessType(ModelConstants.ACCESS_LOCAL);
-				} else {
-					dbMObject.setAccessType(ModelConstants.ACCESS_NET);
-				}	
-			}
-		} else {
-			if (sitesPhotoObject.isFolder()) {
-				logger.warn("[convertMediaInfo] Try to extract metas from folder.");
-			}			
-		}
-		return dbMObject;
-	}
+//	/**
+//	 *
+//	 *   Extract Media info datas and add to db' Photo object.
+//	 *
+//	 * @param sitesPhotoObject
+//	 * @param thePhoto
+//	 * @return
+//	 * @throws ExceptionPhotoProcess
+//	 */
+//	public Media convertMediaInfo(PhotoObjectInt sitesPhotoObject, Photo thePhoto) throws ExceptionPhotoProcess  {
+//		logger.debug("[convertMediaInfo] Extract objects media and save to DB entity=" +thePhoto);
+//		PhotoMediaObjectInt mObject = null;
+//		Media dbMObject = null;
+//
+//		if ((thePhoto != null) && ( ! sitesPhotoObject.isFolder()) ) {
+//			mObject = null;
+//			try {
+//
+//				if ( sitesPhotoObject.getType().equalsIgnoreCase("VIDEO")) {
+//					logger.trace("[convertMediaInfo] Load objects media info.");
+//					mObject =  sitesPhotoObject.getMedia(EnumMediaType.VIDEO);
+//
+//				}
+//
+//
+//
+//
+//				logger.trace("[convertMediaInfo] Load objects media info.");
+//				mObject =  sitesPhotoObject.getMedia(EnumMediaType.IMAGE);
+//			} catch (Exception e) {
+//				throw new ExceptionPhotoProcess("ERROR:  Extract image metadata. "+e.getMessage(),e);
+//			}
+//
+//			if (mObject == null) {
+//				logger.warn("Cannot retrieve media info from object Object="+sitesPhotoObject.getId());
+//			}
+//			else {
+//				logger.trace("[convertMediaInfo] Create local media object");
+//				dbMObject = new Media();
+//				dbMObject.setType(ModelConstants.MEDIA_PHOTO);
+//				dbMObject.setHeight(mObject.getHeight());
+//				dbMObject.setWidth(mObject.getWidth());
+//				dbMObject.setSize(mObject.getSize());
+//				dbMObject.setMimeType(mObject.getMimeType());
+//				dbMObject.setPath(mObject.getPath());
+//				if ( mObject.getType() == EnumMediaType.IMAGE_FILE ) {
+//					dbMObject.setAccessType(ModelConstants.ACCESS_LOCAL);
+//				} else {
+//					dbMObject.setAccessType(ModelConstants.ACCESS_NET);
+//				}
+//			}
+//		} else {
+//			if (sitesPhotoObject.isFolder()) {
+//				logger.warn("[convertMediaInfo] Try to extract metas from folder.");
+//			}
+//		}
+//		return dbMObject;
+//	}
 	
 	/**
 	 * 
@@ -583,47 +591,86 @@ public class PhotoService {
 			thePhoto.setDescr(sitesPhotoObject.getDescr());
 			
 			if ( sitesPhotoObject.isFolder() ) {
-				thePhoto.setType(ModelConstants.PHOTO_FOLDER);
+				thePhoto.setType(ModelConstants.OBJ_FOLDER);
 			}
 			else {
-				thePhoto.setType(ModelConstants.PHOTO_SINGLE);
+				thePhoto.setType(ModelConstants.OBJ_SINGLE);
 			}
+			//  No other type can be received from site
 		}
 		
 		try {
 			thePhoto.setOnSiteId(sitesPhotoObject.getId());
 			thePhoto.setUpdateTime(new Date());
+			thePhoto.setMediaType(sitesPhotoObject.getMimeType());
 		}
 		catch (Exception e) {
 			throw new ExceptionPhotoProcess("[convertToPhoto] Canot process photo object. ON Site object ="+sitesPhotoObject+", photo="+thePhoto,e);
 		}
-		
-		if ( ! sitesPhotoObject.isFolder() ) {
-			//thePhoto.setRealUrl(sitesPhotoObject.getSrcUrl());
-			
-			//  
-			//    Вытаскиваем и сохраняем информацию по фото объекту 
-			//
-			try {
-				Media dbMedia = new Media();
-				PhotoMediaObjectInt sitesMedia  = sitesPhotoObject.getMedia(EnumMediaType.IMAGE);
 
-				dbMedia.setType(ModelConstants.MEDIA_PHOTO);
+
+		//--------------------------------------------------------------------------
+		//
+		//   For object that is media, additionally load media info and metadata
+		//
+		//--------------------------------------------------------------------------
+
+		if ( ! sitesPhotoObject.isFolder() ) {
+			String baseMediaObject = thePhoto.getMediaType().substring(0,thePhoto.getMediaType().indexOf("/"));
+			Media dbMedia = new Media();
+
+			//--------------------------------------------------------------------------
+			//    Вытаскиваем и сохраняем информацию по media объекту
+			//--------------------------------------------------------------------------
+			try {
+				PhotoMediaObjectInt sitesMedia = null;
+				//   Main media object is video
+				if (baseMediaObject.equalsIgnoreCase("video")){
+					sitesMedia  = sitesPhotoObject.getMedia(EnumMediaType.VIDEO);
+					dbMedia.setType(Media.MEDIA_VIDEO);
+				}
+				else {
+					sitesMedia  = sitesPhotoObject.getMedia(EnumMediaType.IMAGE);
+					dbMedia.setType(Media.MEDIA_IMAGE);
+				}
+
 				dbMedia.setAccessType(
-						(sitesMedia.getAccessType()==EnumMediaType.ACC_LOACL)?ModelConstants.ACCESS_LOCAL:ModelConstants.ACCESS_NET
+						(sitesMedia.getAccessType()==EnumMediaType.ACC_LOACL)?Media.ACCESS_LOCAL:Media.ACCESS_NET
 						);
 				dbMedia.setHeight(sitesMedia.getHeight());
 				dbMedia.setWidth(sitesMedia.getWidth());
 				dbMedia.setSize(sitesMedia.getSize());
 				dbMedia.setMimeType(sitesMedia.getMimeType());
 				dbMedia.setPath(sitesMedia.getPath());
-				
-				thePhoto.addMediaObject(dbMedia);	
+				thePhoto.addMediaObject(dbMedia);
+
+				//   Add addition image for video asset.
+				//TODO: Не факт что это надо делать.
+				if (baseMediaObject.equalsIgnoreCase("video")){
+					dbMedia = new Media();
+					sitesMedia  = sitesPhotoObject.getMedia(EnumMediaType.IMAGE);
+
+					dbMedia.setType(Media.MEDIA_IMAGE);
+					dbMedia.setAccessType(
+							(sitesMedia.getAccessType()==EnumMediaType.ACC_LOACL)?Media.ACCESS_LOCAL:Media.ACCESS_NET
+					);
+					dbMedia.setHeight(sitesMedia.getHeight());
+					dbMedia.setWidth(sitesMedia.getWidth());
+					dbMedia.setSize(sitesMedia.getSize());
+					dbMedia.setMimeType(sitesMedia.getMimeType());
+					dbMedia.setPath(sitesMedia.getPath());
+					thePhoto.addMediaObject(dbMedia);
+				}
+
 				
 			} catch (Exception e) {
 				logger.warn("[convertToPhoto] Cannot get media object. Site="+sitesPhotoObject+", photo="+thePhoto,e);
 			}
-			
+
+			//--------------------------------------------------------------------------
+			//    Вытаскиваем и сохраняем Метаданные
+			//--------------------------------------------------------------------------
+
 			//  Если не получили метаданные в качестве параметра, пробуем загрузить из файла
 			if (metadata == null ) {
 				try {
@@ -635,6 +682,7 @@ public class PhotoService {
 			
 			//	Если удалось получить из параметра или загрузить копируем данные 
 			if ( metadata != null) {
+
 				thePhoto.setUnicId(metadata.getUnicId());
 				thePhoto.setCamMake(metadata.getCameraMake());
 				thePhoto.setCamModel(metadata.getCameraModel());
@@ -740,15 +788,17 @@ public class PhotoService {
 				parentPhotoObject = getOnSiteObject(parentNode);
 				logger.trace("[uploadPhotoObject]Get parent object=" + (parentPhotoObject==null?"null":parentPhotoObject.getName())  + " for parent node="+parentNode);
 			}
-			
-			if ( thePhoto.getType() == ModelConstants.PHOTO_FOLDER) {
+
+			//-------------------------
+			//   Create folder
+			//-------------------------
+			if ( thePhoto.getType() == ModelConstants.OBJ_FOLDER) {
 				logger.trace("[uploadPhotoObject] Create folder on remote site. Name="+thePhoto.getName());
-				//logger.trace("[uploadPhotoObject]        Parent object=" + parentPhotoObject==null?"null":parentPhotoObject.getName() );
-				
-				//logger.trace("[uploadPhotoObject] Create folder on remote site. Name="+thePhoto.getName()+()"");	
 				sitesPhotoObject = connector.createFolder(thePhoto.getName(), parentPhotoObject);
-				
 			}
+			//-------------------------
+			//   Create Object
+			//-------------------------
 			else {
 				logger.trace("[uploadPhotoObject] Upload object as plain photo. Name="+thePhoto.getName()+
 						", parent object=" + (parentPhotoObject!=null?parentPhotoObject.getId():"null"));
@@ -756,22 +806,15 @@ public class PhotoService {
 					throw new ExceptionInvalidArgument("Input stream for upload is null, but object is nnot a folder.");
 				sitesPhotoObject = connector.createObject(thePhoto.getName(), parentPhotoObject, inputImgFile);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new ExceptionPhotoProcess("Cannot create object. Nested Exception : " + e.getMessage(),e);
 		}
 			
 		logger.trace("[uploadPhotoObject]  Object created. id="+sitesPhotoObject.getId()+", name="+sitesPhotoObject.getName());
 		return sitesPhotoObject;
 	}
-	
-	/**
-	 * Проверяет является ли обект корневым
-	 * @param theNode  the node object
-	 * @return
-	 */
-	public boolean isRoot(Node theNode) {
-		return theNode.getParent() == null;
-	}
+
 	
 	/**
 	 *    Соединяемся с конектором (Если еще не соединились) вытаскиваем Фото объект в терминах коннектора
@@ -787,12 +830,11 @@ public class PhotoService {
 	 * @throws Exception when cannot find connector
 	 */
 	public PhotoObjectInt getOnSiteObject(Node theNode) throws ExceptionInternalError, Exception {
-		//if (theNode.isRoot()) return null;
 		Photo thePhoto = theNode.getPhoto();
 		if ( thePhoto.getOnSiteId() == null) 
 			throw new ExceptionInternalError("Empty pathOnSite property for object " + thePhoto ); 
 		SiteConnectorInt connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
-		logger.trace("[getOnSiteObject] Load onSite object ID="+thePhoto.getOnSiteId() + ", onSiteObject = " );
+		logger.trace("[getOnSiteObject] Load sites object "+thePhoto+", ID="+thePhoto.getOnSiteId());
 		PhotoObjectInt onSiteObject = connector.loadObject(thePhoto.getOnSiteId());
 		return onSiteObject;
 	}
@@ -829,8 +871,8 @@ public class PhotoService {
 	 * @throws ExceptionDBContent
 	 */
 	@Transactional
-	public void deleteObject(Node theNode, boolean forseDelete) throws ExceptionPhotoProcess, ExceptionDBContent {
-		deleteObject(theNode,forseDelete,false);
+	public boolean deleteObject(Node theNode, boolean forseDelete) throws ExceptionPhotoProcess, ExceptionDBContent {
+		return deleteObject(theNode,forseDelete,false);
 	}		
 	
 	/**
@@ -842,9 +884,9 @@ public class PhotoService {
 	 * @throws ExceptionDBContent 
 	 */
 	@Transactional
-	public void deleteObject(String strNodeId, boolean forseDelete, boolean withFile ) throws ExceptionPhotoProcess, ExceptionDBContent {
-		Node theNode = nodeRepo.findOne(QNode.node.id.eq(strNodeId));
-		deleteObject(theNode,forseDelete,withFile);
+	public boolean deleteObject(String strNodeId, boolean forseDelete, boolean isDeleteOnSite ) throws ExceptionPhotoProcess, ExceptionDBContent, ExceptionInternalError {
+		Node theNode = nodeRepo.findOne(strNodeId);
+		return deleteObject(theNode,forseDelete,isDeleteOnSite);
 	}
 	
 	/**
@@ -858,16 +900,17 @@ public class PhotoService {
 	 * @param theNode
      * @param forseDelete - Для Объектов  типа 'folder',  если  true удаляет все содержимое
 	 * 						если false и есть подобъекты то генерирует Exception
-	 * @param withFile    - Если true то объект из DB удаляется вместе с файлом на диске. Иначе файл на диске остается.
+	 * @param isDeleteOnSite    - Если true то объект из DB удаляется вместе с объектов на сайте.
 	 * @throws ExceptionPhotoProcess
 	 * @throws ExceptionDBContent 
 	 */
 	//@Transactional(propagation=Propagation.REQUIRED,readOnly=false, rollbackFor = Exception.class)
 	@Transactional(propagation=Propagation.SUPPORTS)
-	public void deleteObject(Node theNode, boolean forseDelete,boolean withFile) throws ExceptionPhotoProcess, ExceptionDBContent {
+	public boolean  deleteObject(Node theNode, boolean forseDelete,boolean isDeleteOnSite) throws ExceptionPhotoProcess, ExceptionDBContent, ExceptionInternalError {
 		Photo thePhoto = theNode.getPhoto();
 		String newThumbPath = thumbService.getThumbPath(thePhoto);
-	
+		boolean allDeleted = true;
+
 		logger.debug("Remove Photo object: " +
 				"  NodeId = " + theNode.getId() +
 				", PhotoId = " + thePhoto.getId() +
@@ -879,12 +922,12 @@ public class PhotoService {
 		
 		//--- look for sub nodes
 		//    If this node has sub nodes delete subnodes first
-		if ( thePhoto.getType() != ModelConstants.PHOTO_SINGLE) {
+		if ( thePhoto.getType() != ModelConstants.OBJ_SINGLE) {
 			Iterable<Node> containedPhotos = nodeRepo.findAll(QNode.node.parent.eq(theNode.getId()));
 			if (containedPhotos.iterator().hasNext()) {
 				if (forseDelete) {			
-					for ( Node subNode: containedPhotos) {		
-						deleteObject(subNode,forseDelete,withFile);
+					for ( Node subNode: containedPhotos) {
+						allDeleted = allDeleted &&  deleteObject(subNode,forseDelete,isDeleteOnSite);
 					}
 				//  All subnodes deleted, so delete folder
 				}
@@ -904,44 +947,85 @@ public class PhotoService {
 		logger.debug("Get nodes for photo id="+thePhoto.getId());
 		List<Node> allNodes =  thePhoto.getNodes();
 
+
 		if (allNodes.size() <= 1) {	
-			logger.debug("Object "+thePhoto+", has just one reference, so we can delete it.");	
-			
+			logger.debug("Object "+thePhoto+", has just one reference, so we can delete it.");
+
+			//--- IF required, delete photoObject on site
+			if ( isDeleteOnSite ) {
+				boolean wasRemoved = false;
+				if ( thePhoto.getType() == ModelConstants.OBJ_SINGLE ) {
+					wasRemoved = deleteObjectFromSite(theNode);
+				}
+				else {
+					if (allDeleted) {
+						wasRemoved = deleteObjectFromSite(theNode);
+					}
+				}
+				//  if not all deleted on site or we cann delete this photo& just hide it and exit.
+				if (! wasRemoved)  {
+					thePhoto.setHidden(true);
+					photoRepo.save(thePhoto);
+					return false;
+				}
+			}
+
 			//---  Delete Thumbnail file
 			try {
 				FileUtils.fileDelete(newThumbPath, false);
 			}
 			catch (ExceptionFileIO e) {
 				logger.warn("Cannot delete thumbnail "+newThumbPath+ ", for photo obj " + theNode.getPhoto() + ".  File delete report:"+e.getLocalizedMessage(),e);
-			} 			
-			
+			}
+
 			//--- Delete PhotoObject from DB
-			String  msg = "Photo NodeId="+ theNode +", PhotoID=" + thePhoto;	
+			String msg = "Photo NodeId=" + theNode + ", PhotoID=" + thePhoto;
 			theNode.setPhoto(null);
 			nodeRepo.delete(theNode);
-			photoRepo.delete(thePhoto);	
-			logger.debug("Deleted " + msg);		
+			photoRepo.delete(thePhoto);
+			logger.debug("Deleted " + msg);
+
 		}
 		else {
 			logger.debug("Photo object has anather link, so delete only the node "+theNode);
 			nodeRepo.delete(theNode);
-		}		
+		}
+		return true;
 	}
 
-	/*=============================================================================================
-	 * 
-	 *    MOVE  photoObject to other folder 
-	 *      
-	 =============================================================================================*/
-	
 
-	
-	/*=============================================================================================
-	 * 
-	 *    COPY  photoObject 
-	 *      
-	 =============================================================================================*/
-	
+
+	protected boolean  deleteObjectFromSite(Node theNode) throws ExceptionInternalError {
+		Photo thePhoto = theNode.getPhoto();
+		try {
+			SiteConnectorInt connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
+			try {
+				if (connector.isCanDelete()) {
+					PhotoObjectInt onSiteObject = getOnSiteObject(theNode);
+					logger.debug("[PhotoService.deleteObjectFromSite] Delete on site. Node="+theNode+", object="+ thePhoto.getName()+"(id="+thePhoto.getId()+")  site " + thePhoto.getSiteBean());
+					onSiteObject.delete();
+				}
+				// else throw new ExceptionInternalError("Cannot delete object " + thePhoto.getName() + ". The site read only.");
+				//
+				//If site read-only  just hide object in db
+				//
+				else {
+					return false;
+				}
+			} catch (ExceptionInternalError eie) {
+				throw eie;
+			} catch (Exception e) {
+				logger.error("[deleteObject] Cannot delete object from site.", e);
+				throw new ExceptionInternalError("Cannot delete object from site.", e);
+			}
+		} catch (ExceptionInternalError eie) {
+			throw eie;
+		} catch (Exception e) {
+			logger.error("[deleteObject] Cannot get object from site. ", e);
+			throw new ExceptionInternalError("Cannot get object from site.", e);
+		}
+		return true;
+	}
 
 	/*=============================================================================================
 	 * 
@@ -964,7 +1048,7 @@ public class PhotoService {
 		QPhoto photo = QPhoto.photo;
 
 
-		BooleanExpression criteria = QPhoto.photo.type.eq(ModelConstants.PHOTO_SINGLE)
+		BooleanExpression criteria = QPhoto.photo.type.eq(ModelConstants.OBJ_SINGLE)
 				.and(QPhoto.photo.hidden.isFalse());
 
 		BooleanExpression sqlFilter = filter.getCriteria();

@@ -303,7 +303,7 @@ define(["jquery","login","modalDialog","api","menu","filter",
 
             if (filter && (! itemSelection.isEmpty())) {
 
-                var hashArray = itemSelection.getHash();
+                //var hashArray = itemSelection.getHash();
 
                 filter.getFilteredList().removeItems(itemSelection.getHash());
 

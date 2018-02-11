@@ -56,8 +56,9 @@ test {
 //----------------------------------------------------------
 ext {
     //  Google API      //v1-rev13-1.20.0 //v1-rev512-1.22.0 //v1-rev512-1.22.0/
-    googleAPIServicesVersion = 'v1-rev512-1.22.0'
-    googleAPIClientVersion = '1.+'
+    //googleAPIServicesVersion = 'v1-rev512-1.22.0'  //v1-rev539-1.23.0
+    googleAPIServicesVersion = 'v1-rev539-1.23.0'  //v1-rev539-1.23.0
+    googleAPIClientVersion = '1.47.1'   //1.47.1
 }
 
 repositories {
@@ -79,17 +80,21 @@ dependencies {
     //compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: "${jacksonVersion}"
 
     //  Google libs
-    compile group: 'com.google.gdata',  name: 'core', version: '1.47.1'
-    compile group: 'javax.mail',  name: 'mail', version: '1.4'
+   // compile group: 'com.google.gdata',  name: 'core', version: "${googleAPIClientVersion}"
+    compile group: 'com.google.gdata', name: 'core', version: '1.47.1'
+    //compile group: 'com.google.gdata', name: 'gdata-core-1.0', version: '1.47.1'
+    //compile group: 'com.google.gdata', name: 'gdata-client-1.0', version: '1.41.5'
+
+    //compile group: 'com.google.api-client',  name: 'google-api-client', version: "1.23.+"
+    compile group: 'com.google.apis',  name: 'google-api-services-plus', version: "${googleAPIServicesVersion}"
+
+    //compile group: 'javax.mail',  name: 'mail', version: '1.4'
     //compile group: 'com.google.guava',  name: 'guava', version: '13.0.1'
     //compile group: 'com.google.oauth-client',  name: 'google-oauth-client', version: "${googleAPIClientVersion}"
     //compile group: 'com.google.oauth-client',  name: 'google-oauth-client-jetty', version: "${googleAPIClientVersion}"
     //compile group: 'com.google.http-client',  name: 'google-http-client-jackson2', version: "${googleAPIClientVersion}"
     //compile (group: 'com.google.oauth-client',  name: 'google-oauth-client-servlet', version: "${googleAPIClientVersion}")
     //        { exclude group:'javax.servlet',module:'servlet-api' }
-
-    compile group: 'com.google.api-client',  name: 'google-api-client', version: "${googleAPIClientVersion}"
-    compile group: 'com.google.apis',  name: 'google-api-services-plus', version: "${googleAPIServicesVersion}"
     //google-oauth-client-jetty
     //compile group: 'com.google.apis',  name: 'google-api-services-appsactivity', version: "${googleAPIServicesVersion}"
 

@@ -92,7 +92,10 @@ define( ["jquery"], function($) {
 
             "photoList":["GET","","/list"],
             "getPhoto":["GET","","/photo/"],
-            "siteUpload":["POST","json","/site/"]
+            "siteUpload":["POST","json","/site/"],
+
+            "batchDeletePhotos":["DELETE","json","/objects"]
+
         };
 
         defaultAjaxOptions = {
@@ -503,6 +506,12 @@ define( ["jquery"], function($) {
             getPhoto: function (photoId, callbackResult, callbackError) {
                 API_DEBUG && debug_("[addSite] start ");
                 call("getPhoto", { 'url':getActionUrl('getPhoto')+photoId },{}, callbackResult, callbackError);
+            },
+
+            //  DELETE /site/{id}/task/{tid}
+            batchDeletePhotos: function(objectList, callbackResult, callbackError) {
+                API_DEBUG && debug_("[deleteTask] start ");
+                call("batchDeletePhotos", { 'url':getActionUrl('batchDeletePhotos')},objectList, callbackResult, callbackError);
             }
 
         };

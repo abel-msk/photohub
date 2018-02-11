@@ -16,6 +16,8 @@ public interface PhotoObjectInt {
 	
 	public String getType();
 	public String getDescr();
+	public String getMimeType();
+
 	public URL getThumbUrl();
 	public URL getSrcUrl();
 	public long getSize();

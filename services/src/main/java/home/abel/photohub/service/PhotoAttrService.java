@@ -56,7 +56,7 @@ public class PhotoAttrService {
 	}
 	/**
 	 * Return objects attribute value
-	 * @param thePhoto
+	 * @param theNode
 	 * @param theAttrName
 	 * @return
 	 * @throws ExceptionInvalidArgument 
@@ -64,13 +64,14 @@ public class PhotoAttrService {
 	public String getAttr(Node theNode, String theAttrName) throws ExceptionInvalidArgument  {
 		PhotoAttrEnum theAttr =  PhotoAttrEnum.fromName(theAttrName);
 		return getAttr(theNode,theAttr);
-	}		
+	}
+
 	/**
-	 *  Return  objects attribute  value 
-	 * @param thePhoto
-	 * @param theAttrName
-	 * @return
-	 * @throws ExceptionInvalidArgument 
+	 * 	 *  Return  objects attribute  value by its name
+	 * @param theNode
+	 * @param thePhotoAttrEnum
+	 * @return objects attribute  value
+	 * @throws ExceptionInvalidArgument
 	 */
 	public String getAttr(Node theNode, PhotoAttrEnum thePhotoAttrEnum) throws ExceptionInvalidArgument  {
 		InternetDateFormat dateFormat = new InternetDateFormat();
@@ -188,7 +189,7 @@ public class PhotoAttrService {
 	
 	/**
 	 * Return list of all attributes as  Map <attrName, attrValue>
-	 * @param objectId
+	 * @param theNode
 	 * @return - the Map object where key is a attribute name and value its attribute value
 	 * @throws ExceptionInvalidArgument 
 	 */
@@ -249,7 +250,7 @@ public class PhotoAttrService {
 	 * Set attribute to new object
 	 * 
 	 * @param theNode      node object for attribute change
-	 * @param theAttrName  the json attribute name
+	 * @param theAttr  the json attribute name
 	 * @param value        the value need to set
 	 * @return             new save value
 	 * @throws Exception
@@ -270,14 +271,14 @@ public class PhotoAttrService {
 				Integer theNewType = new java.lang.Integer(value);
 				
 				//  Folder cannot be converted from/to other types
-				if ((thePhoto.getType() == ModelConstants.PHOTO_FOLDER) ||
-						(theNewType == ModelConstants.PHOTO_FOLDER)){
+				if ((thePhoto.getType() == ModelConstants.OBJ_FOLDER) ||
+						(theNewType == ModelConstants.OBJ_SERIES)){
 					throw new ExceptionPhotoProcess("Folder canot be converted from/to other types.");
 				}
 				
 				//  For convert from collection to single photo check if collection is empty				
-				if ((theNewType	==  ModelConstants.PHOTO_SINGLE )  &&
-						(thePhoto.getType()  == ModelConstants.PHOTO_COLLECTION)){
+				if ((theNewType	==  ModelConstants.OBJ_SINGLE )  &&
+						(thePhoto.getType()  == ModelConstants.OBJ_SERIES)){
 					if ( nodeRepo.count(QNode.node.parent.eq(theNode.getId())) > 0 )  {
 						throw new ExceptionPhotoProcess("Cannot convert to single photo not empty collection.");
 					}
@@ -337,7 +338,7 @@ public class PhotoAttrService {
 	private String getPhotoUrl(Node theNode, boolean requiredRealPath) {
 		String result = null;
 
-		if ( theNode.getPhoto().getType() != ModelConstants.PHOTO_FOLDER ) {
+		if ( theNode.getPhoto().getType() != ModelConstants.OBJ_FOLDER ) {
 			if ((confService.isSelfImageWeb()) || (theNode.getPhoto().getRealUrl() == null)) {
 				result = confService.getValue(ConfVarEnum.LOCAL_PHOTO_URL);
 				result = result.endsWith("/") ? result : result + "/";

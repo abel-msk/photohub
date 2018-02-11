@@ -506,14 +506,37 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			logger.error("ERROR: Create folder,  PostUrl="+postUrl+", Exception="+e.getMessage(),e);
 			throw new AccessException("Cannot create folder in picasa web album. ("+e.getMessage()+")");
 		}
+
 //		myAlbum.setDescription(new PlainTextConstruct("Updated album description")); 
 //		myAlbum.update();
-		
-		
-		
+
 		GoogleAlbumObject gObject = new GoogleAlbumObject(this,myAlbum.getGphotoId());
 		
 		return (PhotoObjectInt)gObject;
 
-	}	
+	}
+
+
+
+	/**---------------------------------------------------------------------
+	 *
+	 *    PHOTO DELETION
+	 *
+	 ---------------------------------------------------------------------*/
+	/**
+	 * Indicate that object on this site can be deleted.
+	 * @see home.abel.photohub.connector.prototype.SiteConnectorInt#isCanDelete()
+	 */
+	@Override
+	public boolean isCanDelete() {
+		return false;
+	}
+
+//	@Override
+//	public void deleteObject(PhotoObjectInt obj) throws Exception {
+//		if ( ! isCanDelete() ) throw new AccessException("Cannot delete object on readonly site.");
+//		obj.delete();
+//	}
+
+
 }

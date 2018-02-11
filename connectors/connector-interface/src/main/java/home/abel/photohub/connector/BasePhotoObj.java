@@ -21,6 +21,7 @@ public class BasePhotoObj implements PhotoObjectInt {
 	protected URL thumbUrl = null;
 	protected URL srcUrl = null;
 	protected String type = null;
+	protected String mimeType = null;
 	
 	protected long size = 0;
 	protected int width = 0;
@@ -51,13 +52,23 @@ public class BasePhotoObj implements PhotoObjectInt {
 	}
 
 	@Override
+	public String getMimeType() {
+		return this.mimeType;
+	}
+
+	protected void setMimeType(String mimeType) {
+		this.mimeType = mimeType;
+	}
+
+	@Override
 	public String getType() {
 		return type;
 	}
 
-	protected void setType(String type) {
+	public void setType(String type) {
 		this.type = type;
 	}
+
 
 	@Override
 	public String getDescr() {
@@ -73,45 +84,45 @@ public class BasePhotoObj implements PhotoObjectInt {
 		return thumbUrl;
 	}
 	
-//	public void setThumbUrl(URL thumbUrl) {
-//		this.thumbUrl = thumbUrl;
-//	}
+	public void setThumbUrl(URL thumbUrl) {
+		this.thumbUrl = thumbUrl;
+	}
 
 	@Override
 	public URL getSrcUrl() {
 		return srcUrl;
 	}
 	
-//	public void setSrcUrl(URL srcUrl) {
-//		this.srcUrl = srcUrl;
-//	}
+	public void setSrcUrl(URL srcUrl) {
+		this.srcUrl = srcUrl;
+	}
 
 	@Override
 	public long getSize() {
 		return size;
 	}
 	
-//	public void setSize( long size) {
-//		this.size = size;
-//	}
+	public void setSize( long size) {
+		this.size = size;
+	}
 	
 	@Override
 	public int getWidth() {
 		return width;
 	}
 
-//	public void setWidth( int width) {
-//		this.width = width;
-//	}
+	public void setWidth( int width) {
+		this.width = width;
+	}
 	
 	@Override
 	public int getHeight() {
 		return height;
 	}
 
-//	public void setHeight(int height) {
-//		this.height = height;
-//	}
+	public void setHeight(int height) {
+		this.height = height;
+	}
 	
 	@Override
 	public SiteConnectorInt getConnector() {

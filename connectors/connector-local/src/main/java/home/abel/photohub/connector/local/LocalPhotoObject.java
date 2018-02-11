@@ -59,19 +59,42 @@ public class LocalPhotoObject extends BasePhotoObj {
 		photoObjectsFile = objectFile;
 		isFolder = photoObjectsFile.isDirectory();
 		if (! isFolder ) { 
-			this.size = photoObjectsFile.length(); 
+			setSize(photoObjectsFile.length());
 			
 			// normalize extension type
 			String fileExt = FilenameUtils.getExtension(objectFile.getName()).toLowerCase();
 			if (fileExt != null ) {
-				if (fileExt.startsWith("tif")) { fileExt="tiff";}
-				else if(fileExt.startsWith("jpg")) { fileExt="jpeg";}
-				setType(fileExt);
+				if (fileExt.startsWith("tif")) {
+					setType("image");
+					setMimeType("image/tiff");
 				}
+				if (fileExt.startsWith("tiff")) {
+					setType("image");
+					setMimeType("image/tiff");
+				} else if (fileExt.startsWith("jpg")) {
+					setType("image");
+					setMimeType("image/jpeg");
+				} else if (fileExt.startsWith("jpeg")) {
+					setType("image");
+					setMimeType("image/jpeg");
+				} else if (fileExt.startsWith("png")) {
+					setType("image");
+					setMimeType("image/png");
+				} else if (fileExt.startsWith("avi")) {
+					setType("video");
+					setMimeType("video/mp4");
+				} else if (fileExt.startsWith("mp4")) {
+					setType("video");
+					setMimeType("video/mp4");
+				} else {
+					setMimeType("unknown");
+					setType("unknown");
+				}
+			}
 			
 			BufferedImage memImage = ImageIO.read(photoObjectsFile);
-			this.width = memImage.getWidth();
-			this.height = memImage.getHeight();	
+			setWidth(getWidth());
+			setHeight(getHeight());
 			
 			//logger.trace("Load image.  width=" +getWidth()+", height="+getHeight());
 		}
@@ -218,11 +241,12 @@ public class LocalPhotoObject extends BasePhotoObj {
             //----------------------------------------------------------------------
             boolean NeedUpdate = false;
             
-//ImageDescription
+			//ImageDescription
             
             //
             Double longitude = null;
             Double latitude = null;
+
             //  Loop throught input tags
             ExifMetadataTags[] values = ExifMetadataTags.values();
     		for (int i = 0; i < values.length; i++) {
@@ -467,9 +491,19 @@ public class LocalPhotoObject extends BasePhotoObj {
 			mediaFile = new LocalMediaObject(this.getConnector(),photoObjectsFile,"PHOTO");
 			mediaFile.setHeight(this.height);
 			mediaFile.setWidth(this.width);
-			mediaFile.setMimeType("image/" + getType());
 			mediaFile.setSize(this.size);
-			mediaFile.setType(EnumMediaType.IMAGE_FILE);
+			mediaFile.setMimeType(getMimeType());
+
+			if (getType().equalsIgnoreCase("image")) {
+				mediaFile.setType(EnumMediaType.IMAGE_FILE);
+			}
+			else if (getType().equalsIgnoreCase("video")) {
+				mediaFile.setType(EnumMediaType.VIDEO_FILE);
+			}
+			else {
+				mediaFile.setType(EnumMediaType.UNKNOWN);
+			}
+
 		}
 		else {
 			throw new IOException("Photo file path not defined.");

@@ -28,7 +28,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class Media implements Serializable{
 	private static final long serialVersionUID = 1L;
-	
+
+	public static final int MEDIA_THUMB = 11;
+	public static final int MEDIA_IMAGE = 12;
+	public static final int MEDIA_VIDEO = 13;
+
+
+	public static final int ACCESS_NET = 21;
+	public static final int ACCESS_LOCAL = 22;
+
 	@Id
 	@Column(columnDefinition = "BIGINT") 
     //@TableGenerator(name="node_gen", allocationSize=1)

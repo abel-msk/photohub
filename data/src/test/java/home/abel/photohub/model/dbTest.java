@@ -169,7 +169,7 @@ public class dbTest {
 		
     	Photo folder = new Photo();
     	folder.setName("folder");
-    	folder.setType(ModelConstants.PHOTO_FOLDER);
+    	folder.setType(ModelConstants.OBJ_FOLDER);
     	folder.setSiteBean(theSite);
     	photoRepo.save(folder);
     	
@@ -183,7 +183,7 @@ public class dbTest {
     	
     	Photo photo = new Photo();
     	photo.setName("Test photo");
-    	photo.setType(ModelConstants.PHOTO_SINGLE);
+    	photo.setType(ModelConstants.OBJ_SINGLE);
     	photo.setUpdateTime(new Date());
     	photo.setSiteBean(theSite);
     	photoRepo.save(photo);

@@ -105,8 +105,8 @@ public class ThumbService {
 			logger.debug("Thumbnail created in path: " + newThumbPath);
 		}
 		//   Object is folder
-		else if ((thePhoto.getType() == ModelConstants.PHOTO_FOLDER)  ||
-				(thePhoto.getType() == ModelConstants.PHOTO_COLLECTION)){	
+		else if ((thePhoto.getType() == ModelConstants.OBJ_FOLDER)  ||
+				(thePhoto.getType() == ModelConstants.OBJ_SERIES)){
 			String defaultFolderIcon = confService.getValue(ConfVarEnum.DEFAULT_FLD_THUMB);
 			logger.debug("Default thumbnail '" + defaultFolderIcon + "' copyed to: " + newThumbPath);	
 			
@@ -147,8 +147,8 @@ public class ThumbService {
 			
 			//   Save thumbnail info to DB
 			Media dbMObject = new Media();
-			dbMObject.setType(ModelConstants.MEDIA_THUMB);
-			dbMObject.setAccessType(ModelConstants.ACCESS_LOCAL);
+			dbMObject.setType(Media.MEDIA_THUMB);
+			dbMObject.setAccessType(Media.ACCESS_LOCAL);
 			dbMObject.setHeight(mObject.getHeight());
 			dbMObject.setWidth(mObject.getWidth());
 			dbMObject.setSize(outputFile.length());

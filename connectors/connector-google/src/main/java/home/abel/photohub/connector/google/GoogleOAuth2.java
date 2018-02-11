@@ -32,6 +32,8 @@ public class GoogleOAuth2 {
         "https://www.googleapis.com/auth/plus.stream.write",   // ?
         "https://www.googleapis.com/auth/plus.media.upload",
         "https://picasaweb.google.com/data/");  // ?
+	//https://www.googleapis.com/auth/drive;
+	//https://www.googleapis.com/auth/drive.appfolder  - application data folder
     
     private java.io.File DATA_STORE_DIR;
     private FileDataStoreFactory LocaldataStore;    
