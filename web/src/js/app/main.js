@@ -60,6 +60,9 @@ define(["jquery","login","modalDialog","api","menu","filter",
         "imageInfo","logger","upload","utils","viewImgLoader","itemSelection","bootstrap"],
     function ($,Login,Dialog,api,Menu,Filter,ImageInfo,logger,Upload,Utils,ViewImgLoader,ItemSelection) {
 
+
+
+
     function _getParent(element,className) {
         var res = element;
         while((! res.classList.contains(className)) && (res.tagName != "body")) {
@@ -67,6 +70,7 @@ define(["jquery","login","modalDialog","api","menu","filter",
         }
         return res;
     }
+
 
     $(document).ready(function() {
         console.log("APP START");
@@ -175,17 +179,29 @@ define(["jquery","login","modalDialog","api","menu","filter",
             .off('click', '.img-bg')
             .on('click', '.img-bg', function () {
                 var cs = getComputedStyle(this);
+                // var imgFrame = _getParent(this,"img-frame");
+                // var imgData = {
+                //     'imgId':imgFrame.getAttribute('data-id'),
+                //     'imgPos':imgFrame.getAttribute('data-count')
+                // };
+                // imgFrame = _getParent(this,"content-page");
+                //
+                // imgData.imgPos = parseInt(imgData.imgPos) + parseInt(imgFrame.getAttribute("data-offset"));
+                // logger.debug("[init.img.click] Got image id ="+imgData.imgId+", pos="+imgData.imgPos);
+                //
+                // viewImgLoader.open(imgData.imgId,imgData.imgPos,parseInt(cs.width),parseInt(cs.height));
+                //
+
                 var imgFrame = _getParent(this,"img-frame");
-                var imgData = {
-                    'imgId':imgFrame.getAttribute('data-id'),
-                    'imgPos':imgFrame.getAttribute('data-count')
-                };
-                imgFrame = _getParent(this,"content-page");
+                var pageFrame = _getParent(this,"content-page");
 
-                imgData.imgPos = parseInt(imgData.imgPos) + parseInt(imgFrame.getAttribute("data-offset"));
-                logger.debug("[init.img.click] Got image id ="+imgData.imgId+", pos="+imgData.imgPos);
-
-                viewImgLoader.open(imgData.imgId,imgData.imgPos,parseInt(cs.width),parseInt(cs.height));
+                viewImgLoader.open({
+                    'id'      : imgFrame.getAttribute('data-id'),
+                    'pos'     : parseInt(imgFrame.getAttribute('data-count')) + parseInt(pageFrame.getAttribute("data-offset")),
+                    'width'   : parseInt(cs.width),
+                    'height'  : parseInt(cs.height),
+                    'mimeType': imgFrame.getAttribute('data-mimetype')
+                });
 
             })
         ;
@@ -270,12 +286,24 @@ define(["jquery","login","modalDialog","api","menu","filter",
 
         }
 
+        //------------------------------------------------------------------------
+        //
+        //
+        //------------------------------------------------------------------------
+
         function viewNext(offset) {
             if ( filter ) {
                 filter.loadSingle(offset, function(object) {
-                    var mediaObj = Utils.getMediaObject(object);
+                    var mediaObj = loadDefaultMetia(object);
                     if (mediaObj) {
-                        viewImgLoader.append(object.id, offset, mediaObj.width,mediaObj.height);
+                        //viewImgLoader.append(object.id, offset, mediaObj.width, mediaObj.height);
+                        viewImgLoader.append({
+                            'id': object.id,
+                            'pos': offset,
+                            'width': mediaObj.width,
+                            'height': mediaObj.height,
+                            'mimeType': mediaObj.mimeType
+                        });
                     }
                 });
             }
@@ -284,12 +312,38 @@ define(["jquery","login","modalDialog","api","menu","filter",
         function viewPrev(offset) {
             if ( filter ) {
                 filter.loadSingle(offset, function(object) {
-                    var mediaObj = Utils.getMediaObject(object);
+                    var mediaObj =loadDefaultMetia(object);
                     if (mediaObj) {
-                        viewImgLoader.prepend(object.id, offset, mediaObj.width,mediaObj.height);
+                        //viewImgLoader.prepend(object.id, offset, mediaObj.width,mediaObj.height);
+                        viewImgLoader.append({
+                            'id': object.id,
+                            'pos': offset,
+                            'width': mediaObj.width,
+                            'height': mediaObj.height,
+                            'mimeType': mediaObj.mimeType
+                        });
                     }
                 });
             }
+        }
+
+        //------------------------------------------------------------------------
+        //
+        //
+        //------------------------------------------------------------------------
+
+        function loadDefaultMetia (object) {
+            // var type = object.mediaType.substring(0,object.mediaType.index("/"));
+            // var mt = MEDIA_IMAGE;
+            // if ( type === "video") {
+            //     mt = MEDIA_VIDEO;
+            // }
+            for (var i = 0; i < object.mediaObjects.length; i++) {
+                if  (object.mediaObjects[i].mimeType == object.mediaType) {
+                    return object.mediaObjects[i];
+                }
+            }
+            return null;
         }
 
         //------------------------------------------------------------------------
@@ -313,6 +367,19 @@ define(["jquery","login","modalDialog","api","menu","filter",
                 menu.closeMenu(MENU_SELECTION);
             }
         }
+
+
+        //------------------------------------------------------------------------
+        //
+        //      Lad single object photo by their ID
+        //
+        function loadObjectbyId(objectId, callback) {
+
+        }
+
+
+
+
 
 
 

@@ -521,16 +521,18 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
         //        photoObject  - JSON  объект описывающий фотографию, полученный от сервера
         //     Возвращает
         //        JSON {
-        //             id
-        //             count     - зщзиция элемента от начала страницы
+        //             id        - ID of photo object
+        //             count     - позиция элемента от начала страницы
         //             min
         //             max
-        //             view      -  показывать или нет
-        //             mimeType  - image type
+        //             name      - имя медиа объекта
+        //             view      - показывать или нет
+        //             type      - фолдер, объект или серия объектов
+        //             mimeType  - mediaType, the mimetype of main media object
         //             url       - url for load thumb image
         //             height    - thumb height
         //             width     - thumb width
-        //             aspect    -  aspect
+        //             aspect    - aspect
         //         }
         //
         //------------------------------------------------------------------------------------------
@@ -552,6 +554,7 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
                 object.siteType = photoObject.siteBean.connectorType;
                 object.siteName = photoObject.siteBean.name;
                 object.realUrl = photoObject.realUrl;
+                object.mimeType = photoObject.mediaType;
                 object.startNewSession = false;
                 object.createTime = photoObject.createTime;
 
@@ -560,9 +563,12 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
 
                 for (var i = 0; i < photoObject.mediaObjects.length; i++) {
                     if (photoObject.mediaObjects[i].type == MEDIA_THUMB) {
-                        object.mimeType = photoObject.mediaObjects[i].mimeType;
+                        var mt =  photoObject.mediaObjects[i].mimeType;
+                        var thumbFlExt =  mt.substring(mt.indexOf("/") + 1);
+
+                        //object.thumbMimeType = photoObject.mediaObjects[i].mimeType;
                         var imgFolder = photoObject.id.substring(parseInt(photoObject.id.length) - 2);
-                        object.url = Api.getActionUrl("thumbUrl") + '/' + imgFolder + "/" + photoObject.id + "." + object['mimeType'].substring(object['mimeType'].indexOf("/") + 1);
+                        object.url = Api.getActionUrl("thumbUrl") + '/' + imgFolder + "/" + photoObject.id + "." + thumbFlExt;
                         object.height = parseInt(photoObject.mediaObjects[i].height);
                         object.width = parseInt(photoObject.mediaObjects[i].width);
                         object.aspect = parseFloat(parseFloat(object['width']) / parseFloat(object['height']));

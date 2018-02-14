@@ -12,7 +12,8 @@ requirejs.config({
         'underscore': '../lib/underscore',
         'bootstrap': '../lib/bootstrap',
         'dropzone': '../lib/dropzone-amd-module',
-        'pikaday': '../lib/pikaday'
+        'pikaday': '../lib/pikaday',
+        'const': '../const'
     },
 
 
@@ -32,6 +33,9 @@ requirejs.config({
         },
         'pikaday': {
             deps: ['jquery',"moment"]
+        },
+        'const': {
+            deps: ['jquery']
         }
     }
 

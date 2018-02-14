@@ -76,7 +76,7 @@ public class ResponsePhotoObjectFactory {
 					attrService.getAttr(curNode,PhotoAttrEnum.PHOTO_THUMB)));
 			
 			//  Create Photo url
-			if (curNode.getPhoto().getType() != ModelConstants.PHOTO_FOLDER) {
+			if (curNode.getPhoto().getType() != ModelConstants.OBJ_FOLDER) {
 				rpo.setPhotoUrl(prepareAttrValue(PhotoAttrEnum.PHOTO_URL,
 						attrService.getAttr(curNode,PhotoAttrEnum.PHOTO_URL)));	
 			}

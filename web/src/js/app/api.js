@@ -2,9 +2,9 @@
  * Created by abel on 31.10.15.
  */
 
-define( ["jquery"], function($) {
+define( ["jquery","const"], function($, Const) {
 
-    var API_DEBUG = true;
+    var API_DEBUG =  Const.API_DEBUG;
 
     var JobQueue = function(){
 
@@ -48,16 +48,19 @@ define( ["jquery"], function($) {
             callTimeouts = {},
             ajaxQueue = new JobQueue();
 
-        API_URL = 'http://localhost:8081/api';
+        //API_URL = 'http://localhost:8081/api';
         //var TEST_SERVER_URL = 'http://localhost:8081/api';
         //var BASE_SERVER_URL = 'api';
 
-        $.getJSON("property.json", function(data) {
-            API_DEBUG && debug_("load property = " + data.apiUrl);
-            if (data.apiUrl && (data.apiUrl.substring(0,1)  != '$' )) {
-                API_URL =  data.apiUrl;
-            }
-        });
+        // $.getJSON("property.json", function(data) {
+        //     API_DEBUG && debug_("load property = " + data.apiUrl);
+        //     if (data.apiUrl && (data.apiUrl.substring(0,1)  != '$' )) {
+        //         API_URL =  data.apiUrl;
+        //     }
+        // });
+
+
+        API_URL = Const.getAPIPath();
 
 
         url_actions = {

@@ -2,14 +2,20 @@
  * Created by abel on 31.12.16.
  */
 
-define(["jquery","logger"],function($,logger) {
-   "use strict";
+define(["jquery","logger","const"],function($, logger, Const) {
+    "use strict";
+
 
     var IMAGE_FRAME = "img-view-frame";
-    var MAIN_FRAME= "view-panel";
+    var MAIN_FRAME = "view-panel";
     var BACK_BTN = "close-view-pane";
     var PREV_BTN = "viewPrev";
     var NEXT_BTN = "viewNext";
+
+    var CONTAINER = "media-container";
+    var IMAGE_FRAME = "img-view-frame";
+    var VIDEO_FRAME = "video-view-frame";
+
 
     var ZIN_BTN = "z-in";
     var ZOUT_BTN = "z-out";
@@ -20,6 +26,13 @@ define(["jquery","logger"],function($,logger) {
         'loadPrev': null
     };
 
+    //-----------------------------------------------------------------------
+    //    Return first part (base type) of media mime type.
+    //-----------------------------------------------------------------------
+
+    function _getMimeTypeBase (mimetype) {
+        return mimetype.substring(0,mimetype.indexOf("/"));
+    };
 
     //-----------------------------------------------------------------------
     //
@@ -34,40 +47,46 @@ define(["jquery","logger"],function($,logger) {
     //-----------------------------------------------------------------------
     function View(options) {
         this.frame = document.getElementById(MAIN_FRAME);
-        this.img = document.getElementById(IMAGE_FRAME);
+        var imageFrame = document.getElementById(IMAGE_FRAME);
+        var videoFrame = document.getElementById(VIDEO_FRAME);
         this.state = "close";
         this.zoomBy = "height";
 
-        this.options = $.extend(true,{},defaultOptions,options || {});
+        this.options = $.extend(true, {}, defaultOptions, options || {});
 
 
-        $("#"+BACK_BTN).on("click",{'caller':this}, function(event) {
+        $("#" + BACK_BTN).on("click", {'caller': this}, function (event) {
             event.data.caller.close();
         });
 
-        $("#"+ZIN_BTN).on("click",{'caller':this}, function(event) {
+        $("#" + ZIN_BTN).on("click", {'caller': this}, function (event) {
             event.data.caller.zoomIn();
         });
 
-        $("#"+ZOUT_BTN).on("click",{'caller':this}, function(event) {
+        $("#" + ZOUT_BTN).on("click", {'caller': this}, function (event) {
             event.data.caller.zoomOut();
         });
 
-        $("#viewPrev").on("click",{'caller':this}, function(event) {
+        $("#viewPrev").on("click", {'caller': this}, function (event) {
             event.data.caller.loadPrev();
         });
 
-        $("#viewNext").on("click",{'caller':this}, function(event) {
+        $("#viewNext").on("click", {'caller': this}, function (event) {
             event.data.caller.loadNext();
         });
 
-        $(this.frame).on("mousemove",{'caller':this}, function(event) {
+        $(this.frame).on("mousemove", {'caller': this}, function (event) {
             event.data.caller.onMouseMove();
         });
 
-        $("#fscreen").on("click",{'caller':this}, function(event) {
+        $("#fscreen").on("click", {'caller': this}, function (event) {
             event.data.caller.screenToggle();
         });
+
+        $("#media-container").off("click").on("click", {'caller': this}, function (event) {
+            event.data.caller.playToggle();
+        });
+
 
 
     }
@@ -81,26 +100,66 @@ define(["jquery","logger"],function($,logger) {
     //                    что-бы полностью влезьть по вертикаои в текущую зону просмотра.
     //                    false фотография масштабирется что-бы влезть по ширине.
     //
+    //      //TODO:  Добавить MimeType в параметры
+    //     {
+    //         id : id объекта фотографии от бекэнда
+    //         pos : позиция фотографии в текущем выводе каталога.
+    //         width: ширина фотографии в пикселах
+    //         height: высота фотографии в пикселах
+    //         mimetype:
+    //         isVert
+    //         url
+    //     }
+    //
+    //
     //-----------------------------------------------------------------------
-    View.prototype.openPhoto = function(url,vertOrient) {
+
+    View.prototype.openPhoto = function(item) {
         try {
 
-            this.img.src = url;
-            if ( vertOrient ) {
+            this.item = item;
+
+
+            if ( _getMimeTypeBase(item.mimeType) ===  "video") {
+                $("#"+IMAGE_FRAME).hide();
+                $("#"+VIDEO_FRAME).show();
+
+                this.img = document.getElementById(VIDEO_FRAME);
+                this.img.src = item.url + "?type="+Const.MEDIA_VIDEO;
+                this.img.load();
+                this.img.poster = item.url;
                 this.img.classList.add("full-height");
-                this.img.classList.remove("full-width");
-                this.img.style.height = "100%";
-                this.zoomBy="height";
-            } else {
                 this.img.classList.add("full-width");
-                this.img.classList.remove("full-height");
+                this.img.style.height = "100%";
                 this.img.style.width = "100%";
-                this.zoomBy="width";
+
+                // Set Play pause handler
+
             }
+            else {
+                $("#"+VIDEO_FRAME).hide();
+                $("#"+IMAGE_FRAME).show();
+                this.img = document.getElementById(IMAGE_FRAME);
+                this.img.src = item.url;
+
+                if (item.isVert) {
+                    this.img.classList.add("full-height");
+                    this.img.classList.remove("full-width");
+                    this.img.style.height = "100%";
+                    this.zoomBy = "height";
+                } else {
+                    this.img.classList.add("full-width");
+                    this.img.classList.remove("full-height");
+                    this.img.style.width = "100%";
+                    this.zoomBy = "width";
+                }
+            }
+
+
             this.open();
 
         } catch (e) {
-            logger.debug("[View.viewPhoto] Incorrect object parameter.", obj);
+            logger.debug("[View.viewPhoto] Incorrect object parameter.", e);
         }
     };
 
@@ -127,10 +186,15 @@ define(["jquery","logger"],function($,logger) {
     //
     //-----------------------------------------------------------------------
     View.prototype.close = function() {
+        if ( _getMimeTypeBase(this.item.mimeType) ===  "video") {
+            this.img.pause()
+        }
+
         this.frame.style.opacity = "0";
         this.frame.style.width = "0";
         this.frame.style.height = "0";
         this.img.src = "";
+
         this.screenToggle(true);
         this.state = "close";
     };
@@ -212,6 +276,20 @@ define(["jquery","logger"],function($,logger) {
             this.opacityList[i].style.opacity = visible;
         }
     };
+
+
+
+    View.prototype.playToggle = function() {
+      if ( this.img.paused || this.img.ended ) {
+          this.img.play()
+      }
+      else {
+          this.img.pause()
+      }
+    };
+
+
+
 
     //-----------------------------------------------------------------------
     //     Раскрывает зону просмотра (окно браузера) во весь экран.

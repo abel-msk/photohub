@@ -39,11 +39,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  *  Server access request for photo image and thumbnails
@@ -53,6 +49,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author abel
  *
  */
+@CrossOrigin
 @Controller
 @RequestMapping("/api")
 public class ImageController {
@@ -99,7 +96,83 @@ public class ImageController {
 		}
 	}
 	
-	
+//	/*=============================================================================================
+//
+//
+//		VIDEO FILE SERVE
+//
+//
+//	 =============================================================================================*/
+//	@RequestMapping(value = "/video/{id}", method = RequestMethod.GET)
+//	@ResponseBody
+//	public ResponseEntity<InputStreamResource> streamVideo(
+//			final HttpServletRequest HTTPrequest,
+//			final HttpServletResponse HTTPresponse,
+//			@PathVariable("id") String PhotoId) throws Exception {
+//
+//		logger.debug(">>> GET Request for /video/"+PhotoId);
+//
+//		ResponseEntity<InputStreamResource> resp = null;
+//		Photo thePhoto = photoService.getPhotoById(PhotoId);
+//
+//		//TODO: Check if source has local copy
+//
+//		//  Необходимо загрузить конектор чтобы освежить авторизацию с сайтом-источником
+//		//SiteConnectorInt connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
+//
+//		Media mediaObject = null;
+//		for(Media media: thePhoto.getMediaObjects()) {
+//			if (media.getType() == Media.MEDIA_VIDEO) {
+//				logger.debug("Found media object."
+//						+" Type=" + media.getType()
+//						+", mimeType="+media.getMimeType()
+//				);
+//				mediaObject = media;
+//				break;
+//			}
+//		}
+//
+//		InputStream is = null;
+//		if ( mediaObject.getAccessType() == Media.ACCESS_LOCAL) {
+//			is = new FileInputStream(mediaObject.getPath());
+//		}
+//		else {
+//			URL url = new URL(mediaObject.getPath());
+//			is = url.openStream();
+//		}
+//
+//		HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
+//		if ((mediaObject.getSize() > 0) &&  (mediaObject.getType() != Media.MEDIA_VIDEO )) {
+//			headers.setContentLength(mediaObject.getSize());
+//		}
+//
+//		String strMimeType = mediaObject.getMimeType();
+//		int mimeDelimiterPos = strMimeType.indexOf("/");
+//
+//		MediaType thisObjMimeType= new MediaType(
+//				strMimeType.substring(0,mimeDelimiterPos),
+//				strMimeType.substring(mimeDelimiterPos+1)
+//		);
+//
+//		headers.setContentType(thisObjMimeType);
+//
+//		logger.debug("[ImageController.downloadImage] Replay with image. "
+//				+" Mime type="+thisObjMimeType
+//				+", size="+mediaObject.getSize()
+//				+", access type="+mediaObject.getAccessType()
+//				+", path="+mediaObject.getPath());
+//
+//		resp =  new ResponseEntity<InputStreamResource>(
+//				new InputStreamResource(is),
+//				headers,
+//				HttpStatus.OK);
+//
+//
+//		logger.debug("<<< Request processed.");
+//		return resp;
+//	}
+//
+
 
 	/*=============================================================================================
 
@@ -121,14 +194,18 @@ public class ImageController {
 	 * @return
 	 * @throws Exception
 	 */
+
+	//TODO:  handle size request
+
 	@RequestMapping(value = "/image/{PhotoId}", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<InputStreamResource> downloadImage(
 	        final HttpServletRequest HTTPrequest,
 	        final HttpServletResponse HTTPresponse,
+			@RequestParam(value ="type", required = false, defaultValue = "12" ) Integer mediaType,
 			@PathVariable("PhotoId") String PhotoId) throws Exception {
 		
-		logger.debug(">>> GET Request for /image/"+PhotoId);
+		logger.debug(">>> GET Request for /image/"+PhotoId+" [type="+mediaType+"]");
 
 		ResponseEntity<InputStreamResource> resp = null;		
 		Photo thePhoto = photoService.getPhotoById(PhotoId);
@@ -136,48 +213,45 @@ public class ImageController {
 		//TODO: Check if source has local copy
 		
 		//  Необходимо загрузить конектор чтобы освежить авторизацию с сайтом-источником
-		SiteConnectorInt connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
-		//PhotoObjectInt theSitesPhoto =  connector.loadObject(thePhoto.getOnSiteId());
-		
-		Media imageObject = null;
+		//SiteConnectorInt connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
+
+		Media mediaObject = null;
 		for(Media media: thePhoto.getMediaObjects()) {
-			if (media.getType() == ModelConstants.MEDIA_PHOTO) {
-				imageObject = media;
+			if (media.getType() == mediaType) {
+				mediaObject = media;
 				break;
 			}
 		}
 		
 		InputStream is = null;
-		if ( imageObject.getAccessType() == ModelConstants.ACCESS_LOCAL) {
-			is = new FileInputStream(imageObject.getPath());
+		if ( mediaObject.getAccessType() == Media.ACCESS_LOCAL) {
+			is = new FileInputStream(mediaObject.getPath());
 		}
 		else {
-			URL url = new URL(imageObject.getPath());	
+			URL url = new URL(mediaObject.getPath());
 			is = url.openStream();
 		}
 
 	    HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
-	    if (imageObject.getSize() > 0 ) {
-	    	headers.setContentLength(imageObject.getSize());
+	    if (mediaObject.getSize() > 0) {
+	    	headers.setContentLength(mediaObject.getSize());
 	    }
-		//headers.setContentType(new MediaType(imageObject.getMimeType()));
-		//headers.setContentType(MediaType.IMAGE_JPEG);
 
-		if ( imageObject.getMimeType().toUpperCase().endsWith("GIF") ) {
-			headers.setContentType(MediaType.IMAGE_GIF);
-		}
-		else if (( imageObject.getMimeType().toUpperCase().endsWith("JPG")) || 
-				(imageObject.getMimeType().toUpperCase().endsWith("JPEG"))) {
-			headers.setContentType(MediaType.IMAGE_JPEG);
-		}
-		else if (imageObject.getMimeType().toUpperCase().endsWith("PNG")) {
-			headers.setContentType(MediaType.IMAGE_PNG);
-		} 
-		
-		logger.debug("[ImageController.downloadImage] Replay with image. Mime type="+headers.getContentType().toString()
-				+", size="+imageObject.getSize()
-				+", access type="+imageObject.getAccessType()
-				+", path="+imageObject.getPath());
+	    String strMimeType = mediaObject.getMimeType();
+		int mimeDelimiterPos = strMimeType.indexOf("/");
+
+		MediaType thisObjMimeType= new MediaType(
+				strMimeType.substring(0,mimeDelimiterPos),
+				strMimeType.substring(mimeDelimiterPos+1)
+		);
+
+		headers.setContentType(thisObjMimeType);
+
+		logger.debug("[ImageController.downloadImage] Replay with image. "
+				+" Mime type="+thisObjMimeType
+				+", size="+mediaObject.getSize()
+				+", access type="+mediaObject.getAccessType()
+				+", path="+mediaObject.getPath());
 		
 		resp =  new ResponseEntity<InputStreamResource>(
 				new InputStreamResource(is),

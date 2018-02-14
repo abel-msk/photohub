@@ -123,10 +123,11 @@ define(["jquery","logger","moment"],function ($,logger,moment) {
         return (/Date/).test(Object.prototype.toString.call(obj)) && !isNaN(obj.getTime());
     };
 
-    utilsObj.getMediaObject = function(object) {
+    utilsObj.getMediaObject = function(object,mediaType) {
         var mediaList = object.mediaObjects;
+
         for (var i = 0; i < mediaList.length; i++) {
-            if  (mediaList[i].type == MEDIA_PHOTO) {
+            if  (mediaList[i].mimeType == mediaType) {
                 return mediaList[i];
             }
         }

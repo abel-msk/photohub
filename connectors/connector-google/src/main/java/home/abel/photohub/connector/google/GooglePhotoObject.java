@@ -52,6 +52,8 @@ public class GooglePhotoObject extends BasePhotoObj {
     public final String MEDIA_TYPE_IMAGE = "image";
 	public final String MEDIA_TYPE_VIDEO = "video";
 
+	private final boolean DEBUG_GOOGLE = false;
+
 
 	protected GoogleSiteConnector googleConnector = null;
 	protected PicasawebService service = null;
@@ -118,7 +120,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 //				);
 //		PhotoFeed feed = service.getFeed(feedUrl, PhotoFeed.class);
 
-		if ( logger.isTraceEnabled() ) {
+		if ( logger.isTraceEnabled()  && DEBUG_GOOGLE ) {
 
 			// Configure the logging mechanisms.
 			Logger httpLogger = Logger.getLogger("com.google.gdata.client.http.HttpGDataRequest");
@@ -131,7 +133,6 @@ public class GooglePhotoObject extends BasePhotoObj {
 			logHandler.setLevel(Level.ALL);
 			httpLogger.addHandler(logHandler);
 			//xmlLogger.addHandler (logHandler);
-
 		}
 		
 		URL entryUrl = new URL("https://picasaweb.google.com/data/entry/api/user/"+

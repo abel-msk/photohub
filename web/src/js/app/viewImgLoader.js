@@ -1,13 +1,19 @@
 /**
  * Created by abel on 07.01.17.
  */
-define(["jquery","api","viewImg","logger"], function($,Api,View,logger) {
+define(["jquery","api","viewImg","logger","const"], function($, Api, View, logger, Const) {
     "use strict";
     var DEBUG = true;
 
     var defaultOptions = {
         'loadNext': null,
         'loadPrev': null };
+
+
+
+    var defParamsForOpenImage = {
+
+    }
 
     //-----------------------------------------------------------------------
     //    Класс Загружвет фотографию для просмотра.
@@ -38,18 +44,21 @@ define(["jquery","api","viewImg","logger"], function($,Api,View,logger) {
         this.prev = null;
         this.cur = null;
         this.next = null;
-        this.urlPreffix = Api.getActionUrl('imageUrl') + "/";
+        //this.urlPreffix = Api.getActionUrl('imageUrl') + "/";
+        this.urlPreffix  = Const.getImageURL() + "/";
     }
 
     //-----------------------------------------------------------------------
     //
     //   Первоначальное открытие и подгрузка фотографии
     //   Параметры:
-    //      id - id объекта фотографии от бекэнда
-    //      pos  -  позиция фотографии в текущем выводе каталога.
-    //              Первая отображаемая фотография = 0
-    //      w    -  ширина фотографии в пикселах
-    //      h    -  высота фотографии в пикселах
+    //     {
+    //         id : id объекта фотографии от бекэнда
+    //         pos : позиция фотографии в текущем выводе каталога.
+    //         width: ширина фотографии в пикселах
+    //         height: высота фотографии в пикселах
+    //         mimetype:
+    //     }
     //
     //   Примечание:  w,h испоользуются для вычисления соотношения сторон.
     //      на основании чего определяется по высоте или ширине
@@ -57,16 +66,22 @@ define(["jquery","api","viewImg","logger"], function($,Api,View,logger) {
     //      Масштабирование определяется таким образом чтобы вся вотография былла в окне браузера.
     //
     //-----------------------------------------------------------------------
-    ViewImgLoader.prototype.open = function (id,pos,w,h) {
+    ViewImgLoader.prototype.open = function (item) {
         try {
             this.view.hideBtn("next");
             this.view.hideBtn("prev");
 
+            var theUrl = this.urlPreffix + item.id;
 
-            var theUrl = this.urlPreffix + id;
-            this.view.openPhoto(theUrl, this.isVert(w,h));
 
-            this.cur = {'pos': pos, 'isVert': this.isVert(w,h), 'id': id, 'url':theUrl };
+
+            this.cur = item;
+            this.cur.isVert = this.isVert(item.width,item.height);
+            this.cur.url = theUrl;
+
+            //theUrl, this.isVert(item.width,item.height)
+            this.view.openPhoto(this.cur);
+            //this.cur = {'pos': item.pos, 'isVert': this.isVert(item.width,item.height), 'id': item.id, 'url':theUrl };
 
             if (typeof this.options.loadNext == "function") {
                 typeof this.options.loadNext(parseInt(this.cur.pos) + 1);
@@ -118,7 +133,8 @@ define(["jquery","api","viewImg","logger"], function($,Api,View,logger) {
                 this.prev = this.cur;
                 if (this.prev) {this.view.showBtn("prev");}
                 this.cur = this.next;
-                this.view.openPhoto(this.next.url, this.next.isVert);
+                //this.view.openPhoto(this.next.url, this.next.isVert);
+                this.view.openPhoto(this.cur);
 
                 if (typeof this.options.loadNext == "function") {
                     typeof this.options.loadNext(parseInt(this.cur.pos) + 1);
@@ -149,7 +165,8 @@ define(["jquery","api","viewImg","logger"], function($,Api,View,logger) {
                 this.next = this.cur;
                 if (this.next) {this.view.showBtn("next");}
                 this.cur = this.prev;
-                this.view.openPhoto(this.prev.url, this.prev.isVert);
+                //this.view.openPhoto(this.prev.url, this.prev.isVert);
+                this.view.openPhoto(this.cur);
 
                 if (typeof this.options.loadPrev == "function") {
                     if (parseInt(this.cur.pos) > 0) {
@@ -176,21 +193,28 @@ define(["jquery","api","viewImg","logger"], function($,Api,View,logger) {
     //   Вызывается для добавлния фотографии в качестве новой следующей.
     //   После досбавдления и предзагрузки, возвращает на место кнопку перехода к следующей.
     //   Параметры:
-    //      id - id объекта фотографии от бекэнда
-    //      pos  -  позиция фотографии в текущем выводе каталога.
-    //              Первая отображаемая фотография = 0
-    //      w    -  ширина фотографии в пикселах
-    //      h    -  высота фотографии в пикселах
+    //
+    //     {
+    //         id : id объекта фотографии от бекэнда
+    //         pos : позиция фотографии в текущем выводе каталога.
+    //         width: ширина фотографии в пикселах
+    //         height: высота фотографии в пикселах
+    //         mimetype:
+    //     }
     //-----------------------------------------------------------------------
-    ViewImgLoader.prototype.append = function(id,pos,w,h) {
+    ViewImgLoader.prototype.append = function(item) {
 
         this.view.showBtn("next");
-        var img = new Image();
-        img.src = this.urlPreffix + id;
-        this.next = { 'pos':pos, 'isVert':this.isVert(w,h), 'id':id, 'url': img.src};
 
-        DEBUG && logger.debug("[ViewImgLoader.append] Next image id="+this.next.id
+        this.next = item;
+        this.next.isVert =this.isVert(item.width,item.height);
+        this.next.url = this.urlPreffix + item.id;
+
+        var img = new Image();
+        img.src =  this.next.url;
+        DEBUG && logger.debug("[ViewImgLoader.append] Next "+ item.mimeType+" id="+this.next.id
             +", pos="+this.next.pos+", src="+this.next.url);
+
     };
 
     //-----------------------------------------------------------------------
@@ -198,22 +222,38 @@ define(["jquery","api","viewImg","logger"], function($,Api,View,logger) {
     //   Вызывается для добавлния фотографии в качестве новой предыдущей.
     //   После досбавдления и предзагрузки, возвращает на место кнопку перехода к предыдущей.
     //   Параметры:
-    //      id - id объекта фотографии от бекэнда
-    //      pos  -  позиция фотографии в текущем выводе каталога.
-    //              Первая отображаемая фотография = 0
-    //      w    -  ширина фотографии в пикселах
-    //      h    -  высота фотографии в пикселах
+    //     {
+    //         id : id объекта фотографии от бекэнда
+    //         pos : позиция фотографии в текущем выводе каталога.
+    //         width: ширина фотографии в пикселах
+    //         height: высота фотографии в пикселах
+    //         mimetype:
+    //         isVert
+    //         url
+    //     }
     //-----------------------------------------------------------------------
-    ViewImgLoader.prototype.prepend = function(id,pos,w,h) {
+    ViewImgLoader.prototype.prepend = function(item) {
 
         this.view.showBtn("prev");
+
+        this.prev = item;
+        this.prev.isVert =this.isVert(item.width,item.height);
+        this.prev.url = this.urlPreffix + item.id;
+
+        //this.prev = { 'pos':pos, 'isVert':this.isVert(w,h), 'id':id , 'url': img.src};
+
         var img = new Image();
-        img.src = this.urlPreffix + id;
-        this.prev = { 'pos':pos, 'isVert':this.isVert(w,h), 'id':id , 'url': img.src};
+        img.src = this.prev.url;
+        DEBUG && logger.debug("[ViewImgLoader.append] Prev "+ item.mimeType+" id="+this.next.id
+            +", pos="+this.next.pos+", src="+this.next.url);
 
-        DEBUG && logger.debug("[ViewImgLoader.prepend] Prev image id="+this.prev.id
-            +", pos="+this.prev.pos+", src="+this.prev.url);
 
+    };
+
+    //-----------------------------------------------------------------------
+    //    Return first part (base type) of media mime type&
+    ViewImgLoader.prototype._getMimeTypeBase = function(mimetype) {
+        return mimetype.substring(0,mimetype.indexOf("/"));
     };
 
     return ViewImgLoader;

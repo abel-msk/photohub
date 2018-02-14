@@ -184,7 +184,8 @@ define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) 
     //             min
     //             max
     //             view      -  показывать или нет
-    //             mimeType  - image type
+    //             type      - video or image
+    //             mimeType  - mimetype of main media object
     //             url       - url for load thumb image
     //             height    - thumb height
     //             width     - thumb width
@@ -395,6 +396,9 @@ define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) 
         imgElement.id = "img-frame-"+this.id;
         imgElement.setAttribute("data-id", o.item.id);
         imgElement.setAttribute("data-count", o.item.count);
+        imgElement.setAttribute("data-mimetype", o.item.mimeType);
+        imgElement.setAttribute("data-name", o.item.name);
+        imgElement.setAttribute("data-type", o.item.type);  // folder or object
         imgElement.classList.add("img-frame");
         imgElement.style.left = o.left + "px";
         imgElement.style.top = o.top + "px";

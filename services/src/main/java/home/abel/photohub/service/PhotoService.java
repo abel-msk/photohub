@@ -962,7 +962,7 @@ public class PhotoService {
 						wasRemoved = deleteObjectFromSite(theNode);
 					}
 				}
-				//  if not all deleted on site or we cann delete this photo& just hide it and exit.
+				//  if not all deleted on site or we can delete this photo, just hide it and exit.
 				if (! wasRemoved)  {
 					thePhoto.setHidden(true);
 					photoRepo.save(thePhoto);
