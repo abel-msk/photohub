@@ -2,13 +2,12 @@ package home.abel.photohub.connector;
 
 import home.abel.photohub.connector.prototype.EnumMediaType;
 import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
+import org.springframework.core.io.AbstractResource;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 public class BaseMediaObject implements PhotoMediaObjectInt{
-
-	protected InputStream inputStream = null;
 	protected int width = -1;
 	protected int height = -1;
 	protected long size = -1;
@@ -37,13 +36,14 @@ public class BaseMediaObject implements PhotoMediaObjectInt{
 	public void setMimeType(String mimeType) {
 		this.mimeType = mimeType;
 	}
-	public InputStream getInputStream() throws IOException {
-		return inputStream;
+	public AbstractResource getContentStream( String headers ) throws Exception {
+		return null;
 	}
-	public void setInputStream(InputStream inputStream) {
-		this.inputStream = inputStream;
+	public AbstractResource getContentStream() throws Exception {
+		return getContentStream(null);
 	}
-	
+
+
 	public int getWidth() {
 		return width;
 	}

@@ -13,6 +13,7 @@ package home.abel.photohub.connector.google;
 
 import java.awt.Dimension;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
@@ -43,6 +44,9 @@ import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
 import home.abel.photohub.connector.prototype.PhotoMetadataInt;
 import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
+import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.UrlResource;
 
 
 public class GooglePhotoObject extends BasePhotoObj {
@@ -149,6 +153,8 @@ public class GooglePhotoObject extends BasePhotoObj {
 		try {
 			gPhoto = service.getEntry(entryUrl, PhotoEntry.class);
 
+
+
 		//ServiceForbiddenException
 		} catch (ServiceException  fe) {
 			logger.warn("[Google.loadObject] Get entry error. "+ fe.getMessage());
@@ -221,7 +227,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 	public GoogleMediaObject loadImageInfo(PhotoEntry thePhotoEntryObject, String mimeBaseType)  {
 
 		boolean sizeObtained = false;
-		GoogleMediaObject mediaFile = new GoogleMediaObject(this.getConnector());
+		GoogleMediaObject mediaFile = new GoogleMediaObject(this.googleConnector);
 
 		try {
 			mediaFile.setHeight(Long.valueOf(thePhotoEntryObject.getHeight()).intValue());
@@ -240,6 +246,9 @@ public class GooglePhotoObject extends BasePhotoObj {
 		int maxWidth = 0;
 		int maxHeight = 0;
 
+		//thePhotoEntryObject.getMediaGroup().getContents().get(0).
+
+
 		for (MediaContent content : thePhotoEntryObject.getMediaGroup().getContents()) {
 			if ((mimeBaseType == null) || (content.getType().startsWith(mimeBaseType))) {
 				try {
@@ -247,11 +256,13 @@ public class GooglePhotoObject extends BasePhotoObj {
 						if ((content.getWidth() == mediaFile.getWidth()) && (content.getHeight() == mediaFile.getHeight())) {
 							mediaFile.setMimeType(content.getType());
 							mediaFile.setPath(content.getUrl().toString());
+							mediaFile.setMedia(content);
 						}
 					} else {
 						if ((content.getWidth() > maxWidth) && (content.getHeight() >= maxHeight)) {
 							mediaFile.setMimeType(content.getType());
 							mediaFile.setPath(content.getUrl().toString());
+							mediaFile.setMedia(content);
 						}
 					}
 				} catch (Exception e1) {
@@ -419,6 +430,11 @@ public class GooglePhotoObject extends BasePhotoObj {
 	}
 
 
+	public AbstractResource getSource() throws Exception {
+		return  mediaInfo.getContentStream(null);
+	}
+
+
 	/*---------------------------------------------------------------------
 	 *
 	 *    Thumbnail processing
@@ -460,7 +476,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 //		}
 
 		if ( mediaItem != null) {
-			mediaFile = new GoogleMediaObject(this.getConnector());
+			mediaFile = new GoogleMediaObject(this.googleConnector);
 			mediaFile.setHeight(mediaItem.getHeight());
 			mediaFile.setWidth(mediaItem.getWidth());
 			mediaFile.setPath(mediaItem.getUrl());

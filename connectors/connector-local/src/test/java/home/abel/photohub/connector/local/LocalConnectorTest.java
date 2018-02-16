@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.AbstractResource;
 
 public class LocalConnectorTest {
 	final Logger logger = LoggerFactory.getLogger(LocalConnectorTest.class);
@@ -82,9 +83,9 @@ public class LocalConnectorTest {
 			System.out.println("Load photo object id='"+photoObj.getId()+"', name='"+photoObj.getName()+"'");
 			
 			PhotoMediaObjectInt thumbMedia = photoObj.getThumbnail(new Dimension(250,250));
-			InputStream is = thumbMedia.getInputStream();
-			Assert.assertNotNull(is);
-			is.close();
+			AbstractResource resource = thumbMedia.getContentStream(null);
+			Assert.assertNotNull(resource);
+			resource.getInputStream().close();
 			
 			//   Get Metadata from object
 			PhotoMetadataInt metadata= photoObj.getMeta();

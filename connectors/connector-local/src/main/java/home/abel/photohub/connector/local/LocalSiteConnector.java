@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import home.abel.photohub.connector.prototype.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,12 +17,9 @@ import com.fasterxml.uuid.Generators;
 
 import home.abel.photohub.connector.SiteBaseConnector;
 import home.abel.photohub.connector.SiteBaseProperty;
-import home.abel.photohub.connector.prototype.AccessException;
-import home.abel.photohub.connector.prototype.ExceptionObjectAccess;
-import home.abel.photohub.connector.prototype.InitializationException;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
-import home.abel.photohub.connector.prototype.SitePropertyInt;
-import home.abel.photohub.connector.prototype.SiteStatusEnum;
+import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.UrlResource;
 
 public class LocalSiteConnector extends SiteBaseConnector {
 
@@ -293,6 +292,20 @@ public class LocalSiteConnector extends SiteBaseConnector {
 
 		return folderSaveTo;
 	}
-		
+
+
+	/**
+	 *
+	 * @param path  The media path&  CAn be obtained from PhotoMediaObject.getPath()
+	 * @return
+	 * @throws Exception
+	 */
+	public AbstractResource loadMediaByPath(String path, String headers) throws Exception {
+		File resFile = new File(path);
+		if ( ! resFile.exists())
+			throw new ExceptionIncorrectParams("Is not valid path : "+path+". Use MediaObject.getPath()");
+
+		return new FileSystemResource(resFile);
+	}
 	
 }

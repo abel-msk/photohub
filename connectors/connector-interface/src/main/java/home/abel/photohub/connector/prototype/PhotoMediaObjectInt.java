@@ -1,5 +1,7 @@
 package home.abel.photohub.connector.prototype;
 
+import org.springframework.core.io.AbstractResource;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -12,9 +14,9 @@ public interface PhotoMediaObjectInt {
 	public void setType(EnumMediaType type);
 	public String getMimeType();
 	public void setMimeType(String mimeType);
-	public InputStream getInputStream() throws IOException;
-	public void setInputStream(InputStream inputStream);
-	
+	public AbstractResource getContentStream() throws Exception;
+	public AbstractResource getContentStream(String headers) throws Exception;
+
 	public int getWidth();
 	public void setWidth(int width);
 	public int getHeight();

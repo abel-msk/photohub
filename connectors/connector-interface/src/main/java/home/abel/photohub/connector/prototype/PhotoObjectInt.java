@@ -1,6 +1,8 @@
 package home.abel.photohub.connector.prototype;
 
 import home.abel.photohub.connector.BaseMediaObject;
+import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.UrlResource;
 
 import java.awt.Dimension;
 import java.io.IOException;
@@ -58,5 +60,7 @@ public interface PhotoObjectInt {
 	
 	public PhotoMediaObjectInt update() throws Exception;
 	public void delete() throws Exception;
-	
+
+	public AbstractResource getSource() throws Exception;
+
 }

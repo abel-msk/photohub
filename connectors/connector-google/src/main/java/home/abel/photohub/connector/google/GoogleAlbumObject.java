@@ -225,7 +225,7 @@ public class GoogleAlbumObject extends BasePhotoObj {
 		GoogleMediaObject mediaObject = null;
 
 		if ( maxThumb != null) {
-			mediaObject = new GoogleMediaObject(this.getConnector());
+			mediaObject = new GoogleMediaObject(this.googleConnector);
 
 			mediaObject.setHeight(maxThumb.getHeight());
 			mediaObject.setWidth(maxThumb.getWidth());

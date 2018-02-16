@@ -18,6 +18,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.AbstractResource;
 import org.springframework.stereotype.Service;
 import org.springframework.core.env.Environment;
 
@@ -143,7 +144,12 @@ public class ThumbService {
 			//   Save thumbnail to local file
 			String newThumbPath = getThumbPath(thePhoto);
 			File outputFile = new File(newThumbPath);
-			FileUtils.saveFile(mObject.getInputStream(), outputFile);
+			try {
+				FileUtils.saveFile(mObject.getContentStream().getInputStream(), outputFile);
+			}
+			catch (Exception e) {
+				throw new IOException(e);
+			}
 			
 			//   Save thumbnail info to DB
 			Media dbMObject = new Media();

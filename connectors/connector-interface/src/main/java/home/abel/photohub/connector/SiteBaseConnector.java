@@ -6,6 +6,7 @@ import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.connector.prototype.SiteCredentialInt;
 import home.abel.photohub.connector.prototype.SitePropertyInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
+import org.springframework.core.io.AbstractResource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -220,6 +221,12 @@ public class SiteBaseConnector implements SiteConnectorInt{
 	public String getLocalStore() {
 		return localStore;
 	}
-	
+
+
+	public AbstractResource loadMediaByPath(String path, String headers) throws Exception {
+		return null;
+	}
+
+
 
 }

@@ -1,5 +1,7 @@
 package home.abel.photohub.connector.prototype;
 
+import org.springframework.core.io.AbstractResource;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
@@ -16,7 +18,7 @@ public interface SiteConnectorInt {
 	 */
 	/**
 	 * Set site user, for identify connection and site login.
-	 * @param userId
+	 * @param siteUser
 	 */
 	public void setUser (String siteUser);
 	public String getUser ();
@@ -81,7 +83,7 @@ public interface SiteConnectorInt {
 	/**
 	 * 
 	 * Sute connec to for auth. For OAuth2 it is first phase  
-	 * @param cred
+	 * @param callback
 	 * @throws Throwable 
 	 */
 	public SiteCredentialInt doConnect(URL callback) throws Exception;
@@ -108,5 +110,8 @@ public interface SiteConnectorInt {
 	public PhotoObjectInt createFolder(String name, PhotoObjectInt parent) throws Exception;
 	
 	public void deleteObject(PhotoObjectInt obj) throws Exception;
+
+
+	public AbstractResource loadMediaByPath(String path, String headers) throws Exception;
 
 }

@@ -15,27 +15,53 @@ import org.slf4j.LoggerFactory;
 import home.abel.photohub.connector.BaseMediaObject;
 import home.abel.photohub.connector.prototype.EnumMediaType;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
+import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.InputStreamResource;
 
 public class LocalMediaObject extends BaseMediaObject {
 	final Logger logger = LoggerFactory.getLogger(LocalMediaObject.class);
 
 	
 	protected SiteConnectorInt connector = null;
-	protected  File sourceFile;
+	protected File sourceFile;
 	protected String requestType;
 
 	
 	public LocalMediaObject(SiteConnectorInt connector, File source, String requestType) throws IOException {
 		sourceFile = source;
+		path = sourceFile.getAbsolutePath();
 		this.connector = connector;
 		this.requestType =requestType;
 		accType = EnumMediaType.ACC_LOACL;
 	}
 
-		
-	public InputStream getInputStream() throws IOException {
-		
+//	public InputStream getInputStream() throws IOException {
+//
+//		InputStream is = null;
+//		if (sourceFile != null) {
+//			if ( requestType.equalsIgnoreCase("THUMB")) {
+//				//logger.trace("Scale image to width=" +getWidth()+", height="+getHeight());
+//				ImageScaler scaller = new ImageScaler();
+//				is = scaller.doScale(sourceFile, new Dimension(getWidth(),getHeight()));
+//			} else {
+//				is = new FileInputStream(sourceFile);
+//			}
+//		}
+//		else {
+//			logger.warn("Access to media object when source file not defined");
+//		}
+//		return is;
+//	}
+
+
+	public AbstractResource getContentStream(String headers) throws Exception {
+		return getContentStream();
+	}
+
+	public AbstractResource getContentStream() throws Exception {
+
 		InputStream is = null;
+		InputStreamResource isr = null;
 		if (sourceFile != null) {
 			if ( requestType.equalsIgnoreCase("THUMB")) {
 				//logger.trace("Scale image to width=" +getWidth()+", height="+getHeight());
@@ -48,9 +74,15 @@ public class LocalMediaObject extends BaseMediaObject {
 		else {
 			logger.warn("Access to media object when source file not defined");
 		}
-		return is;		
+
+		if (is != null) {
+			isr = new InputStreamResource(is);
+		}
+		return isr;
 	}
-	
+
+
+
 
 
 }

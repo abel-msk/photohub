@@ -15,7 +15,6 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
             'sitesList':null
         };
 
-
         function FilterClass(viewport,initialFilter) {
             try {
                 var caller = this;
@@ -52,7 +51,6 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
                 logger.debug("[FilterClass.init] Error", e);
             }
         }
-
 
         //--------------------------------------------------------------------------
         //
@@ -107,7 +105,6 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
             );
         };
 
-
         //--------------------------------------------------------------------------
         //
         //   Return current catalog object
@@ -115,7 +112,6 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
         FilterClass.prototype.getFilteredList = function() {
             return this.filteredList;
         };
-
 
         return FilterClass;
 

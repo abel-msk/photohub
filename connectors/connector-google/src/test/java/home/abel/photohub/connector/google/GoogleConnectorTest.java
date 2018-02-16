@@ -2,11 +2,7 @@ package home.abel.photohub.connector.google;
 
 import home.abel.photohub.connector.ConnectorsFactory;
 import home.abel.photohub.connector.SiteBaseProperty;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
-import home.abel.photohub.connector.prototype.SiteConnectorInt;
-import home.abel.photohub.connector.prototype.SiteCredentialInt;
-import home.abel.photohub.connector.prototype.SitePropertyInt;
-import home.abel.photohub.connector.prototype.SiteStatusEnum;
+import home.abel.photohub.connector.prototype.*;
 
 import java.awt.Dimension;
 import java.io.BufferedReader;
@@ -19,6 +15,9 @@ import java.util.Scanner;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.AbstractResource;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class GoogleConnectorTest {
     final Logger logger = LoggerFactory.getLogger(GoogleConnectorTest.class);
@@ -30,88 +29,91 @@ public class GoogleConnectorTest {
 	public void initFactory() {  
       	
 		try {
-			ConnectorsFactory factory   = new ConnectorsFactory();
+			ConnectorsFactory factory = new ConnectorsFactory();
 			factory.addConnectorClass("home.abel.photohub.connector.google.GoogleSiteConnector");
 
 			String hasType = null;
 			String connectorId = "1";
-			SitePropertyInt prop = new SiteBaseProperty(GoogleSiteConnector.GOOGLE_PERSON_ID,"","abel");
-			
-			Map<String, SitePropertyInt> sitePropertiesMap = new HashMap<String, SitePropertyInt>();	
-			sitePropertiesMap.put(GoogleSiteConnector.GOOGLE_PERSON_ID,prop);
-			
-			for (String type: factory.getAvailableTypes()) {
+			SitePropertyInt prop = new SiteBaseProperty(GoogleSiteConnector.GOOGLE_PERSON_ID, "", "abel");
+
+			Map<String, SitePropertyInt> sitePropertiesMap = new HashMap<String, SitePropertyInt>();
+			sitePropertiesMap.put(GoogleSiteConnector.GOOGLE_PERSON_ID, prop);
+
+			for (String type : factory.getAvailableTypes()) {
 				hasType = type;
-				logger.debug("Factory has type '"+type+"'");
+				logger.debug("Factory has type '" + type + "'");
 			}
-			
+
 			//   Create connector thought factory 
 			//Map<String, SitePropertyInt> propMap = new HashMap<String, SitePropertyInt>();
-			
-			SiteConnectorInt connector  = factory.createConnector(
+
+			SiteConnectorInt connector = factory.createConnector(
 					hasType,
 					"abel",
 					connectorId,
 					"/tmp",
 					sitePropertiesMap   //Propertyes Map
-					);
-			
+			);
+
 			//  Эмулируем что токен уже загружен
 			connector.setState(SiteStatusEnum.CONNECT);
-			
-			
-			
+
+
 //			SiteCredentialInt exchangeCred = connector.doConnect(new URL("http://localhost:6443/api"));
-			SiteCredentialInt exchangeCred = connector.doConnect(null);			 
-			if ( exchangeCred.getState() == SiteStatusEnum.CONNECT) {
+			SiteCredentialInt exchangeCred = connector.doConnect(null);
+			if (exchangeCred.getState() == SiteStatusEnum.CONNECT) {
 				System.out.println("+++ Connected successfuly.");
-			}
-			else {
-				String code ="";
+			} else {
+				String code = "";
 				System.out.println("+++" + exchangeCred.getUserMessage() + "+++");
 				System.out.println(exchangeCred.getUserLoginFormUrl());
 				System.out.println("->");
-				connector  = factory.getConnector(connectorId);
-		    	
+				connector = factory.getConnector(connectorId);
+
 				//Scanner s = new Scanner(System.in);
 				//code = s.nextLine();
- 				//s.close();
+				//s.close();
 
-                String result = IN.readLine();
-                code = result.trim();
-
-
+				String result = IN.readLine();
+				code = result.trim();
 
 
-				
 //				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 //		    	String code = br.readLine();
 //		    	br.close();
 
 
-		    	//System.out.println("Got code:" + code);
-				logger.debug("The code = " + code );
+				//System.out.println("Got code:" + code);
+				logger.debug("The code = " + code);
 				System.out.println("+++ GO +++");
 
-		    	exchangeCred.setAccessToken(code);	
-		    	connector.doAuth(exchangeCred);
-		    	
-		    	System.out.println("+++ AUTH OK +++");
+				exchangeCred.setAccessToken(code);
+				connector.doAuth(exchangeCred);
+
+				System.out.println("+++ AUTH OK +++");
 			}
-			
+
 			List<PhotoObjectInt> rootList = connector.getRootObjects();
 
-			for ( PhotoObjectInt Item : rootList) {
-				logger.debug("Item="+Item.getName());
+			for (PhotoObjectInt Item : rootList) {
+				logger.debug("Item=" + Item.getName());
 			}
 
 			List<PhotoObjectInt> filePhotos = null;
 			PhotoObjectInt AlbmObject = rootList.get(0);
 			if (AlbmObject.isFolder()) {
-				filePhotos  = AlbmObject.listSubObjects();
+				filePhotos = AlbmObject.listSubObjects();
 			}
-			filePhotos.get(0).getThumbnail(new Dimension(250,250));
-//			
+
+			AbstractResource ars = filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getContentStream();
+			assertThat(ars.isOpen()).isTrue();
+			ars.getInputStream().close();
+
+			ars = connector.loadMediaByPath(filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getPath(),null);
+			assertThat(ars.isOpen()).isTrue();
+
+
+
 			//PhotoMetadataInt meta = filePhotos.get(0).getMeta();
 			//6060383542025899969.5795087093546466562
 //			String theIdString = new String("6060383542025899969.5795087093546466562");

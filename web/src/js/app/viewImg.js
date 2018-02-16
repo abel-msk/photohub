@@ -112,6 +112,7 @@ define(["jquery","logger","const"],function($, logger, Const) {
     //     }
     //
     //
+    //      Tag video description: https://www.w3schools.com/tags/ref_av_dom.asp
     //-----------------------------------------------------------------------
 
     View.prototype.openPhoto = function(item) {

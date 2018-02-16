@@ -1,6 +1,7 @@
 package home.abel.photohub.connector.google;
 
 
+import java.awt.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -14,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import com.google.gdata.client.Service;
+import home.abel.photohub.connector.prototype.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +33,9 @@ import com.google.gdata.data.photos.PhotoEntry;
 import home.abel.photohub.connector.SiteBaseConnector;
 import home.abel.photohub.connector.SiteBaseCredential;
 import home.abel.photohub.connector.SiteBaseProperty;
-import home.abel.photohub.connector.prototype.AccessException;
-import home.abel.photohub.connector.prototype.ExceptionIncorrectParams;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
-import home.abel.photohub.connector.prototype.SiteCredentialInt;
-import home.abel.photohub.connector.prototype.SitePropertyInt;
-import home.abel.photohub.connector.prototype.SiteStatusEnum;
+import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.InputStreamResource;
+
 /**
  * 
  * 
@@ -241,7 +241,7 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 	 *   И пытается  с ним авторизоваться у гугла. Если все ок 
 	 *    - сохраняет токен в файле для будущей авто загрузки и авто авторизации.
 	 *    
-	 * @param cred
+	 * @param excahgeCread
 	 * @return
 	 -------------------------------------------------------------------------*/
 	@Override
@@ -537,6 +537,111 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 //		if ( ! isCanDelete() ) throw new AccessException("Cannot delete object on readonly site.");
 //		obj.delete();
 //	}
+
+
+	/**
+	 *
+	 *
+	 *       Loading resources from site
+	 *
+	 *
+	 */
+
+	private final int retries = 10;
+	public static final String[] responsHeaders = {"Content-Length",
+			"Content-Disposition",
+			"Accept-Ranges",
+			"Last-Modified",
+			"Expires",
+			"Content-Type"};
+	/**
+	 *   Load media by its URL through picasa service connection
+	 *
+	 * @param path url for loading
+	 * @return resource with inpunStram of opened connection and respons headers placed in description
+	 * @throws Exception
+	 */
+	public AbstractResource  loadMediaByPath(String path, String headers) throws Exception {
+
+
+		Service.GDataRequestFactory factory = getPicasaService().getRequestFactory();
+		InputStream responseStream = null;
+		InputStreamResource resource = null;
+		Service.GDataRequest request = null;
+
+		String[] inputHeaders = null;
+		if ( headers != null) {
+			inputHeaders = headers.split("\\r?\\n");
+		}
+
+		String location = path;
+		int counter = 0;
+
+		while ((location != null)  && (counter < retries)) {
+			logger.trace("[loadMediaByPath] load resource from URL:" +location );
+
+			//
+			//   Create request
+			//
+			URL requestUrl = new URL(location);
+			request = factory.getRequest(
+					Service.GDataRequest.RequestType.QUERY,
+					requestUrl,
+					com.google.gdata.util.ContentType.ANY
+			);
+
+			//
+			//   Set headers
+			//
+			if (inputHeaders != null ) {
+				for (String hdr : inputHeaders) {
+					if (hdr.contains(":")) {
+						logger.trace("[loadMediaByPath] set request header "
+								+ hdr.substring(0, hdr.indexOf(":"))
+								+ ", value "
+								+ hdr.substring(hdr.indexOf(":") + 1).trim()
+						);
+						request.setHeader(hdr.substring(0, hdr.indexOf(":")), hdr.substring(hdr.indexOf(":") + 1).trim());
+					}
+				}
+			}
+
+			try {
+				//request.setHeader();
+				request.execute();
+				location = null;
+				responseStream = request.getResponseStream();
+			}
+			catch (com.google.gdata.util.RedirectRequiredException e) {
+				location = e.getRedirectLocation();
+				logger.trace("[loadMediaByPath] loading failed. Trying count="+counter);
+				//location = request.getResponseHeader("Location");
+				request.end();
+			}
+			counter++;
+		}
+
+		if (counter >=retries) {
+			throw new ExceptionObjectAccess("Seems we got too match redirects. Last location: " + location );
+		}
+
+		if ( responseStream != null ) {
+			StringBuilder sb = new StringBuilder();
+			for (String hdrName: responsHeaders)   {
+				String hdrValue = request.getResponseHeader(hdrName);
+				if ( hdrValue != null) {
+					String hdr = hdrName + ": " + hdrValue;
+					logger.trace("[loadMediaByPath] Request header " + hdr);
+					sb.append(hdr).append("\n");
+				}
+			}
+
+			resource = new InputStreamResource(responseStream, sb.toString());
+		}
+		return resource;
+	}
+
+
 
 
 }
