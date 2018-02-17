@@ -1,6 +1,7 @@
 package home.abel.photohub.connector.prototype;
 
 import home.abel.photohub.connector.BaseMediaObject;
+import home.abel.photohub.connector.SiteMediaPipe;
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.UrlResource;
 
@@ -61,6 +62,6 @@ public interface PhotoObjectInt {
 	public PhotoMediaObjectInt update() throws Exception;
 	public void delete() throws Exception;
 
-	public AbstractResource getSource() throws Exception;
+	public SiteMediaPipe getSource() throws Exception;
 
 }

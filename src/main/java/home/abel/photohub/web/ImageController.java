@@ -19,6 +19,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.gdata.data.media.mediarss.MediaKeywords;
+import home.abel.photohub.connector.HeadersContainer;
+import home.abel.photohub.connector.SiteMediaPipe;
 import home.abel.photohub.connector.prototype.EnumMediaType;
 import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
 import home.abel.photohub.connector.prototype.PhotoObjectInt;
@@ -120,7 +122,15 @@ public class ImageController {
 
 	 =============================================================================================*/
 
-	private final static String[] transmittedHeaders= {"Range","Connection"};
+	private final static String[] transmittedHeaders= {
+			"Range",
+			"Connection",
+			"If-Modified-Since",
+			"If-Match",
+			"If-Unmodified-Since",
+			"If-None-Match",
+			"ETag"
+	};
 
 	/**
 	 * 
@@ -135,7 +145,7 @@ public class ImageController {
 	 */
 	@RequestMapping(value = "/image/{PhotoId}", method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<AbstractResource> downloadImage(
+	public ResponseEntity<InputStreamResource> downloadImage(
 	        final HttpServletRequest HTTPrequest,
 	        final HttpServletResponse HTTPresponse,
 			@RequestParam(value ="type", required = false, defaultValue = "12" ) Integer mediaType,
@@ -145,9 +155,9 @@ public class ImageController {
 		
 		logger.debug("GET Request for /image/"+PhotoId+" [type="+mediaType+"]");
 
-		AbstractResource resp = null;
+		//AbstractResource resp = null;
 		Photo thePhoto = photoService.getPhotoById(PhotoId);
-		StringBuilder siteReqHeaders = new StringBuilder();
+		//StringBuilder siteReqHeaders = new StringBuilder();
 
 		//  Необходимо загрузить конектор чтобы освежить авторизацию с сайтом-источником
 		SiteConnectorInt connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
@@ -168,58 +178,30 @@ public class ImageController {
 		//
 		//   Extract input request headers^ and retransmit  they to remote site request generator
 		//
+		HeadersContainer inputHeaders  = new HeadersContainer();
 		for (String hdrName : transmittedHeaders) {
-			//String hdrVal = HTTPrequest.getHeader(hdrName);
 			Enumeration<String>  hdrVals =  HTTPrequest.getHeaders(hdrName);
 			if ( hdrVals != null) {
 				while (hdrVals.hasMoreElements()) {
-					siteReqHeaders.append(hdrName).append(": ").append(hdrVals.nextElement()).append("\n");
+					inputHeaders.addHeader(hdrName,hdrVals.nextElement());
 				}
 			}
 		}
 
-		logger.trace(" Input request hraders:" + (siteReqHeaders.length()>0?siteReqHeaders.toString():"Empty"));
 
 		//
 		//   Retransmit request
 		//
-		AbstractResource responseResource  = connector.loadMediaByPath(mediaObject.getPath(),
-				(siteReqHeaders.length()>0?siteReqHeaders.toString():null)
-		);
+		SiteMediaPipe responsPipe  = connector.loadMediaByPath(mediaObject.getPath(),inputHeaders);
 
 		//
 		//   Extract the received respons header lines when open stream from site
 		//
 		HttpHeaders hdrList = new HttpHeaders();
-		if  ( responseResource.getDescription() != null ) {
 
-			String descrStr = responseResource.getDescription();
-			Pattern regex = Pattern.compile("\\[(.*?)\\]",Pattern.DOTALL);
-			Matcher regexMatcher = regex.matcher(descrStr);
-			if (regexMatcher.find()) {
-				try {
-					descrStr = regexMatcher.group(1);
-				}
-				catch (Exception e) {
-					logger.warn("[downloadImage] Cannot find headers in stream description: "+ e.getMessage());
-					descrStr = null;
-				}
-			}
-			else {
-				logger.warn("[downloadImage] Cannot find headers in stream description."+descrStr);
-				descrStr = null;
-			}
-
-			if ( descrStr != null) {
-				String[] siteRespHeaders = descrStr.split("\\r?\\n");
-				for (String hdr : siteRespHeaders) {
-					//logger.trace("[downloadImage] parse header string = " + hdr);
-					if (hdr.contains(":")) {
-						hdrList.add(hdr.substring(0, hdr.indexOf(":")),
-								hdr.substring(hdr.indexOf(":") + 1).trim()
-						);
-					}
-				}
+		for (String key : responsPipe.getHdrKeys()) {
+			for (String value :responsPipe.getHdrValues(key)) {
+				hdrList.add(key,value);
 			}
 		}
 
@@ -240,21 +222,24 @@ public class ImageController {
 				+", path="+mediaObject.getPath());
 
 		//logger.trace("[ImageController.downloadImage] Replay headers " + hdrList );
-
-		return ResponseEntity.ok()
-				.headers(hdrList)
-				//.contentLength(mediaObject.getSize())
-				//.contentType(MediaType.parseMediaType(mediaObject.getMimeType()))
-				.body(responseResource);
+		logger.trace("[ImageController.downloadImage] Error " + (responsPipe.getError() == null?"not":responsPipe.getError()));
+		logger.trace("[ImageController.downloadImage] Status " + (responsPipe.getStatus()==null?"error":responsPipe.getStatus()));
 
 
+		ResponseEntity<InputStreamResource> resp = null;
 
-//
-//		return ResponseEntity.ok()
-//				.contentLength(theMedia.getSize())
-//				.contentType(MediaType.parseMediaType(theMedia.getMimeType()))
-//				.body(resp);
+		if (responsPipe.getStatus() != null) {
+			resp = ResponseEntity.status(Integer.parseInt(responsPipe.getStatus()))
+					.headers(hdrList)
+					.body(new InputStreamResource(responsPipe.getInputStream()));
+		}
+		else {
+			resp = ResponseEntity.status(Integer.parseInt(responsPipe.getError()))
+					.headers(hdrList)
+					.body(null);
+		}
 
+		return resp;
 	}
 	
 	/*=============================================================================================
@@ -294,23 +279,23 @@ public class ImageController {
 		
 		File imageFile = new File(realPath);
 
-	    HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
-		headers.setContentLength(imageFile.length());
-		headers.setContentType(new MediaType("image",fileExt));
+//	    HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
+//		headers.setContentLength(imageFile.length());
+//		headers.setContentType(new MediaType("image",fileExt));
 		
 		logger.debug("Send file: " + imageFile.getName());
 
+		/*
 		resp =  new ResponseEntity<InputStreamResource>(
 				new InputStreamResource(new FileInputStream(imageFile)),
 				headers,
 				HttpStatus.OK);
-		/*
+		*/
+
 		resp = ResponseEntity.ok()
 	            .contentLength(imageFile.length())
 	            .contentType(new MediaType("image",fileExt))
-	            //.contentType(MediaType.IMAGE_PNG)
 	            .body(new InputStreamResource(new FileInputStream(imageFile)));
-	    */		
 		return resp;
 	}
 

@@ -9,6 +9,7 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
+import home.abel.photohub.connector.SiteMediaPipe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,14 +55,14 @@ public class LocalMediaObject extends BaseMediaObject {
 //	}
 
 
-	public AbstractResource getContentStream(String headers) throws Exception {
+	public SiteMediaPipe getContentStream(String headers) throws Exception {
 		return getContentStream();
 	}
 
-	public AbstractResource getContentStream() throws Exception {
+	public SiteMediaPipe getContentStream() throws Exception {
 
 		InputStream is = null;
-		InputStreamResource isr = null;
+
 		if (sourceFile != null) {
 			if ( requestType.equalsIgnoreCase("THUMB")) {
 				//logger.trace("Scale image to width=" +getWidth()+", height="+getHeight());
@@ -75,10 +76,10 @@ public class LocalMediaObject extends BaseMediaObject {
 			logger.warn("Access to media object when source file not defined");
 		}
 
-		if (is != null) {
-			isr = new InputStreamResource(is);
-		}
-		return isr;
+
+		SiteMediaPipe pipe = new SiteMediaPipe();
+		pipe.setInputStream(is);
+		return pipe;
 	}
 
 

@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.google.gdata.client.Service;
+import home.abel.photohub.connector.*;
 import home.abel.photohub.connector.prototype.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +31,6 @@ import com.google.gdata.data.media.MediaFileSource;
 import com.google.gdata.data.photos.AlbumEntry;
 import com.google.gdata.data.photos.PhotoEntry;
 
-import home.abel.photohub.connector.SiteBaseConnector;
-import home.abel.photohub.connector.SiteBaseCredential;
-import home.abel.photohub.connector.SiteBaseProperty;
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.InputStreamResource;
 
@@ -552,7 +550,9 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			"Content-Disposition",
 			"Accept-Ranges",
 			"Last-Modified",
+			"Content-Range",
 			"Expires",
+			"E-Tag",
 			"Content-Type"};
 	/**
 	 *   Load media by its URL through picasa service connection
@@ -561,18 +561,15 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 	 * @return resource with inpunStram of opened connection and respons headers placed in description
 	 * @throws Exception
 	 */
-	public AbstractResource  loadMediaByPath(String path, String headers) throws Exception {
+	public SiteMediaPipe loadMediaByPath(String path, HeadersContainer headers) throws Exception {
 
-
+		if (headers == null) {
+			headers = new HeadersContainer();
+		}
+		SiteMediaPipe thePipe = new SiteMediaPipe();
 		Service.GDataRequestFactory factory = getPicasaService().getRequestFactory();
-		InputStream responseStream = null;
-		InputStreamResource resource = null;
 		Service.GDataRequest request = null;
 
-		String[] inputHeaders = null;
-		if ( headers != null) {
-			inputHeaders = headers.split("\\r?\\n");
-		}
 
 		String location = path;
 		int counter = 0;
@@ -593,16 +590,10 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			//
 			//   Set headers
 			//
-			if (inputHeaders != null ) {
-				for (String hdr : inputHeaders) {
-					if (hdr.contains(":")) {
-						logger.trace("[loadMediaByPath] set request header "
-								+ hdr.substring(0, hdr.indexOf(":"))
-								+ ", value "
-								+ hdr.substring(hdr.indexOf(":") + 1).trim()
-						);
-						request.setHeader(hdr.substring(0, hdr.indexOf(":")), hdr.substring(hdr.indexOf(":") + 1).trim());
-					}
+
+			for (String key : headers.getHdrKeys()) {
+				for (String value: headers.getHdrValues(key)) {
+					request.setHeader(key, value);
 				}
 			}
 
@@ -610,13 +601,19 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 				//request.setHeader();
 				request.execute();
 				location = null;
-				responseStream = request.getResponseStream();
+				thePipe.setInputStream(request.getResponseStream());
 			}
 			catch (com.google.gdata.util.RedirectRequiredException e) {
 				location = e.getRedirectLocation();
 				logger.trace("[loadMediaByPath] loading failed. Trying count="+counter);
-				//location = request.getResponseHeader("Location");
 				request.end();
+			}
+			catch (com.google.gdata.util.NotModifiedException e) {
+				request.end();
+				thePipe.addHeadersList("ETag", e.getHttpHeader("ETag"));
+				thePipe.setStatus("304"); //SC_NOT_MODIFIED
+				logger.trace("[loadMediaByPath] Got NotModified request.  ETag header = "+ e.getHttpHeader("ETag"));
+				return thePipe;
 			}
 			counter++;
 		}
@@ -625,20 +622,16 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			throw new ExceptionObjectAccess("Seems we got too match redirects. Last location: " + location );
 		}
 
-		if ( responseStream != null ) {
-			StringBuilder sb = new StringBuilder();
-			for (String hdrName: responsHeaders)   {
+		if ( request != null ) {
+			for (String hdrName : responsHeaders) {
 				String hdrValue = request.getResponseHeader(hdrName);
-				if ( hdrValue != null) {
-					String hdr = hdrName + ": " + hdrValue;
-					logger.trace("[loadMediaByPath] Request header " + hdr);
-					sb.append(hdr).append("\n");
+				if (hdrValue != null) {
+					thePipe.addHeader(hdrName, hdrValue);
 				}
 			}
-
-			resource = new InputStreamResource(responseStream, sb.toString());
 		}
-		return resource;
+
+		return thePipe;
 	}
 
 

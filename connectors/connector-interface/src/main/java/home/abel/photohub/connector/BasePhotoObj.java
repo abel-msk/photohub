@@ -185,7 +185,7 @@ public class BasePhotoObj implements PhotoObjectInt {
 	}
 
 	@Override
-	public AbstractResource getSource() throws Exception {
+	public SiteMediaPipe getSource() throws Exception {
 		return null;
 	}
 

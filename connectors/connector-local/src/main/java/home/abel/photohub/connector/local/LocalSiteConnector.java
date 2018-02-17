@@ -1,5 +1,6 @@
 package home.abel.photohub.connector.local;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,7 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import home.abel.photohub.connector.HeadersContainer;
+import home.abel.photohub.connector.SiteMediaPipe;
 import home.abel.photohub.connector.prototype.*;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +24,8 @@ import home.abel.photohub.connector.SiteBaseProperty;
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.UrlResource;
+
+import javax.imageio.ImageIO;
 
 public class LocalSiteConnector extends SiteBaseConnector {
 
@@ -296,16 +302,52 @@ public class LocalSiteConnector extends SiteBaseConnector {
 
 	/**
 	 *
-	 * @param path  The media path&  CAn be obtained from PhotoMediaObject.getPath()
+	 * @param objectFile
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getFileMimeType(File objectFile) throws IOException  {
+
+		String fileExt = FilenameUtils.getExtension(objectFile.getName()).toLowerCase();
+		if ((fileExt != null) && (fileExt.length() > 0) ) {
+			if (fileExt.startsWith("tif")) {
+				return "image/tiff" ;
+			} else if (fileExt.startsWith("tiff")) {
+				return "image/tiff" ;
+			} else if (fileExt.startsWith("jpg")) {
+				return "image/jpeg";
+			} else if (fileExt.startsWith("jpeg")) {
+				return "image/jpeg";
+			} else if (fileExt.startsWith("png")) {
+				return "image/png";
+			} else if (fileExt.startsWith("avi")) {
+				return "video/mp4";
+			} else if (fileExt.startsWith("mp4")) {
+				return "video/mp4";
+			}
+		}
+		return "unknown";
+	}
+
+	/**
+	 *
+	 * @param path  The media path can be obtained from PhotoMediaObject.getPath()
+	 * @param headers  headers we get in case this was http request
 	 * @return
 	 * @throws Exception
 	 */
-	public AbstractResource loadMediaByPath(String path, String headers) throws Exception {
-		File resFile = new File(path);
-		if ( ! resFile.exists())
-			throw new ExceptionIncorrectParams("Is not valid path : "+path+". Use MediaObject.getPath()");
+	public SiteMediaPipe loadMediaByPath(String path, HeadersContainer headers) throws Exception {
+//		File resFile = new File(path);
+//		if ( ! resFile.exists())
+//			throw new ExceptionIncorrectParams("Is not valid path : "+path+". Use MediaObject.getPath()");
+//		return new FileSystemResource(resFile);
 
-		return new FileSystemResource(resFile);
+		FileRangeRequest frr = new FileRangeRequest();
+		return frr.loadMediaByPath(path,headers);
 	}
+
+
+
+
 	
 }

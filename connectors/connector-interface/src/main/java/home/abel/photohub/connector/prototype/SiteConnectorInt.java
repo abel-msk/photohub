@@ -1,5 +1,7 @@
 package home.abel.photohub.connector.prototype;
 
+import home.abel.photohub.connector.HeadersContainer;
+import home.abel.photohub.connector.SiteMediaPipe;
 import org.springframework.core.io.AbstractResource;
 
 import java.io.File;
@@ -112,6 +114,6 @@ public interface SiteConnectorInt {
 	public void deleteObject(PhotoObjectInt obj) throws Exception;
 
 
-	public AbstractResource loadMediaByPath(String path, String headers) throws Exception;
+	public SiteMediaPipe loadMediaByPath(String path, HeadersContainer headers) throws Exception;
 
 }

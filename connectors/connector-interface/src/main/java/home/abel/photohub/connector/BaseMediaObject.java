@@ -36,10 +36,10 @@ public class BaseMediaObject implements PhotoMediaObjectInt{
 	public void setMimeType(String mimeType) {
 		this.mimeType = mimeType;
 	}
-	public AbstractResource getContentStream( String headers ) throws Exception {
+	public SiteMediaPipe getContentStream( HeadersContainer headers ) throws Exception {
 		return null;
 	}
-	public AbstractResource getContentStream() throws Exception {
+	public SiteMediaPipe getContentStream() throws Exception {
 		return getContentStream(null);
 	}
 

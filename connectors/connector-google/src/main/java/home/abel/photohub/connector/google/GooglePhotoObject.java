@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 //import org.apache.log4j.Level;
 //import org.slf4j.Logger;
+import home.abel.photohub.connector.SiteMediaPipe;
 import org.slf4j.LoggerFactory;
 
 import com.google.gdata.client.photos.PicasawebService;
@@ -430,7 +431,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 	}
 
 
-	public AbstractResource getSource() throws Exception {
+	public SiteMediaPipe getSource() throws Exception {
 		return  mediaInfo.getContentStream(null);
 	}
 

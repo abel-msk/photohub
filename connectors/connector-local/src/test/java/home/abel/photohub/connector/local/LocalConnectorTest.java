@@ -1,30 +1,26 @@
 package home.abel.photohub.connector.local;
 
 import java.awt.Dimension;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 //import java.nio.file.Path;
 //import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import home.abel.photohub.connector.BasePhotoMetadata;
 import home.abel.photohub.connector.ConnectorsFactory;
-import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
-import home.abel.photohub.connector.prototype.PhotoMetadataInt;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
-import home.abel.photohub.connector.prototype.SiteConnectorInt;
-import home.abel.photohub.connector.prototype.SitePropertyInt;
+import home.abel.photohub.connector.HeadersContainer;
+import home.abel.photohub.connector.SiteMediaPipe;
+import home.abel.photohub.connector.prototype.*;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.InputStreamResource;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class LocalConnectorTest {
 	final Logger logger = LoggerFactory.getLogger(LocalConnectorTest.class);
@@ -83,8 +79,8 @@ public class LocalConnectorTest {
 			System.out.println("Load photo object id='"+photoObj.getId()+"', name='"+photoObj.getName()+"'");
 			
 			PhotoMediaObjectInt thumbMedia = photoObj.getThumbnail(new Dimension(250,250));
-			AbstractResource resource = thumbMedia.getContentStream(null);
-			Assert.assertNotNull(resource);
+			SiteMediaPipe resource = thumbMedia.getContentStream(null);
+			Assert.assertNotNull(resource.getInputStream());
 			resource.getInputStream().close();
 			
 			//   Get Metadata from object
@@ -135,9 +131,39 @@ public class LocalConnectorTest {
 			System.out.println("Metadata. UnicId = " + metadata.getUnicId() );
 			System.out.println("Metadata. CameraMake = " + metadata.getCameraMake() );
 			System.out.println("Metadata. CameraModel = " + metadata.getCameraModel() );		
-			System.out.println("Metadata. Date = " + metadata.getCreationTime());		
-			
-			
+			System.out.println("Metadata. Date = " + metadata.getCreationTime());
+
+			PhotoMediaObjectInt media = photoObj.getMedia(EnumMediaType.IMAGE);
+
+
+
+			HeadersContainer headers = new HeadersContainer();
+			headers.addHeader("Range","bytes=500-");
+			SiteMediaPipe pipe = connector.loadMediaByPath(media.getPath(),headers);
+
+			System.out.println("\nGot headers:");
+			for (String key : pipe.getHdrKeys()) {
+				for (String value: pipe.getHdrValues(key)) {
+					System.out.println("    "+key+ ": "+value);
+				}
+			}
+			System.out.println("    Error: "+pipe.getError());
+			System.out.println("    Status: "+pipe.getStatus());
+
+			assertThat(pipe.getInputStream() != null).isTrue();
+
+			byte[] buffer = new byte[1024];
+			int length;
+			int totoalLength = 0;
+			while ((length = pipe.getInputStream().read(buffer)) != -1) {
+				totoalLength += length;
+			}
+
+			System.out.println("Read " + totoalLength +" bytes");
+			pipe.getInputStream().close();
+
+
+
 			System.out.println("\n------------ Testing delete ------------");
 			connector.deleteObject(photoObj);
 			System.out.println("Deleted !");

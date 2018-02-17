@@ -7,6 +7,8 @@ import java.net.URL;
 import com.google.gdata.client.Service;
 import com.google.gdata.data.media.mediarss.MediaContent;
 import com.google.gdata.util.ContentType;
+import home.abel.photohub.connector.HeadersContainer;
+import home.abel.photohub.connector.SiteMediaPipe;
 import home.abel.photohub.connector.prototype.ExceptionObjectAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +35,7 @@ public class GoogleMediaObject extends BaseMediaObject {
 		this.media = mediaObj;
 	}
 	
-	public AbstractResource getContentStream(String headers) throws Exception {
+	public SiteMediaPipe getContentStream(HeadersContainer headers) throws Exception {
 		if ( this.media == null) {
 			throw new ExceptionObjectAccess("Media object was not loaded from site.");
 		}

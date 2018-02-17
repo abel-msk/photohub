@@ -2,6 +2,7 @@ package home.abel.photohub.connector.google;
 
 import home.abel.photohub.connector.ConnectorsFactory;
 import home.abel.photohub.connector.SiteBaseProperty;
+import home.abel.photohub.connector.SiteMediaPipe;
 import home.abel.photohub.connector.prototype.*;
 
 import java.awt.Dimension;
@@ -105,12 +106,12 @@ public class GoogleConnectorTest {
 				filePhotos = AlbmObject.listSubObjects();
 			}
 
-			AbstractResource ars = filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getContentStream();
-			assertThat(ars.isOpen()).isTrue();
-			ars.getInputStream().close();
+			SiteMediaPipe  pipe = filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getContentStream();
+			assertThat(pipe.getInputStream().available()>0).isTrue();
+			pipe.getInputStream().close();
 
-			ars = connector.loadMediaByPath(filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getPath(),null);
-			assertThat(ars.isOpen()).isTrue();
+			pipe = connector.loadMediaByPath(filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getPath(),null);
+			assertThat(pipe.getInputStream().available() > 0);
 
 
 

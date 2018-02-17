@@ -223,7 +223,7 @@ public class SiteBaseConnector implements SiteConnectorInt{
 	}
 
 
-	public AbstractResource loadMediaByPath(String path, String headers) throws Exception {
+	public SiteMediaPipe loadMediaByPath(String path, HeadersContainer headers) throws Exception {
 		return null;
 	}
 

@@ -67,8 +67,7 @@ public class LocalPhotoObject extends BasePhotoObj {
 				if (fileExt.startsWith("tif")) {
 					setType("image");
 					setMimeType("image/tiff");
-				}
-				if (fileExt.startsWith("tiff")) {
+				} else if (fileExt.startsWith("tiff")) {
 					setType("image");
 					setMimeType("image/tiff");
 				} else if (fileExt.startsWith("jpg")) {
