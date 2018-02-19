@@ -27,15 +27,19 @@ public class ScanTask extends BaseTask {
 	private PhotoService photoService;
 	private SiteService siteSvc;
 
-	public ScanTask(Site theSite, SiteService siteService, Schedule shedule, ScheduleProcessing scheduleSvc, PhotoService photoService ) throws Throwable {
-		super(theSite,TaskNamesEnum.TNAME_SCAN,shedule,scheduleSvc, true);
+	public ScanTask(Site theSite, SiteService siteService, Schedule schedule, ScheduleProcessing scheduleSvc, PhotoService photoService ) throws Throwable {
+		super(theSite,TaskNamesEnum.TNAME_SCAN,schedule,scheduleSvc, true);
 		siteSvc = siteService;
+		logger.trace("[ScanTask.Init] Site id is " + theSite.getId());
+
 		try {
-			this.connector = siteSvc.getOrLoadConnector(getSite());
+			this.connector = siteSvc.getOrLoadConnector(theSite);
 		}
 		catch (Throwable e) {
 			setStatus(TaskStatusEnum.ERR,e.getMessage());
-			siteSvc.updateSite(theSite);
+			saveLog();
+			//siteSvc.updateSite(theSite);
+			logger.error("[ScanTask] Site connection error.",e);
 			throw e;
 		}
 		this.photoService = photoService;

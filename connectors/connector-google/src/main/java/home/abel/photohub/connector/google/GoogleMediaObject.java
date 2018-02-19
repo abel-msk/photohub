@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 import com.google.gdata.client.Service;
+import com.google.gdata.data.media.mediarss.AbstractMediaResource;
 import com.google.gdata.data.media.mediarss.MediaContent;
 import com.google.gdata.util.ContentType;
 import home.abel.photohub.connector.HeadersContainer;
@@ -26,10 +27,17 @@ public class GoogleMediaObject extends BaseMediaObject {
 
 	
 	protected GoogleSiteConnector connector = null;
-	protected MediaContent media = null;
+	//protected MediaContent media = null;
+	//com.google.gdata.data.media.mediarss.AbstractMediaResource
+	protected AbstractMediaResource media = null;
 	
-	public GoogleMediaObject(GoogleSiteConnector connector) {
+	public GoogleMediaObject(GoogleSiteConnector connector, AbstractMediaResource mediaObj) {
+		super();
 		this.connector = connector;
+		this.media = mediaObj;
+		setPath(mediaObj.getUrl().toString());
+		setHeight(mediaObj.getWidth());
+		setWidth(mediaObj.getHeight());
 	}
 	public void setMedia(MediaContent mediaObj) {
 		this.media = mediaObj;

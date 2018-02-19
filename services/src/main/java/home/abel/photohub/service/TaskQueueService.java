@@ -1,5 +1,6 @@
 package home.abel.photohub.service;
 
+import home.abel.photohub.connector.ConnectorsFactory;
 import home.abel.photohub.model.*;
 import home.abel.photohub.model.TaskRecordRepository;
 import home.abel.photohub.tasks.BaseTask;
@@ -44,6 +45,10 @@ public class TaskQueueService {
 	@Autowired
 	Queue queue;
 
+//	@Autowired
+//	ConnectorsFactory cf;   //  Required to bee initilized before init method called.
+//	@Autowired
+//	SiteService  siteSvc; //  Required to bee initilized before init method called.
 
 	@Autowired
 	SiteRepository siteRepo;
@@ -71,13 +76,16 @@ public class TaskQueueService {
 	private EntityManager entityManager;
 
 
-	@PostConstruct
+	//@PostConstruct
+	//   Called from task service.
 	/**
 	 * Сразу после старта, загружает все задачи с рассписанием в очередь
 	 * @throws Exception
 	 */
 	public void Init() throws Throwable {
 		logger.trace("[SceduleService.Init] Arm saved scheduled jobs.");
+
+		//siteSvc.setConnectorsFactory(cf);
 
 		Iterable<Schedule> schList = scheduleRepository.findAll();
 		for (Schedule scheduleObj: schList ) {
@@ -88,9 +96,12 @@ public class TaskQueueService {
 						TaskNamesEnum.valueOf(scheduleObj.getTaskName()),
 						scheduleObj.getSite(),
 						scheduleObj);
+
 				this.put(task);
+
+
 			} catch (Exception e) {
-				logger.warn("[SceduleService.Init] Cannot run task " +task+ ", Error=" + e.getMessage());
+				logger.warn("[Init] Cannot run task: " + e.getMessage(),e);
 			}
 		}
 	}
@@ -171,9 +182,10 @@ public class TaskQueueService {
 			ListenableFuture<Void> taskProcess = (ListenableFuture<Void>) threadPoolTaskExecutor.submitListenable(task);
 			//taskProcess.addCallback(new TaskCallback(task,queue));
 			task.setThisTaskProcess(taskProcess);
+			logger.debug("[runNow] Start Task "+task);
 		}
 		catch (Exception e) {
-			logger.warn("Task does not started. Task="+task+", Error="+e.getMessage());
+			logger.warn("[runNow] Task does not started. Task="+task+", Error="+e.getMessage());
 			throw e;
 		}
 		return task;
@@ -190,6 +202,8 @@ public class TaskQueueService {
 			ScheduledFuture<?> taskProcess = threadPoolTaskScheduler.schedule(task,cronTrigger);
 
 			task.setThisTaskProcess(taskProcess);
+			logger.debug("[runScheduled] Start schedule for Task  "+task);
+
 		}
 		catch (Exception e) {
 			logger.warn("[runScheduled] Task "+task+" cannot be scheduled. Error="+e.getMessage());

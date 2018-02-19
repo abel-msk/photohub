@@ -82,8 +82,6 @@ public class ScheduleProcessing {
         if ((schedule.getId() != null) && (scheduleRepository.findOne(schedule.getId()) != null)) {
             scheduleRepository.delete(schedule);
             logger.trace("[removeSchedule] Remove schedule from db. Schedule=" + schedule);
-
-
         }
         else {
             logger.debug("[removeSchedule] Request to remove  from db schedule  w/o Id. Schedule=" + schedule);

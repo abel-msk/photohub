@@ -295,6 +295,9 @@ public class TaskFactory {
 			theSchedule.setParams(new ArrayList<>());
 		}
 
+		//
+		//  Добавляем параметры посленные отдельно в посленный  объект "Schedule"
+		//
 		if (getTasksDescr(taskName.toString()) != null) {
 			Map<String, String> paramsTemplate = getTasksDescr(taskName.toString()).getParams();
 			if (paramsTemplate != null) {

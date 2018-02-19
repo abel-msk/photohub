@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 //import org.apache.log4j.Level;
 //import org.slf4j.Logger;
 import home.abel.photohub.connector.SiteMediaPipe;
+import home.abel.photohub.connector.prototype.*;
 import org.slf4j.LoggerFactory;
 
 import com.google.gdata.client.photos.PicasawebService;
@@ -38,13 +39,6 @@ import com.google.gdata.util.ServiceForbiddenException;
 
 import home.abel.photohub.connector.BasePhotoMetadata;
 import home.abel.photohub.connector.BasePhotoObj;
-import home.abel.photohub.connector.prototype.AccessException;
-import home.abel.photohub.connector.prototype.ExifMetadataTags;
-import home.abel.photohub.connector.prototype.EnumMediaType;
-import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
-import home.abel.photohub.connector.prototype.PhotoMetadataInt;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
-import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.UrlResource;
@@ -226,51 +220,41 @@ public class GooglePhotoObject extends BasePhotoObj {
 	 * @param thePhotoEntryObject
 	 */
 	public GoogleMediaObject loadImageInfo(PhotoEntry thePhotoEntryObject, String mimeBaseType)  {
-
-		boolean sizeObtained = false;
-		GoogleMediaObject mediaFile = new GoogleMediaObject(this.googleConnector);
-
-		try {
-			mediaFile.setHeight(Long.valueOf(thePhotoEntryObject.getHeight()).intValue());
-			mediaFile.setWidth(Long.valueOf(thePhotoEntryObject.getWidth()).intValue());
-			mediaFile.setSize(thePhotoEntryObject.getSize());
-			sizeObtained = true;
-
-		} catch  (ServiceException fe) {
-			logger.warn("[Google.loadImageInfo] Cannot obtain image info : " + thePhotoEntryObject.getId());
-		}
-
-
-		//   Если мы знаем оригинальное разрешение то ищем файл с таким же.
-		//   Иначе ищем файл с максимальным.
+		GoogleMediaObject mediaFile = null;
 
 		int maxWidth = 0;
 		int maxHeight = 0;
 
-		//thePhotoEntryObject.getMediaGroup().getContents().get(0).
-
+		try {
+			maxHeight = Long.valueOf(thePhotoEntryObject.getHeight()).intValue();
+			maxWidth = Long.valueOf(thePhotoEntryObject.getWidth()).intValue();
+		} catch  (ServiceException fe) {
+			logger.warn("[loadImageInfo] Cannot obtain image info : " + thePhotoEntryObject.getId());
+			maxWidth = 0;
+			maxHeight = 0;
+		}
 
 		for (MediaContent content : thePhotoEntryObject.getMediaGroup().getContents()) {
 			if ((mimeBaseType == null) || (content.getType().startsWith(mimeBaseType))) {
 				try {
-					if (sizeObtained) {
-						if ((content.getWidth() == mediaFile.getWidth()) && (content.getHeight() == mediaFile.getHeight())) {
-							mediaFile.setMimeType(content.getType());
-							mediaFile.setPath(content.getUrl().toString());
-							mediaFile.setMedia(content);
-						}
-					} else {
-						if ((content.getWidth() > maxWidth) && (content.getHeight() >= maxHeight)) {
-							mediaFile.setMimeType(content.getType());
-							mediaFile.setPath(content.getUrl().toString());
-							mediaFile.setMedia(content);
-						}
+					if ((content.getWidth() >= maxWidth) && (content.getHeight() >= maxHeight)) {
+						mediaFile = new GoogleMediaObject(this.googleConnector,content);
+						mediaFile.setMimeType(content.getType());
+						maxWidth = content.getWidth();
+						maxHeight = content.getHeight();
+						mediaFile.setSize(mediaFile.getSize());
 					}
 				} catch (Exception e1) {
-					logger.warn("[Google.loadImageInfo] Cannot convert image source url : " + content.getUrl().toString());
+					logger.warn("[loadImageInfo] Cannot convert image source url : " + content.getUrl().toString());
 				}
 			}
 		}
+
+
+		if (mediaFile == null )  {
+			throw  new ExceptionInternalError("[loadImageInfo] GoogleMediaObject not initialized.");
+		}
+
 
 		//  Define object type in all places
 		//  Сохраняем значение типа метиа контента во всех вариантах
@@ -477,7 +461,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 //		}
 
 		if ( mediaItem != null) {
-			mediaFile = new GoogleMediaObject(this.googleConnector);
+			mediaFile = new GoogleMediaObject(this.googleConnector,mediaItem);
 			mediaFile.setHeight(mediaItem.getHeight());
 			mediaFile.setWidth(mediaItem.getWidth());
 			mediaFile.setPath(mediaItem.getUrl());

@@ -54,15 +54,24 @@ public class SiteService {
 	ConnectorsFactory connectorsFactory;
 		
 	@Autowired
-	private home.abel.photohub.model.NodeRepository nodeRepo;	
+	private home.abel.photohub.model.NodeRepository nodeRepo;
+
+	@Autowired
+	TaskQueueService  queue;
 	
 	@PersistenceContext
 	private EntityManager em;
 
-	
-	public  SiteService () {
-
-	}
+//
+//	ConnectorsFactory cfBackup;
+//
+//	public  SiteService () {
+//	}
+//
+//	public void setConnectorsFactory(ConnectorsFactory cf) {
+//		cfBackup = cf;
+//	}
+//
 	
 	/**
 	 * 
@@ -72,7 +81,8 @@ public class SiteService {
 	 */
 	@PostConstruct
 	public void Init() throws Exception {
-		
+
+		logger.debug("[SiteService.INIT]  Init started");
 		//   Save sites types
 		siteTypes = new ArrayList<String>();
 		for ( String type: connectorsFactory.getAvailableTypes()) {
@@ -88,7 +98,20 @@ public class SiteService {
 				logger.trace("Site type "+ type +", property "+propName+", with value "+ defProperties.get(propName).getValue());
 			}
 			propertiesNamesByType.put(type,defProperties);
-		}		
+		}
+
+
+		//
+		//   Init Queue Service.
+		//
+
+		try {
+			queue.Init();
+		}
+		catch (Throwable thException) {
+			logger.error("[SiteService.Init.Queue]  Error :"+thException.getMessage(),thException);
+		}
+
 	}
 	
 	
@@ -181,6 +204,8 @@ public class SiteService {
 	 */
 	public SiteConnectorInt getOrLoadConnector(Site theSite)  throws Exception {
 		logger.trace("[getOrLoadConnector] Load connector for site="+theSite);
+		logger.trace("[getOrLoadConnector] connectorsFactory =  " +(connectorsFactory!= null?"NOT NULL":"IS NULL"));
+
 		SiteConnectorInt connector =  connectorsFactory.getConnector(theSite.getId());
 		if ( connector == null) {
 			connector =  connectorsFactory.getConnector(

@@ -201,35 +201,16 @@ public class GoogleAlbumObject extends BasePhotoObj {
 	public boolean hasThumbnailSource() {
 		return this.maxThumb!= null;
 	}
-	
-//	protected GoogleThumbObject  getThumb(Dimension dim) throws IOException {
-//		GoogleThumbObject prevThumb = null;						
-//		for ( GoogleThumbObject thumb: googleThumbObjects) {
-//			logger.trace("Look for thumb for object "+getName()+". DIM w="+thumb.getWidth()+"/h="+thumb.getHeight()+" URL = "+thumb.getUrl());
-//			if ((prevThumb != null ) && (thumb.isGE(dim.getWidth(), dim.getHeight()))) {
-//				logger.trace("Retrive thumbnail w="+thumb.getWidth()+"/h="+thumb.getHeight()+" " +
-//							"for request w="+dim.getWidth()+"/h="+dim.getHeight());
-//				return thumb;
-//			}
-//		}
-//		//  Stream with required size not found
-//		//  get most relevant
-//		if (! googleThumbObjects.isEmpty() ) {
-//			return googleThumbObjects.get(0);
-//		}
-//		return null;	
-//	}
 
 	@Override
 	public PhotoMediaObjectInt getThumbnail(Dimension dim) throws IOException {
 		GoogleMediaObject mediaObject = null;
 
 		if ( maxThumb != null) {
-			mediaObject = new GoogleMediaObject(this.googleConnector);
-
-			mediaObject.setHeight(maxThumb.getHeight());
-			mediaObject.setWidth(maxThumb.getWidth());
-			mediaObject.setPath(maxThumb.getUrl().toString());
+			mediaObject = new GoogleMediaObject(this.googleConnector,maxThumb);
+//			mediaObject.setHeight(maxThumb.getHeight());
+//			mediaObject.setWidth(maxThumb.getWidth());
+//			mediaObject.setPath(maxThumb.getUrl().toString());
 			mediaObject.setType(EnumMediaType.THUMB_NET);
 			
 			String ext  = maxThumb.getUrl().toString().substring(maxThumb.getUrl().toString().lastIndexOf('.') + 1);
