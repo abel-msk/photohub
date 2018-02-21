@@ -72,6 +72,8 @@ public class Photo implements Serializable {
 	@JoinColumn(name="site")
 	private Site siteBean;
 
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date lastScanDate = null;
 
 	/*-------------------------------------
 	 *    Methods
@@ -397,5 +399,12 @@ public class Photo implements Serializable {
 		this.isoSpeed = isoSpeed;
 	}
 
-	
+
+	public Date getLastScanDate() {
+		return lastScanDate;
+	}
+
+	public void setLastScanDate(Date lastScanDate) {
+		this.lastScanDate = lastScanDate;
+	}
 }

@@ -486,7 +486,16 @@ public class PhotoService {
 		Photo thePhoto = convertToPhoto(onSiteObject, null, null);
 		thePhoto.setSiteBean(theSite);
 		//thePhoto = photoRepo.save(thePhoto);
-		
+
+		//--------------------------------------------------------------------------
+		//	Increase site total space amount
+		//--------------------------------------------------------------------------
+		//TODO:  Check for site limit.
+		//
+		theSite.setSizeTotal(theSite.getSizeTotal() + onSiteObject.getSize());
+
+		logger.trace("[addObjectFromSite] Increase site size = " + (theSite.getSizeTotal() + onSiteObject.getSize()));
+
 		try { 
 			thePhoto = photoRepo.save(thePhoto);
 			//--------------------------------------------------------------------------
@@ -497,10 +506,13 @@ public class PhotoService {
 			throw new ExceptionPhotoProcess("Cannot create thumbnail.",e);
 		}
 
+		setScanDate(thePhoto);
+
 		//--------------------------------------------------------------------------
 		//    Finally  generate Nod and links all together
 		//--------------------------------------------------------------------------
 		thePhoto = photoRepo.save(thePhoto);
+		theSite = siteRepo.save(theSite);
 		Node theNode = new Node(thePhoto,theParentNode);
 		theNode = nodeRepo.save(theNode);
 		logger.debug("[addObjectFromSite] Add photo object, type="+
@@ -510,6 +522,18 @@ public class PhotoService {
 		return theNode;
 		
 	}
+
+	/**
+	 *
+	 *
+	 *
+	 * @param thePhoto
+	 */
+	public void setScanDate(Photo thePhoto) {
+		thePhoto.setLastScanDate(new Date());
+	}
+
+
 //	/**
 //	 *
 //	 *   Extract Media info datas and add to db' Photo object.
@@ -911,7 +935,7 @@ public class PhotoService {
 		String newThumbPath = thumbService.getThumbPath(thePhoto);
 		boolean allDeleted = true;
 
-		logger.debug("Remove Photo object: " +
+		logger.debug("[deleteObject] Remove Photo object: " +
 				"  NodeId = " + theNode.getId() +
 				", PhotoId = " + thePhoto.getId() +
 				", Type =" + thePhoto.getType() +
@@ -944,12 +968,12 @@ public class PhotoService {
 		
 		//---   If this photo is not linked anywhere else, so delete photo object too
 
-		logger.debug("Get nodes for photo id="+thePhoto.getId());
+		logger.debug("[deleteObject] Get nodes for photo id="+thePhoto.getId());
 		List<Node> allNodes =  thePhoto.getNodes();
 
 
 		if (allNodes.size() <= 1) {	
-			logger.debug("Object "+thePhoto+", has just one reference, so we can delete it.");
+			logger.debug("[deleteObject] Object "+thePhoto+", has just one reference, so we can delete it.");
 
 			//--- IF required, delete photoObject on site
 			if ( isDeleteOnSite ) {
@@ -975,19 +999,19 @@ public class PhotoService {
 				FileUtils.fileDelete(newThumbPath, false);
 			}
 			catch (ExceptionFileIO e) {
-				logger.warn("Cannot delete thumbnail "+newThumbPath+ ", for photo obj " + theNode.getPhoto() + ".  File delete report:"+e.getLocalizedMessage(),e);
+				logger.warn("[deleteObject] Cannot delete thumbnail "+newThumbPath+ ", for photo obj " + theNode.getPhoto() + ".  File delete report:"+e.getLocalizedMessage(),e);
 			}
 
 			//--- Delete PhotoObject from DB
-			String msg = "Photo NodeId=" + theNode + ", PhotoID=" + thePhoto;
+			String msg = "[deleteObject] Photo NodeId=" + theNode + ", PhotoID=" + thePhoto;
 			theNode.setPhoto(null);
 			nodeRepo.delete(theNode);
 			photoRepo.delete(thePhoto);
-			logger.debug("Deleted " + msg);
+			logger.debug("[deleteObject] Deleted " + msg);
 
 		}
 		else {
-			logger.debug("Photo object has anather link, so delete only the node "+theNode);
+			logger.debug("[deleteObject] Photo object has anather link, so delete only the node "+theNode);
 			nodeRepo.delete(theNode);
 		}
 		return true;
@@ -1002,12 +1026,17 @@ public class PhotoService {
 			try {
 				if (connector.isCanDelete()) {
 					PhotoObjectInt onSiteObject = getOnSiteObject(theNode);
-					logger.debug("[PhotoService.deleteObjectFromSite] Delete on site. Node="+theNode+", object="+ thePhoto.getName()+"(id="+thePhoto.getId()+")  site " + thePhoto.getSiteBean());
+					long objectSize = onSiteObject.getSize();
+					logger.debug("[deleteObjectFromSite] Delete on site. Node="+theNode+", object="+ thePhoto.getName()+"(id="+thePhoto.getId()+")  site " + thePhoto.getSiteBean());
 					onSiteObject.delete();
+					Site theSite = theNode.getPhoto().getSiteBean();
+					theSite.setSizeTotal(theSite.getSizeTotal() - objectSize);
+					siteRepo.save(theSite);
 				}
-				// else throw new ExceptionInternalError("Cannot delete object " + thePhoto.getName() + ". The site read only.");
 				//
-				//If site read-only  just hide object in db
+				//   else throw new ExceptionInternalError("Cannot delete object " + thePhoto.getName() + ". The site read only.");
+				//
+				//   If site read-only  just hide object in db
 				//
 				else {
 					return false;
@@ -1015,13 +1044,13 @@ public class PhotoService {
 			} catch (ExceptionInternalError eie) {
 				throw eie;
 			} catch (Exception e) {
-				logger.error("[deleteObject] Cannot delete object from site.", e);
+				logger.error("[deleteObjectFromSite] Cannot delete object from site.", e);
 				throw new ExceptionInternalError("Cannot delete object from site.", e);
 			}
 		} catch (ExceptionInternalError eie) {
 			throw eie;
 		} catch (Exception e) {
-			logger.error("[deleteObject] Cannot get object from site. ", e);
+			logger.error("[deleteObjectFromSite] Cannot get object from site. ", e);
 			throw new ExceptionInternalError("Cannot get object from site.", e);
 		}
 		return true;

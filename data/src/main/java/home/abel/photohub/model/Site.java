@@ -68,13 +68,15 @@ public class Site implements Serializable {
 
 	//   Entered by user, used for Create connector
 	private String siteUser;
-	
+
+
+	long sizeLimit = 0;
+
+	long sizeTotal = 0;
 	
 	@JsonIgnore
 	@OneToMany(cascade = {CascadeType.REMOVE,CascadeType.PERSIST,CascadeType.MERGE }, mappedBy="siteBean", fetch = FetchType.LAZY, orphanRemoval = true)
 	private List<TaskRecord> tasksLog;
-
-
 
 	/*
 		Method definition
@@ -299,8 +301,24 @@ public class Site implements Serializable {
 	
 	public List<Schedule> getSchedules() {
 		return this.schedules;
-		
 	}
+
+	public long getSizeLimit() {
+		return sizeLimit;
+	}
+
+	public void setSizeLimit(long sizeLimit) {
+		this.sizeLimit = sizeLimit;
+	}
+
+	public long getSizeTotal() {
+		return sizeTotal;
+	}
+
+	public void setSizeTotal(long sizeTotal) {
+		this.sizeTotal = sizeTotal;
+	}
+
 
 	public Schedule getSchedule(String taskName) {
 		if (this.schedules != null) {
@@ -329,7 +347,6 @@ public class Site implements Serializable {
 //		theSch.setTaskName(null);
 		return theSch;
 	}
-	
-	
-	
+
+
 }

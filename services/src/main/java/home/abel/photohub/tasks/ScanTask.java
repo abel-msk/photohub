@@ -72,10 +72,15 @@ public class ScanTask extends BaseTask {
 
 	@Override
 	public void exec() throws Throwable {
-		doScann(connector.getRootObjects(), null);	
+		doScann(connector.getRootObjects(), null);
+
+		//TODO: check for deleted
+
+
+
 	}
 	
-	@Transactional
+	//@Transactional
 	//@Transactional (propagation=Propagation.REQUIRES_NEW)
 	public void doScann(List<PhotoObjectInt> objList, Node parentNode) throws Throwable {
 			
@@ -85,37 +90,85 @@ public class ScanTask extends BaseTask {
 
 					//   Проверяем существует ли такой объект в базе.  Ищем по его ID
 					Node theNode = photoService.isPhotoExist(Item.getId());
-					
-					//Photo dbPhotoObject = photoService.isPhotoExist(Item.getId());
-					
-					//   Если объект еще не существует - добавляем  в базу
-					if ( (theNode == null) || Item.isFolder()) {
-						
-						// TODO: Надо проверять существует ли фотка с таким  UUID
 
-						logger.trace("Add object to db with id="+Item.getId());
-						this.printMsg("Process object " + Item.getName()+"("+Item.getId()+")");
-						
+					//
+					//  Process folder
+					//
+					if ( Item.isFolder() ) {
+						if ( theNode == null ) {
+							logger.trace("[doScann] Add folder to db with id=" + Item.getId() + ", name="+Item.getName());
+							theNode = photoService.addObjectFromSite(
+									Item,
+									parentNode != null ? parentNode.getId() : null,
+									getSite().getId());
+						}
+						doScann(Item.listSubObjects(), theNode);
+					}
+					//
+					//  Process Object
+					//
+					else {
+
+						logger.trace("[doScann] Add "+Item.getMimeType()+" object to db with id=" + Item.getId() + ", name="+Item.getName());
+						this.printMsg("Process object " + Item.getName() + "(" + Item.getId() + ")");
+
+						//Node existObjNode = photoService.isPhotoExistByUUID(Item.getMeta().getUnicId());
+
+
 						if (theNode == null) {
 							theNode = photoService.addObjectFromSite(
 									Item,
-									parentNode != null?parentNode.getId():null,
+									parentNode != null ? parentNode.getId() : null,
 									getSite().getId());
-							}
-
-						//  Если это фолдер то сканируем его содержимое
-						if ( Item.isFolder() ) {
-							doScann(Item.listSubObjects(), theNode);
 						}
-					} else {
-						logger.trace("Skip, оbject with id=" + Item.getId() + " exist.");
+
 					}
+
+					if (theNode != null) {
+						photoService.setScanDate(theNode.getPhoto());
+					}
+
+
+//					if (( theNode != null) && ( ! Item.isFolder())) {
+//						photoService.setScanDate(theNode);
+//
+//					} else {
+//
+//					//   Если объект еще не существует - добавляем  в базу
+//					//if ( (theNode == null) || Item.isFolder()) {
+//
+//						if (! Item.isFolder()) {
+//							Node existObjNode = photoService.isPhotoExistByUUID(Item.getMeta().getUnicId());
+//						}
+//						if ( theNode == null) {
+//							logger.trace("Add object to db with id=" + Item.getId());
+//							this.printMsg("Process object " + Item.getName() + "(" + Item.getId() + ")");
+//
+//							// TODO: Надо проверять существует ли фотка с таким  UUID
+//
+//							if (theNode == null) {
+//								theNode = photoService.addObjectFromSite(
+//										Item,
+//										parentNode != null ? parentNode.getId() : null,
+//										getSite().getId());
+//							}
+//						}
+//
+//						//  Если это фолдер то сканируем его содержимое
+//						if ( Item.isFolder() ) {
+//							doScann(Item.listSubObjects(), theNode);
+//						}
+//						else {
+//							photoService.increaseUsedSpace(theNode);
+//						}
+//					}
+
 				}
 			} catch (Exception ex) {
 				//logger.error(ex.getMessage(),ex);
 				throw new ExceptionTaskAbort(ex.getMessage(),ex);
 			}
-		logger.debug("[ScanTask.doScann] Finished success.");
+		logger.debug("[doScann] Finished success.");
 		}
 	}
 }

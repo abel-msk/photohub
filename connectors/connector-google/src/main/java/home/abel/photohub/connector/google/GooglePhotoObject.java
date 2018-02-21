@@ -188,7 +188,15 @@ public class GooglePhotoObject extends BasePhotoObj {
 			setMimeType("unknown");
 		}
 
-		setSize(mediaFile.getSize());
+		try {
+			setSize(thePhotoEntryObject.getSize());
+		}
+		catch (Exception e) {
+			logger.warn("[loadMainImageInfo] Cannot get object size.",e);
+			setSize(mediaFile.getSize());
+		}
+
+
 		setWidth(mediaFile.getWidth());
 		setHeight(mediaFile.getHeight());
 
@@ -242,7 +250,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 						mediaFile.setMimeType(content.getType());
 						maxWidth = content.getWidth();
 						maxHeight = content.getHeight();
-						mediaFile.setSize(mediaFile.getSize());
+						mediaFile.setSize(content.getFileSize());
 					}
 				} catch (Exception e1) {
 					logger.warn("[loadImageInfo] Cannot convert image source url : " + content.getUrl().toString());
@@ -278,11 +286,11 @@ public class GooglePhotoObject extends BasePhotoObj {
 	}
 	
 
-	/**
-	 *   Сохраняет параметры основного фото файла в свойствах базового класса 	
-	 *  
-	 * @param mediaInfo
-	 */
+//	/**
+//	 *   Сохраняет параметры основного фото файла в свойствах базового класса
+//	 *
+//	 * @param mediaInfo
+//	 */
 //	public void mediaToObjectInfo(GoogleMediaObject mediaInfo ) {
 //		this.size = mediaInfo.getSize();
 //		this.width = mediaInfo.getWidth();
