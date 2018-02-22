@@ -1,9 +1,6 @@
 package home.abel.photohub.tasks;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +23,7 @@ public class ScanTask extends BaseTask {
 	private SiteConnectorInt connector;
 	private PhotoService photoService;
 	private SiteService siteSvc;
+	private Date startDate = null;
 
 	public ScanTask(Site theSite, SiteService siteService, Schedule schedule, ScheduleProcessing scheduleSvc, PhotoService photoService ) throws Throwable {
 		super(theSite,TaskNamesEnum.TNAME_SCAN,schedule,scheduleSvc, true);
@@ -72,9 +70,11 @@ public class ScanTask extends BaseTask {
 
 	@Override
 	public void exec() throws Throwable {
+
+		startDate = new Date();
 		doScann(connector.getRootObjects(), null);
 
-		//TODO: check for deleted
+		checkDeleted(startDate);
 
 		logger.debug("[doScann] Finished success.");
 
@@ -171,5 +171,17 @@ public class ScanTask extends BaseTask {
 				throw new ExceptionTaskAbort(ex.getMessage(),ex);
 			}
 		}
+	}
+
+	//TODO: check for deleted
+	public void checkDeleted(Date fromDate) {
+
+		logger.trace("[checkDeleted] Find not scanned objects.");
+
+		Iterable<Node> nodes = photoService.listdeletedObjects(fromDate,getSite());
+		nodes.forEach(node -> {
+			logger.debug("[checkDeleted] Found candidate for delete = " + node.getPhoto());
+		});
+
 	}
 }

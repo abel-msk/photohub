@@ -1153,7 +1153,31 @@ public class PhotoService {
 		}
 		return result;
 	}
-	
-	
+
+
+	/**
+	 *
+	 *    Get objects with scan date older then date send as parameter
+	 *
+	 * @param fromDate
+	 * @return
+	 */
+	public Iterable<Node> listdeletedObjects(Date fromDate,Site theSite) {
+
+		//return photoRepo.findOne(QPhoto.photo.onSiteId.eq(siteObjectId));
+		JPAQuery<?> query = new JPAQuery<Void>(em);
+		QNode node = QNode.node;
+		QPhoto photo = QPhoto.photo;
+
+		Iterable<Node> nodes = query.select(node).from(node)
+				.where(node.photo.onSiteId.eq(theSite.getId()).and(node.photo.lastScanDate.lt(fromDate)))
+				.orderBy(node.photo.type.asc())
+				.fetch();
+		return nodes;
+	}
+
+
+
+
 	
 } // End of class
