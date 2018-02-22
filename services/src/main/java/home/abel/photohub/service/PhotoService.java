@@ -492,9 +492,10 @@ public class PhotoService {
 		//--------------------------------------------------------------------------
 		//TODO:  Check for site limit.
 		//
-		theSite.setSizeTotal(theSite.getSizeTotal() + onSiteObject.getSize());
-
-		logger.trace("[addObjectFromSite] Increase site size = " + (theSite.getSizeTotal() + onSiteObject.getSize()));
+		if ( ! onSiteObject.isFolder()) {
+			theSite.setSizeTotal(theSite.getSizeTotal() + onSiteObject.getSize());
+			logger.trace("[addObjectFromSite] Increase site size = " + theSite.getSizeTotal());
+		}
 
 		try { 
 			thePhoto = photoRepo.save(thePhoto);

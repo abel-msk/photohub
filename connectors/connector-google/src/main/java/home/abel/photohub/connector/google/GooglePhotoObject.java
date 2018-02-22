@@ -197,6 +197,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 		}
 
 
+
 		setWidth(mediaFile.getWidth());
 		setHeight(mediaFile.getHeight());
 
@@ -208,7 +209,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 			logger.warn("[Google.loadMainImageInfo] Cannot convert image source url : " + mediaFile.getPath() );
 		}
 
-		logger.trace("[Google.loadImageInfo] Load photo info:"
+		logger.trace("[loadMainImageInfo] Load photo info:"
 				+ " mime type="+getMimeType()
 				+ " type="+getType()
 				+ " width="+getWidth()
@@ -250,6 +251,8 @@ public class GooglePhotoObject extends BasePhotoObj {
 						mediaFile.setMimeType(content.getType());
 						maxWidth = content.getWidth();
 						maxHeight = content.getHeight();
+						mediaFile.setWidth(content.getWidth());
+						mediaFile.setHeight(content.getHeight());
 						mediaFile.setSize(content.getFileSize());
 					}
 				} catch (Exception e1) {
@@ -262,6 +265,13 @@ public class GooglePhotoObject extends BasePhotoObj {
 		if (mediaFile == null )  {
 			throw  new ExceptionInternalError("[loadImageInfo] GoogleMediaObject not initialized.");
 		}
+
+//		logger.trace("[loadImageInfo] Create " + (mimeBaseType==null?"any type ":mimeBaseType ) +  " media object. "+
+//			" MimeType="+mediaFile.getMimeType() +
+//			", Height="+mediaFile.getHeight()+
+//			", Width="+mediaFile.getWidth()+
+//			", Size="+mediaFile.getSize()
+//		);
 
 
 		//  Define object type in all places

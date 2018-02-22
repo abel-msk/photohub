@@ -92,8 +92,9 @@ public class LocalPhotoObject extends BasePhotoObj {
 			}
 			
 			BufferedImage memImage = ImageIO.read(photoObjectsFile);
-			setWidth(getWidth());
-			setHeight(getHeight());
+			setWidth(memImage.getWidth());
+			setHeight(memImage.getHeight());
+			setSize(photoObjectsFile.length());
 			
 			//logger.trace("Load image.  width=" +getWidth()+", height="+getHeight());
 		}

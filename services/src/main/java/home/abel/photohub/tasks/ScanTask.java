@@ -76,7 +76,7 @@ public class ScanTask extends BaseTask {
 
 		//TODO: check for deleted
 
-
+		logger.debug("[doScann] Finished success.");
 
 	}
 	
@@ -85,8 +85,8 @@ public class ScanTask extends BaseTask {
 	public void doScann(List<PhotoObjectInt> objList, Node parentNode) throws Throwable {
 			
 		if ( objList != null ) {
-			try {		
-				for (PhotoObjectInt Item: objList) {
+			try {
+				for (PhotoObjectInt Item : objList) {
 
 					//   Проверяем существует ли такой объект в базе.  Ищем по его ID
 					Node theNode = photoService.isPhotoExist(Item.getId());
@@ -94,9 +94,9 @@ public class ScanTask extends BaseTask {
 					//
 					//  Process folder
 					//
-					if ( Item.isFolder() ) {
-						if ( theNode == null ) {
-							logger.trace("[doScann] Add folder to db with id=" + Item.getId() + ", name="+Item.getName());
+					if (Item.isFolder()) {
+						if (theNode == null) {
+							logger.trace("[doScann] Add folder to db with id=" + Item.getId() + ", name=" + Item.getName());
 							theNode = photoService.addObjectFromSite(
 									Item,
 									parentNode != null ? parentNode.getId() : null,
@@ -109,7 +109,7 @@ public class ScanTask extends BaseTask {
 					//
 					else {
 
-						logger.trace("[doScann] Add "+Item.getMimeType()+" object to db with id=" + Item.getId() + ", name="+Item.getName());
+						logger.trace("[doScann] Add " + Item.getMimeType() + " object to db with id=" + Item.getId() + ", name=" + Item.getName());
 						this.printMsg("Process object " + Item.getName() + "(" + Item.getId() + ")");
 
 						//Node existObjNode = photoService.isPhotoExistByUUID(Item.getMeta().getUnicId());
@@ -164,11 +164,12 @@ public class ScanTask extends BaseTask {
 //					}
 
 				}
+			}catch (ExceptionTaskAbort ex1) {
+				throw ex1;
 			} catch (Exception ex) {
-				//logger.error(ex.getMessage(),ex);
+				logger.error("[doScan] Error "+ex.getMessage());
 				throw new ExceptionTaskAbort(ex.getMessage(),ex);
 			}
-		logger.debug("[doScann] Finished success.");
 		}
 	}
 }
