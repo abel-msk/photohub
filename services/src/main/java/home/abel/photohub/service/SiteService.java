@@ -10,6 +10,7 @@ import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import com.querydsl.jpa.impl.JPAQuery;
 import home.abel.photohub.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -635,6 +636,40 @@ public class SiteService {
 					.and(QNode.node.parent.isNull()));	
 //		}
 		return nodesList;
+	}
+
+
+	/**
+	 *
+	 *    Sum all objects size for given site  / суммирует размер всех объектов для сайта
+	 *
+	 * @param theSite
+	 * @return calculated size
+	 */
+	public long calcSiteSize(Site theSite) {
+		long totalSize = 0;
+		JPAQuery<?> query = new JPAQuery<Void>(em);
+		QPhoto photo = QPhoto.photo;
+
+		totalSize = query.select(photo.allMediaSize.sum())
+				.from(photo)
+				.where(photo.siteBean.id.eq(theSite.getId())
+						.and(photo.type.eq(1))
+				).fetchOne();
+		return totalSize;
+	}
+
+	/**
+	 *    Sum all objects size for given site and save it in  site record
+	 *    / суммирует размер всех объектов для сайта и сохраняет в базе для сайта.
+	 * @param theSite
+	 * @return  calculated and saved size
+	 */
+	public long updateSiteSize(Site theSite) {
+		long totalSize = calcSiteSize(theSite);
+		theSite.setSizeTotal(totalSize);
+		siteRepo.save(theSite);
+		return totalSize;
 	}
 
 

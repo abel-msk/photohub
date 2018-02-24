@@ -189,4 +189,9 @@ public class BasePhotoObj implements PhotoObjectInt {
 		return null;
 	}
 
+	public String toString() {
+		return getName() + "("+ getId() + ")";
+	}
+
+
 }

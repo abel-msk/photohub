@@ -23,7 +23,6 @@ public class ScanTask extends BaseTask {
 	private SiteConnectorInt connector;
 	private PhotoService photoService;
 	private SiteService siteSvc;
-	private Date startDate = null;
 
 	public ScanTask(Site theSite, SiteService siteService, Schedule schedule, ScheduleProcessing scheduleSvc, PhotoService photoService ) throws Throwable {
 		super(theSite,TaskNamesEnum.TNAME_SCAN,schedule,scheduleSvc, true);
@@ -71,18 +70,21 @@ public class ScanTask extends BaseTask {
 	@Override
 	public void exec() throws Throwable {
 
-		startDate = new Date();
+		Date startDate = new Date();
+
 		doScann(connector.getRootObjects(), null);
 
 		checkDeleted(startDate);
 
-		logger.debug("[doScann] Finished success.");
+		long totalSize = siteSvc.updateSiteSize(getSite());
+
+		logger.debug("[doScann] Finished success.   Sites total size = " + totalSize );
 
 	}
 	
 	//@Transactional
 	//@Transactional (propagation=Propagation.REQUIRES_NEW)
-	public void doScann(List<PhotoObjectInt> objList, Node parentNode) throws Throwable {
+	private void doScann(List<PhotoObjectInt> objList, Node parentNode) throws Throwable {
 			
 		if ( objList != null ) {
 			try {
@@ -112,6 +114,7 @@ public class ScanTask extends BaseTask {
 						logger.trace("[doScann] Add " + Item.getMimeType() + " object to db with id=" + Item.getId() + ", name=" + Item.getName());
 						this.printMsg("Process object " + Item.getName() + "(" + Item.getId() + ")");
 
+						// TODO: Надо проверять существует ли фотка с таким  UUID
 						//Node existObjNode = photoService.isPhotoExistByUUID(Item.getMeta().getUnicId());
 
 
@@ -121,47 +124,11 @@ public class ScanTask extends BaseTask {
 									parentNode != null ? parentNode.getId() : null,
 									getSite().getId());
 						}
-
 					}
 
 					if (theNode != null) {
 						photoService.setScanDate(theNode.getPhoto());
 					}
-
-
-//					if (( theNode != null) && ( ! Item.isFolder())) {
-//						photoService.setScanDate(theNode);
-//
-//					} else {
-//
-//					//   Если объект еще не существует - добавляем  в базу
-//					//if ( (theNode == null) || Item.isFolder()) {
-//
-//						if (! Item.isFolder()) {
-//							Node existObjNode = photoService.isPhotoExistByUUID(Item.getMeta().getUnicId());
-//						}
-//						if ( theNode == null) {
-//							logger.trace("Add object to db with id=" + Item.getId());
-//							this.printMsg("Process object " + Item.getName() + "(" + Item.getId() + ")");
-//
-//							// TODO: Надо проверять существует ли фотка с таким  UUID
-//
-//							if (theNode == null) {
-//								theNode = photoService.addObjectFromSite(
-//										Item,
-//										parentNode != null ? parentNode.getId() : null,
-//										getSite().getId());
-//							}
-//						}
-//
-//						//  Если это фолдер то сканируем его содержимое
-//						if ( Item.isFolder() ) {
-//							doScann(Item.listSubObjects(), theNode);
-//						}
-//						else {
-//							photoService.increaseUsedSpace(theNode);
-//						}
-//					}
 
 				}
 			}catch (ExceptionTaskAbort ex1) {
@@ -173,14 +140,14 @@ public class ScanTask extends BaseTask {
 		}
 	}
 
-	//TODO: check for deleted
-	public void checkDeleted(Date fromDate) {
+	private void checkDeleted(Date fromDate) {
 
-		logger.trace("[checkDeleted] Find not scanned objects.");
+		//logger.trace("[checkDeleted] Find not scanned objects.");
 
 		Iterable<Node> nodes = photoService.listdeletedObjects(fromDate,getSite());
 		nodes.forEach(node -> {
-			logger.debug("[checkDeleted] Found candidate for delete = " + node.getPhoto());
+			photoService.deleteObject(node,false,false);
+			logger.debug("[checkDeleted] Found and delete not scanned object = " + node.getPhoto());
 		});
 
 	}

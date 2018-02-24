@@ -167,6 +167,12 @@ public class PhotoServiceTest {
 
 	public final String TASK_PARAM_NAME = "PARAM1";
 
+	public static final String defSiteType = "Local";
+	public static final String newSiteName = "TEST";
+	public static final String defSiteId = "2";
+
+
+
 
 	@BeforeClass
 	public static void beforeClass() throws Exception {
@@ -214,8 +220,13 @@ public class PhotoServiceTest {
 	@Before
 	public void before() throws Throwable {
 		System.out.println("------------------------------------------------------------------------");
-		System.out.println("\t Before is invoked");
-		System.out.println("------------------------------------------------------------------------");
+		System.out.println("--- Before method is invoked");
+		System.out.println("\tCreate file structure for new site.");
+
+
+		//
+		//  Create file structure for new site
+		//
 
 		configService.Init();
 
@@ -231,8 +242,30 @@ public class PhotoServiceTest {
 		File imgFile = new  File(newFolder.getAbsolutePath() +  File.separator + RESOURCE_IMAGE_FN) ;
 		if ( ! imgFile.exists()) {
 			FileUtils.copyFileToDirectory(sampeImageFile,newFolder);
-			System.out.println("Copy file " + imgFile.getAbsolutePath());
+			logger.debug("[before] Copy file " + imgFile.getAbsolutePath());
 		}
+		imgFile.deleteOnExit();
+
+		//
+		//  Create file structure for existing site
+		//
+
+		System.out.println("\tCreate file structure for existing site");
+		//   Create folder structure for existed in db site
+		newFolder = new File(SITE_ROOT_PATH + File.separator + TEST_FOLDER_NAME);
+		if ( ! newFolder.exists() ) {
+			newFolder.mkdirs();
+		}
+
+		File testImageFile = new File(
+				newFolder.getAbsolutePath() + File.separator + RESOURCE_IMAGE_FN);
+		if ( ! testImageFile.exists()) {
+			FileUtils.copyFileToDirectory(sampeImageFile,newFolder);
+			logger.debug("[before] Copy file " + imgFile.getAbsolutePath());
+		}
+		testImageFile.deleteOnExit();
+
+		System.out.println("------------------------------------------------------------------------");
 	}
 
 
@@ -253,9 +286,9 @@ public class PhotoServiceTest {
 	
 	
 
-	public static final String defSiteType = "Local";
-	public static final String newSiteName = "TEST";
-	public static final String defSiteId = "2";
+
+
+
 
 
 	@Test
@@ -517,13 +550,24 @@ public class PhotoServiceTest {
 	public final static String L2_FOLDER_NAME = "Folder_L2";
 	
 	@Test
-	@Transactional
+	//@Transactional
+	@Transactional(propagation=Propagation.SUPPORTS)
 	public void createSiteTest() throws Exception{
 		System.out.println("--- Testing add folder and upload file to site");
 
 		Site theSite = siteRepo.findOne(defSiteId);
 		assertThat(theSite).isNotNull();
-		
+
+		Node node = new Node();
+
+		node = nodeRepo.save(node);
+		assertThat(node).isNotNull();
+
+
+
+
+
+
 		//  Create folder
 		Node rootNode = photoService.addFolder(L2_FOLDER_NAME, "Test", null, theSite.getId());
 		assertThat(rootNode).isNotNull();
@@ -555,7 +599,8 @@ public class PhotoServiceTest {
 	}
 	
 	@Test
-	@Transactional
+	//@Transactional
+	@Transactional(propagation=Propagation.SUPPORTS)
 	public void filterSitesObject() throws Exception{
 		System.out.println("--- Testing Filetring objects");
 		
@@ -605,10 +650,44 @@ public class PhotoServiceTest {
 
 
 	@Test
+	@Transactional(propagation=Propagation.SUPPORTS)
 	public void deleteOnSiteTest()  throws Exception {
+//		//	Create site
+//		Site theSite =  siteService.createSite(newSiteName, defSiteType, TMP_ROOT_PATH, null);
+//		assertThat(theSite).isNotNull();
+//		SiteCredentialInt siteCred = siteService.connectSite(theSite,null);
+//		assertThat(siteCred.getState()).isEqualTo(SiteStatusEnum.CONNECT);
+//
+
 		Site theSite =  siteService.getSite("2");
 		Node  theNewNode = photoService.addPhoto(new File(TMP_IMAGE_FILE), RESOURCE_IMAGE_FN, "", null, theSite.getId());
 		photoService.deleteObject(theNewNode,true,true);
+	}
+
+
+
+	@Test
+	@Transactional(propagation=Propagation.SUPPORTS)
+	public void siteScanTest()  throws Throwable {
+//		//	Create site
+		Site theSite =  siteService.createSite(newSiteName, defSiteType, TMP_ROOT_PATH, null);
+		assertThat(theSite).isNotNull();
+		SiteCredentialInt siteCred = siteService.connectSite(theSite,null);
+		assertThat(siteCred.getState()).isEqualTo(SiteStatusEnum.CONNECT);
+
+
+		BaseTask scanTask = taskFactory.createTask(TaskNamesEnum.TNAME_SCAN.toString(), theSite.getId());
+
+		taskQueueService.put(scanTask);
+		TaskStatusEnum curStatus = scanTask.getStatus();
+
+		if (( scanTask.getStatus() != TaskStatusEnum.FIN )
+			&& (scanTask.getStatus()  != TaskStatusEnum.ERR)) {
+
+			Future<?> taskProcess = scanTask.getThisTaskProcess();
+			//	Wait for task complete
+			taskProcess.get();
+		}
 	}
 
 

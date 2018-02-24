@@ -57,6 +57,10 @@ public class ScheduleProcessing {
      * @param taskRecord объект статус задачи
      */
      public void saveLog(TaskRecord taskRecord) {
+
+         logger.trace("[saveLog] Task record saved to db.  TaskRecord=" + taskRecord);
+
+
          //logger.trace("[saveLog] Save task record " + taskRecord + " to db.");
          if ( taskRecord.getSiteBean() != null) {
              Site theSite = taskRecord.getSiteBean();
@@ -67,7 +71,6 @@ public class ScheduleProcessing {
          else {
              taskRecord = taskRecordRepository.save(taskRecord);
          }
-         logger.trace("[saveLog] Task record saved to db.  TaskRecord=" + taskRecord);
 
      }
 

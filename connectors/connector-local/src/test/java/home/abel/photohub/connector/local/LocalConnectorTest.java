@@ -80,7 +80,8 @@ public class LocalConnectorTest {
 			
 			PhotoMediaObjectInt thumbMedia = photoObj.getThumbnail(new Dimension(250,250));
 			SiteMediaPipe resource = thumbMedia.getContentStream(null);
-			Assert.assertNotNull(resource.getInputStream());
+			assertThat(resource).isNotNull();
+			assertThat(resource.getInputStream()).isNotNull();
 			resource.getInputStream().close();
 			
 			//   Get Metadata from object

@@ -30,7 +30,7 @@ import com.querydsl.core.annotations.QueryType;
         pkColumnName="SEQ_NAME", 
         valueColumnName="SEQ_COUNT", 
         pkColumnValue="TASK_REC_ID", 
-        allocationSize=5)
+        allocationSize=20)
 
 public class TaskRecord implements Serializable {
 	private static final long serialVersionUID = 1L;

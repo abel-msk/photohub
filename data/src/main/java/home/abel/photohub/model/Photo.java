@@ -53,6 +53,8 @@ public class Photo implements Serializable {
 	private URL realUrl;
 	private String  mediaType;
 	private boolean hidden = false;
+	private long allMediaSize = 0;
+	private String backupSrc = null;
 	
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updateTime;
@@ -406,5 +408,22 @@ public class Photo implements Serializable {
 
 	public void setLastScanDate(Date lastScanDate) {
 		this.lastScanDate = lastScanDate;
+	}
+
+
+	public String getBackupSrc() {
+		return backupSrc;
+	}
+
+	public void setBackupSrc(String backupSrc) {
+		this.backupSrc = backupSrc;
+	}
+
+	public long getAllMediaSize() {
+		return allMediaSize;
+	}
+
+	public void setAllMediaSize(long allMediaSize) {
+		this.allMediaSize = allMediaSize;
 	}
 }

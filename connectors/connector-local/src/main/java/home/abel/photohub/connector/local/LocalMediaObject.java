@@ -9,6 +9,7 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
+import home.abel.photohub.connector.HeadersContainer;
 import home.abel.photohub.connector.SiteMediaPipe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,11 +55,12 @@ public class LocalMediaObject extends BaseMediaObject {
 //		return is;
 //	}
 
-
-	public SiteMediaPipe getContentStream(String headers) throws Exception {
-		return getContentStream();
+	@Override
+	public SiteMediaPipe getContentStream(HeadersContainer headers) throws Exception {
+		return this.getContentStream();
 	}
 
+	@Override
 	public SiteMediaPipe getContentStream() throws Exception {
 
 		InputStream is = null;

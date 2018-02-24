@@ -146,6 +146,7 @@ public class PhotoService {
 	 * @throws ExceptionPhotoProcess 
 	 */
 	@Transactional
+	//@Transactional(propagation=Propagation.SUPPORTS)
 	public Node addFolder(String name, String descr, String parentId, String siteId) throws ExceptionInvalidArgument, ExceptionPhotoProcess, ExceptionFileIO{
 		Site theSite = null;
 		Node theParentNode = null;
@@ -163,19 +164,9 @@ public class PhotoService {
 			throw new ExceptionInvalidArgument("Cannot find site with id="+parentId);
 		}
 
-//		if (siteId != null) {
-//			theSite = siteRepo.findOne(QSite.site.id.eq(siteId));
-//			if (theSite == null) throw new ExceptionInvalidArgument("Cannot find site with id="+parentId);
-//		}
-//		else {
-//			throw new ExceptionInvalidArgument("Site argument cannot be null");
-//		}
-
 		Photo thePhoto = new Photo(ModelConstants.OBJ_FOLDER, name, descr, theSite);	
 		Node theNode = new Node(thePhoto,theParentNode);
-		
-		//photoRepo.save(thePhoto);
-		//nodeRepo.save(theNode);
+
 		SiteConnectorInt connector = null;
 		try {
 			connector = siteService.getOrLoadConnector(theSite);
@@ -192,62 +183,44 @@ public class PhotoService {
 		
 		//   Create on site folder
 		try {
-			logger.debug("[addFolder] Create рhoto folder(uploadPhotoObject) : " + thePhoto + ", Node=" + theNode);
 			onSiteObject = uploadPhotoObject((File)null,theNode);
+			thePhoto = convertToPhoto(onSiteObject,thePhoto,null);
 		} catch (NullPointerException e) {
 			throw new ExceptionInvalidArgument(e);
 		}
-		 
 
-		logger.debug("[addFolder] Create рhoto folder : " + thePhoto + ", Node=" + theNode);
 		thePhoto = photoRepo.save(thePhoto);
-		
-		//   Create thumbnail for folder
-		try { 
-			if ( onSiteObject != null) {
-				logger.debug("onSiteObject="+onSiteObject.getId());
-				thePhoto = convertToPhoto(onSiteObject,thePhoto,null);
-				thePhoto = photoRepo.save(thePhoto);
-				thumbService.uploadThumbnail(onSiteObject,thePhoto);
-			}
-			else {
-				logger.debug("onSiteObject=null");
-				thumbService.setDefaultThumb(thePhoto);
-			}
-		} catch (IOException e) {
-			throw new ExceptionInternalError("Cannot create thumbnail.",e);
-		}
-		
-		//theNode.setPhoto(thePhoto);
 		theNode = nodeRepo.save(theNode);
-		logger.debug("Create and save object type='folder', node='"+theNode+"', photo='"+thePhoto+"', site='"+thePhoto.getSiteBean()+"'");
+
+		thumbService.setDefaultThumb(thePhoto);
+		logger.debug("[addFolder] Create and save object type='folder', node="+theNode+", photo="+thePhoto+", on site ID="+onSiteObject.getId());
 		return theNode;
 	}
 	
-	/**
-	 *  
-	 *   Add new Photo to DB.
-	 *     
-	 *  
-	 * @param name
-	 * @param descr
-	 * @param parentId
-	 * @param siteId
-	 * @return
-	 * @throws ExceptionPhotoProcess 
-	 * @throws ExceptionInvalidArgument
-	 */
-	public Node addPhoto(String tmpFileToUpload, String name, String descr, String parentId, String siteId) throws ExceptionInvalidArgument, ExceptionPhotoProcess{
-		Node theNode = null;
-		File inputFile = new File(tmpFileToUpload);
-		if (inputFile.exists()) { 
-			theNode = addPhoto(inputFile, name, descr, parentId, siteId);
-		}
-		else  {
-			throw new ExceptionInvalidArgument("Cannot add photo. File "+tmpFileToUpload+ " Not found.");
-		}
-		return theNode;
-	}
+//	/**
+//	 *
+//	 *   Add new Photo to DB.
+//	 *
+//	 *
+//	 * @param name
+//	 * @param descr
+//	 * @param parentId
+//	 * @param siteId
+//	 * @return
+//	 * @throws ExceptionPhotoProcess
+//	 * @throws ExceptionInvalidArgument
+//	 */
+//	public Node addPhoto(String tmpFileToUpload, String name, String descr, String parentId, String siteId) throws ExceptionInvalidArgument, ExceptionPhotoProcess{
+//		Node theNode = null;
+//		File inputFile = new File(tmpFileToUpload);
+//		if (inputFile.exists()) {
+//			theNode = addPhoto(inputFile, name, descr, parentId, siteId);
+//		}
+//		else  {
+//			throw new ExceptionInvalidArgument("Cannot add photo. File "+tmpFileToUpload+ " Not found.");
+//		}
+//		return theNode;
+//	}
 	/**
 	 *  
 	 *   Add new Photo to DB.
@@ -376,7 +349,7 @@ public class PhotoService {
 			}
 		
 		//
-		//   К этому моменту вайл уже отправлен на сайт.  Так что временный файл надо стереть.
+		//   К этому моменту файл уже отправлен на сайт.  Так что временный файл надо удалить.
 		} finally {
 			if (workFile != null ) workFile.delete();
 		}
@@ -487,15 +460,6 @@ public class PhotoService {
 		thePhoto.setSiteBean(theSite);
 		//thePhoto = photoRepo.save(thePhoto);
 
-		//--------------------------------------------------------------------------
-		//	Increase site total space amount
-		//--------------------------------------------------------------------------
-		//TODO:  Check for site limit.
-		//
-		if ( ! onSiteObject.isFolder()) {
-			theSite.setSizeTotal(theSite.getSizeTotal() + onSiteObject.getSize());
-			logger.trace("[addObjectFromSite] Increase site size = " + theSite.getSizeTotal());
-		}
 
 		try { 
 			thePhoto = photoRepo.save(thePhoto);
@@ -614,12 +578,14 @@ public class PhotoService {
 			thePhoto = new Photo();
 			thePhoto.setName(sitesPhotoObject.getName());
 			thePhoto.setDescr(sitesPhotoObject.getDescr());
-			
+
 			if ( sitesPhotoObject.isFolder() ) {
 				thePhoto.setType(ModelConstants.OBJ_FOLDER);
+				thePhoto.setAllMediaSize(0);
 			}
 			else {
 				thePhoto.setType(ModelConstants.OBJ_SINGLE);
+				thePhoto.setAllMediaSize(sitesPhotoObject.getSize());
 			}
 			//  No other type can be received from site
 		}
@@ -738,40 +704,42 @@ public class PhotoService {
 	 *      
 	 *      
 	 =============================================================================================*/
-
-	/**
-	 * 
-	 *   Upload  photo file to site and save to DB
-	 * 
-	 * @param fileToUpload
-     * @param theNode
-     * @return  return object from site
-	 * @throws ExceptionPhotoProcess
-	 * @throws ExceptionInvalidArgument 
-	 */
+//
+//	/**
+//	 *
+//	 *   Upload  photo file to site
+//	 *
+//	 * @param fileToUpload
+//     * @param theNode
+//     * @return  return object from site
+//	 * @throws ExceptionPhotoProcess
+//	 * @throws ExceptionInvalidArgument
+//	 */
+//
+//	@Transactional
+//	public  PhotoObjectInt uploadPhotoObject(
+//			String fileToUpload,
+//			Node theNode
+//			) throws ExceptionPhotoProcess, ExceptionInvalidArgument
+//	{
+//		PhotoObjectInt onSiteObj = null;
+//		File inputImageFile = new File(fileToUpload);
+//		if ( inputImageFile.exists() ) {
+//			onSiteObj = uploadPhotoObject(inputImageFile,theNode);
+//		}
+//		else {
+//			throw new ExceptionInvalidArgument("The File "+fileToUpload+ " Not found.");
+//		}
+//		return onSiteObj;
+//	}
 	
-	@Transactional
-	public  PhotoObjectInt uploadPhotoObject(
-			String fileToUpload,
-			Node theNode
-			) throws ExceptionPhotoProcess, ExceptionInvalidArgument 
-	{	
-		PhotoObjectInt onSiteObj = null;
-		File inputImageFile = new File(fileToUpload);
-		if ( inputImageFile.exists() ) {
-			onSiteObj = uploadPhotoObject(inputImageFile,theNode);
-		}
-		else {
-			throw new ExceptionInvalidArgument("The File "+fileToUpload+ " Not found.");
-		}
-		return onSiteObj;
-	}
-	
 	/**
-	 *  Upload  photo file to site and save to DB
-	 * 
+	 *
+	 *   Create or Upload  photo file to site
+	 *   Создает(загружает)  объект на удаленном сайте.
+ 	 *
 	 * @param inputImgFile  Image file
-     * @param theNode the node  where photo object will linked
+     * @param theNode the node  where photo object will be linked as child
 	 * @return
 	 * @throws ExceptionPhotoProcess
 	 * @throws ExceptionInvalidArgument
@@ -782,8 +750,7 @@ public class PhotoService {
 			Node theNode
 			) throws ExceptionPhotoProcess, ExceptionInvalidArgument
 	{	
-		logger.trace("[uploadPhotoObject] node="+(theNode==null?"null":theNode));
-		
+		PhotoObjectInt parentPhotoObject = null;
 		PhotoObjectInt sitesPhotoObject  = null;
 		SiteConnectorInt connector = null;
 		Photo thePhoto = theNode.getPhoto();
@@ -795,40 +762,32 @@ public class PhotoService {
 		}
 		
 		try {
-			logger.trace("[uploadPhotoObject] Get site connector " + thePhoto.getSiteBean());
 			connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
-			
 			if (connector.getState() != SiteStatusEnum.CONNECT) throw new RuntimeException("Trying to add object to non connected site " + thePhoto.getSiteBean());
 		} catch (Exception e) {
 			throw new ExceptionPhotoProcess("Cannot upload file. Nested Exception : " + e.getMessage(),e);
 		}
 	
 		try {
-			PhotoObjectInt parentPhotoObject = null;
-			
 			//  Если родительский объект существует и из того же сайта то используем его.
 			//  Иначе посылаем null - тогда объект будет создан в корне сайта
 			if ((parentNode != null ) && 
-					(parentNode.getPhoto().getSiteBean().getId() == thePhoto.getSiteBean().getId())) {
+					(parentNode.getPhoto().getSiteBean().getId().equals(thePhoto.getSiteBean().getId()))) {
 				parentPhotoObject = getOnSiteObject(parentNode);
-				logger.trace("[uploadPhotoObject]Get parent object=" + (parentPhotoObject==null?"null":parentPhotoObject.getName())  + " for parent node="+parentNode);
 			}
 
 			//-------------------------
 			//   Create folder
 			//-------------------------
 			if ( thePhoto.getType() == ModelConstants.OBJ_FOLDER) {
-				logger.trace("[uploadPhotoObject] Create folder on remote site. Name="+thePhoto.getName());
 				sitesPhotoObject = connector.createFolder(thePhoto.getName(), parentPhotoObject);
 			}
 			//-------------------------
 			//   Create Object
 			//-------------------------
 			else {
-				logger.trace("[uploadPhotoObject] Upload object as plain photo. Name="+thePhoto.getName()+
-						", parent object=" + (parentPhotoObject!=null?parentPhotoObject.getId():"null"));
 				if ( ! inputImgFile.exists() ) 
-					throw new ExceptionInvalidArgument("Input stream for upload is null, but object is nnot a folder.");
+					throw new ExceptionInvalidArgument("Input stream for upload is null, but object is not a folder.");
 				sitesPhotoObject = connector.createObject(thePhoto.getName(), parentPhotoObject, inputImgFile);
 			}
 		}
@@ -836,7 +795,9 @@ public class PhotoService {
 			throw new ExceptionPhotoProcess("Cannot create object. Nested Exception : " + e.getMessage(),e);
 		}
 			
-		logger.trace("[uploadPhotoObject]  Object created. id="+sitesPhotoObject.getId()+", name="+sitesPhotoObject.getName());
+		logger.trace("[uploadPhotoObject] Remote create " +(sitesPhotoObject.isFolder()?"Folder":"Object")+ " = "+sitesPhotoObject+
+				", with parent="+(parentPhotoObject==null?"null":parentPhotoObject)
+		);
 		return sitesPhotoObject;
 	}
 
@@ -1019,7 +980,15 @@ public class PhotoService {
 	}
 
 
-
+	/**
+	 *
+	 *
+	 *   Delete object from remote site
+	 *
+	 * @param theNode
+	 * @return
+	 * @throws ExceptionInternalError
+	 */
 	protected boolean  deleteObjectFromSite(Node theNode) throws ExceptionInternalError {
 		Photo thePhoto = theNode.getPhoto();
 		try {

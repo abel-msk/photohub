@@ -22,7 +22,7 @@ import org.eclipse.persistence.annotations.JoinFetchType;
         pkColumnName="SEQ_NAME", 
         valueColumnName="SEQ_COUNT", 
         pkColumnValue="NODE_ID", 
-        allocationSize=5)
+        allocationSize=10)
 
 
 public class Node implements Serializable {

@@ -68,9 +68,9 @@ allprojects {
         testdbUrl = 'jdbc:hsqldb:file:'
 
         //testdbParams = ';hsqldb.tx=mvcc'
-        //testdbParams = ';hsqldb.tx=mvcc;hsqldb.write_delay=false'
+        testdbParams = ';hsqldb.tx=mvcc;hsqldb.write_delay=false'
         //testdbParams = ';hsqldb.tx=MVLOCKS;hsqldb.write_delay=false'
-        testdbParams = ';hsqldb.tx=LOCKS'
+        //testdbParams = ';hsqldb.tx=LOCKS'
         //testdbParams = ''
 
         testdbGenerate = 'false'

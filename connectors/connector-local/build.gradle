@@ -85,5 +85,4 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: "${props.junitVersion}"
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.6.2'
 
-
 }
