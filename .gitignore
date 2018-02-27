@@ -11,6 +11,7 @@ gradle
 **/gradlew.bat
 **/node_modules
 **/bower_components
+**/yarn.lock
 **/testing
 **/tmp
 **/.tmp

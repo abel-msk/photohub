@@ -2,58 +2,6 @@ module.exports = function(grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
 
-        //----------------------------------------------------------------------------------------
-        //
-        //   Устанавливаем, загруженные через bower библиотеки в рабочую директорию  src/js/lib
-        //
-        //----------------------------------------------------------------------------------------
-
-        bower: {
-            dev: {
-                dest: 'src/js/app/',
-                js_dest:"src/js/lib",
-                css_dest: 'src/css',
-                fonts_dest: 'src/fonts',
-                options: {
-                    //stripAffix: true,
-                    keepExpandedHierarchy: false,
-                    //stripGlobBase: true,
-                    packageSpecific: {
-                        'moment' : {
-                            keepExpandedHierarchy: true,
-                            files: [
-                                'moment.js',
-                                'locale/ru.js',
-                                'locale/en.js'
-                            ]
-                        },
-                        'bootstrap' : {
-                            files: [
-                                'dist/css/bootstrap.css',
-                                'dist/fonts/**',
-                                'dist/js/bootstrap.js'
-                            ]
-                        },
-                        'font-awesome': {
-                            files: [
-                                'css/font-awesome.css',
-                                'fonts/**'
-                            ]
-                        },
-                        'dropzone': {
-                            files:[
-                                'dist/dropzone-amd-module.js'
-                            ]
-                        },
-                        'IE8': {
-                            files:[
-                                'build/ie8.max.js'
-                            ]
-                        }
-                    }
-                }
-            }
-        },
 
         //----------------------------------------------------------------------------------------
         //
@@ -114,6 +62,85 @@ module.exports = function(grunt) {
 
                 ],
                 dest: 'build/'
+            },
+
+
+            //----------------------------------------------------------------------------------------
+            //
+            //     Подготовка библиотек
+            //
+            //----------------------------------------------------------------------------------------
+            copylibs: {
+                files: [
+
+                    //
+                    //    Copy LIBS
+                    //
+                    {
+                        expand: true,
+                        nonull: true,
+                        flatten: true,
+                        filter: 'isFile',
+                        cwd: 'node_modules/',
+                        src: [
+                            'backbone/backbone.js',
+                            'bootstrap/dist/js/bootstrap.js',
+                            //'dropzone/dist/dropzone.js',
+                            'jquery/dist/jquery.js',
+                            'moment/moment.js',    //moment/locale/ru.js
+                            'pikaday/pikaday.js',
+                            'requirejs/require.js',
+                            'underscore/underscore.js'
+                        ],
+                        dest: 'src/js/lib/'
+                    },
+
+                    {
+                        expand: true,
+                        nonull: true,
+                        flatten: true,
+                        filter: 'isFile',
+                        cwd: 'node_modules/',
+                        src: [
+                            'moment/locale/ru.js'
+                        ],
+                        dest: 'src/js/lib/locale/'
+                    },
+
+                    //
+                    //    Copy FONTS
+                    //
+                    {
+                        expand: true,
+                        nonull: true,
+                        flatten: true,
+                        filter: 'isFile',
+                        cwd: 'node_modules/',
+                        src: [
+                            'font-awesome/fonts/**',
+                            'bootstrap/fonts/**'
+                        ],
+                        dest: 'src/fonts/'
+                    },
+
+                    //
+                    //    Copy CSS
+                    //
+                    {
+                        expand: true,
+                        nonull: true,
+                        flatten: true,
+                        filter: 'isFile',
+                        cwd: 'node_modules/',
+                        src: [
+                            //'font-awesome/fonts/**',
+                            'font-awesome/css/font-awesome.css',
+                            'bootstrap/dist/css/bootstrap.css',
+                            'pikaday/css/pikaday.css',
+                        ],
+                        dest: 'src/css/'
+                    }
+                ]
             }
         },
 
@@ -130,10 +157,6 @@ module.exports = function(grunt) {
                 }]
             }
         },
-
-
-
-
 
 
         //-------------------------------------------------
@@ -214,7 +237,8 @@ module.exports = function(grunt) {
                                 'utils',
                                 'modalDialog',
                                 'login',
-                                'logger'
+                                'logger',
+                                'const'
                             ]
                         },
 
@@ -244,8 +268,6 @@ module.exports = function(grunt) {
                 }
             }
         }
-
-
 
         // watch: {
         //     less: {
@@ -286,7 +308,7 @@ module.exports = function(grunt) {
     //-------------------------------------------------
     //   Работаем с bower и require js
     grunt.loadNpmTasks('grunt-contrib-requirejs');
-    grunt.loadNpmTasks('grunt-bower');            //  Копируем библиотеки  установленный через bower
+    //grunt.loadNpmTasks('grunt-bower');            //  Копируем библиотеки  установленный через bower
 
 
 
@@ -295,9 +317,9 @@ module.exports = function(grunt) {
     //      Задачи для компиляции
     //
 
-    grunt.registerTask('bowerinstall',['bower']);
+    grunt.registerTask('update',['copy:copylibs']);
 
-    grunt.registerTask('processMin',['copy','useminPrepare','concat', 'cssmin','uglify','usemin']);
+    grunt.registerTask('processMin',['copy:main','useminPrepare','concat', 'cssmin','uglify','usemin']);
     grunt.registerTask('deploy',['clean:all','requirejs','processMin','imagemin','htmlmin']);
     grunt.registerTask('default',['deploy']);
     grunt.registerTask('lesstest', ['less:development']);
