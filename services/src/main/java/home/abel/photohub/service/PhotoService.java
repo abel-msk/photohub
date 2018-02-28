@@ -894,7 +894,7 @@ public class PhotoService {
 	@Transactional(propagation=Propagation.SUPPORTS)
 	public boolean  deleteObject(Node theNode, boolean forseDelete,boolean isDeleteOnSite) throws ExceptionPhotoProcess, ExceptionDBContent, ExceptionInternalError {
 		Photo thePhoto = theNode.getPhoto();
-		String newThumbPath = thumbService.getThumbPath(thePhoto);
+		String newThumbPath = thumbService.getThumbPath(thePhoto.getId());
 		boolean allDeleted = true;
 
 		logger.debug("[deleteObject] Remove Photo object: " +

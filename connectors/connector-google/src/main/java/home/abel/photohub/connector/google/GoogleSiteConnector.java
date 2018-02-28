@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.google.gdata.client.Service;
+import com.google.gdata.data.photos.UserFeed;
+import com.google.gdata.util.ServiceException;
 import home.abel.photohub.connector.*;
 import home.abel.photohub.connector.prototype.*;
 import org.slf4j.Logger;
@@ -178,10 +180,11 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 		SiteBaseCredential excahgeCread = new SiteBaseCredential(this);
 		logger.trace("[Google.doConnect] callback="+callback);
 		
-		//  Первичная авторизация и получение токена
+
 		if (callback != null)  {
 			//   Save callback url
-			apiKeys.setListenerUri(callback == null?GoogleAPIKeys.getDefaultUri():callback.toURI());
+			//apiKeys.setListenerUri(callback == null?GoogleAPIKeys.getDefaultUri():callback.toURI());
+			apiKeys.setListenerUri(callback.toURI());
 			if (apiKeys.isCanUseCallback()) {
 				excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_NET);
 			}
@@ -190,7 +193,10 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			}
 			logger.trace("Listener url = "+apiKeys.getListenerUri().toString()+", Auth receive type =" + excahgeCread.getAuthReceiveType().toString());
 		}
-
+		else {
+			apiKeys.setListenerUri(GoogleAPIKeys.getDefaultUri());
+			excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_DIRECT);
+		}
 
 		googleCred = googleAuthLib.initAuthFlow(apiKeys);
 		logger.trace("[Google.doConnect] googleCred = "+ (googleCred==null?"null":"not null") +  ",  STATE="+ getState());
@@ -204,7 +210,7 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 				setState(SiteStatusEnum.CONNECT);
 				picasaService = new PicasawebService(GoogleSiteConnector.APPLICATION_NAME);
 				picasaService.setOAuth2Credentials(googleCred);
-
+				logger.debug("[Google.doConnect] Check connection (getProfile) OK");
 
 			} 
 			catch (Exception e){
@@ -546,14 +552,19 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 	 */
 
 	private final int retries = 10;
-	public static final String[] responsHeaders = {"Content-Length",
+	public static final String[] responsHeaders = {
+			"Content-Type",
+			"Content-Length",
 			"Content-Disposition",
 			"Accept-Ranges",
-			"Last-Modified",
 			"Content-Range",
+			"If-Range",
+			"Range",
+			"Date",
+			"Last-Modified",
 			"Expires",
-			"E-Tag",
-			"Content-Type"};
+			"E-Tag"
+	};
 	/**
 	 *   Load media by its URL through picasa service connection
 	 *
@@ -575,8 +586,9 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 		int counter = 0;
 
 		while ((location != null)  && (counter < retries)) {
-			logger.trace("[loadMediaByPath] load resource from URL:" +location );
 
+			logger.trace("[loadMediaByPath] Request to  URL:" +location );
+			//Service.GDataRequestFactory factory = getPicasaService().getRequestFactory();
 			//
 			//   Create request
 			//
@@ -605,15 +617,20 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			}
 			catch (com.google.gdata.util.RedirectRequiredException e) {
 				location = e.getRedirectLocation();
-				logger.trace("[loadMediaByPath] loading failed. Trying count="+counter);
+				logger.trace("[loadMediaByPath] Response REDIRECT. Trying count="+counter);
 				request.end();
 			}
 			catch (com.google.gdata.util.NotModifiedException e) {
 				request.end();
 				thePipe.addHeadersList("ETag", e.getHttpHeader("ETag"));
 				thePipe.setStatus("304"); //SC_NOT_MODIFIED
-				logger.trace("[loadMediaByPath] Got NotModified request.  ETag header = "+ e.getHttpHeader("ETag"));
+				logger.trace("[loadMediaByPath] Response NOT MODIFIED.  ETag header = "+ e.getHttpHeader("ETag"));
 				return thePipe;
+			}
+			catch (ServiceException se) {
+				logger.trace("[loadMediaByPath] Response UNKNOWN. " + se.getMessage());
+				request.end();
+				this.doConnect(null);
 			}
 			counter++;
 		}
@@ -633,8 +650,5 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 
 		return thePipe;
 	}
-
-
-
 
 }

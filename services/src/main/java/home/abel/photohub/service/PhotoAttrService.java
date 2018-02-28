@@ -92,7 +92,7 @@ public class PhotoAttrService {
 				result = getPhotoUrl(theNode,true);
 				break;				
 			case 	PHOTO_THUMB:
-				result = thumbService.getThumbUrl(thePhoto);
+				result = thumbService.getThumbUrl(thePhoto.getId());
 				break;
 			case 	PHOTO_DESCR:
 				result = thePhoto.getDescr();

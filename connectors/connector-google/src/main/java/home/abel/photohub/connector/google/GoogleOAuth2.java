@@ -243,7 +243,6 @@ public class GoogleOAuth2 {
     	
     	//   Сохраняем токены доступа с ключем this.getUserId()   	
     	this.credential = authFlow.createAndStoreCredential(tokenResponse, this.getUserId() +"."+ this.getStoreKey());
-
     	return this.credential;
     }
  

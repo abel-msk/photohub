@@ -1,9 +1,12 @@
 package home.abel.photohub.connector.google;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gdata.data.photos.PhotoEntry;
+import com.google.gdata.util.ServiceException;
 import home.abel.photohub.connector.BasePhotoObj;
 import home.abel.photohub.connector.prototype.PhotoObjectInt;
 
@@ -60,11 +63,25 @@ public class GoogleRootObject extends BasePhotoObj {
 	 */
 	@Override
 	public List<PhotoObjectInt> listSubObjects() throws Exception {
-		URL feedUrl = new URL("https://picasaweb.google.com/data/feed/api/user/"+getGoogleProfileId()+"?kind=album");
-		UserFeed userFeed = service.getFeed(feedUrl, UserFeed.class);
-		logger.trace("Got root albums feed "+ userFeed.getDescription() + ", from url="+feedUrl.toString());
 		List<PhotoObjectInt> resultList = new ArrayList<PhotoObjectInt>();
-        
+		URL feedUrl = new URL("https://picasaweb.google.com/data/feed/api/user/"+getGoogleProfileId()+"?kind=album");
+		UserFeed userFeed = null;
+
+		try {
+			userFeed = service.getFeed(feedUrl, UserFeed.class);
+
+		} catch (ServiceException fe) {
+			logger.warn("[Google.loadObject] Get entry error. "+ fe.getMessage());
+			try { //   Try to reconnect
+				this.connector.doConnect(null);
+				service = this.connector.getPicasaService();
+				userFeed = service.getFeed(feedUrl, UserFeed.class);
+			} catch (Exception e) {
+				throw new IOException("Cannot reconnect.",e);
+			}
+		}
+
+		logger.trace("Got root albums feed " + userFeed.getDescription() + ", from url=" + feedUrl.toString());
         for (GphotoEntry gEntry : userFeed.getEntries()) {
         	AlbumEntry albumEntry = new AlbumEntry(gEntry);
         	

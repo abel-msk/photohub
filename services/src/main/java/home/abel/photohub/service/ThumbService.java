@@ -97,7 +97,7 @@ public class ThumbService {
 	public String setThumb(String sourceFilePath, Photo thePhoto) throws Exception {
 		
 		//String photoFullPath = null;
-		String newThumbPath = getThumbPath(thePhoto);
+		String newThumbPath = getThumbPath(thePhoto.getId());
 
 		if (sourceFilePath != null) {
 			//  TODO:  check -- is resize required
@@ -122,7 +122,7 @@ public class ThumbService {
 	}
 	
 	public void setDefaultThumb(Photo thePhoto) throws ExceptionFileIO {
-		String newThumbPath = getThumbPath(thePhoto);
+		String newThumbPath = getThumbPath(thePhoto.getId());
 		String defaultFolderIcon = confService.getValue(ConfVarEnum.DEFAULT_FLD_THUMB);
 		logger.debug("Default thumbnail '" + defaultFolderIcon + "' copyed to: " + newThumbPath);			
 		FileUtils.copyFile(defaultFolderIcon, newThumbPath);
@@ -142,7 +142,7 @@ public class ThumbService {
 			PhotoMediaObjectInt mObject =  sitesPhotoObject.getThumbnail(thumbDimension);
 			
 			//   Save thumbnail to local file
-			String newThumbPath = getThumbPath(thePhoto);
+			String newThumbPath = getThumbPath(thePhoto.getId());
 			File outputFile = new File(newThumbPath);
 			try {
 				FileUtils.saveFile(mObject.getContentStream().getInputStream(), outputFile);
@@ -161,14 +161,6 @@ public class ThumbService {
 			dbMObject.setMimeType(mObject.getMimeType());
 			dbMObject.setPath(newThumbPath);
 			thePhoto.addMediaObject(dbMObject);
-			
-//			String newThumbPath = getThumbPath(thePhoto);
-//			InputStream thumbnailInput = sitesPhotoObject.getThumbnailSource(getThumbDimension());
-//			if ( thumbnailInput == null) {
-//				throw new ExceptionPhotoProcess("Input stream for thumb object "+thePhoto+" from site "+ sitesPhotoObject +" is null.");
-//			}
-//			logger.trace("Save thumb object to file :" + newThumbPath==null?"null":newThumbPath );
-//			FileUtils.saveFile(thumbnailInput, new File(newThumbPath));
 		}
 		else {
 			setDefaultThumb(thePhoto);
@@ -182,8 +174,8 @@ public class ThumbService {
 	 *      
 	 =============================================================================================*/
 	public void copyThumb(Photo photoFrom, Photo photoTo) throws Exception {
-		String fromThumpPath = getThumbPath(photoFrom);
-		String toThumbPath = getThumbPath(photoTo);
+		String fromThumpPath = getThumbPath(photoFrom.getId());
+		String toThumbPath = getThumbPath(photoTo.getId());
 		if (FileUtils.isAccessable(fromThumpPath)) {
 			if (FileUtils.isAccessable(toThumbPath)) {
 				FileUtils.fileDelete(toThumbPath,false);
@@ -208,22 +200,16 @@ public class ThumbService {
 		return null;
 	}
 	*/
-	public String getThumbPath(Photo thePhoto) {
+	public String getThumbPath(String photoId) {
 		return FilenameUtils.normalize(
 				confService.getValue(ConfVarEnum.LOCAL_THUMB_PATH) +
-				File.separator + 
-				genSubPath(thePhoto.getId()) + File.separator + 
-				thePhoto.getId()+ thumbExt);
+				File.separator +  genSubPath(photoId) + File.separator + photoId+ thumbExt);
 	}
 
-	public String getThumbUrl(Photo thePhoto) {
+	public String getThumbUrl(String photoId) {
 		String val = confService.getValue(ConfVarEnum.LOCAL_THUMB_URL,"");
-		//if (val.equalsIgnoreCase(ConfigService.URL_SELF_PREFIX)) {
-		//	val = "";
-		//}
 		val = val.endsWith("/") ? val : val + "/";
-		val =  val + genSubPath(thePhoto.getId()) + "/" + thePhoto.getId()+ thumbExt;
-		logger.debug("getThumbUrl return="+val);
+		val =  val + genSubPath(photoId) + "/" + photoId+ thumbExt;
 		return val;
 	}	
 	

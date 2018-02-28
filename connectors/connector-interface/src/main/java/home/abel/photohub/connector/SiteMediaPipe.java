@@ -47,6 +47,7 @@ public class SiteMediaPipe {
         this.inputStream = inputStream;
     }
 
+    public HeadersContainer getHeaders() { return ResponseHdr;}
 
     public String getError() {
         return error;

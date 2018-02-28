@@ -69,16 +69,18 @@ public class ScanTask extends BaseTask {
 
 	@Override
 	public void exec() throws Throwable {
-
+		long totalSize = 0;
 		Date startDate = new Date();
 
-		doScann(connector.getRootObjects(), null);
+		try {
+			doScann(connector.getRootObjects(), null);
 
-		checkDeleted(startDate);
-
-		long totalSize = siteSvc.updateSiteSize(getSite());
-
-		logger.debug("[doScann] Finished success.   Sites total size = " + totalSize );
+		}
+		finally {
+			checkDeleted(startDate);
+			totalSize = siteSvc.updateSiteSize(getSite());
+			logger.debug("[doScann] Finished. Sites total size = " + totalSize );
+		}
 
 	}
 	

@@ -1,6 +1,7 @@
 package home.abel.photohub.web;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.List;
 import java.io.FileInputStream;
@@ -38,20 +39,19 @@ import home.abel.photohub.service.SiteService;
 import home.abel.photohub.service.ThumbService;
 import home.abel.photohub.web.model.DefaultObjectResponse;
 
+import org.apache.tomcat.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.ResourceRegion;
-import org.springframework.http.HttpRange;
+import org.springframework.web.context.request.WebRequest;
 
 
 /**
@@ -93,7 +93,24 @@ public class ImageController {
 	HeaderBuilderService headerBuild;
 	
 	private ArrayList<String> localAddressesList;
-	
+
+	//@ExceptionHandler({ java.io.IOException.class  })
+	@ExceptionHandler({ Exception.class })
+//	public ResponseEntity<Object> handleBrokenPipeException(Exception ex, WebRequest request) {
+//		logger.debug("[handleBrokenPipeException] " + ex.getMessage());
+//		return new ResponseEntity<Object>( null, new HttpHeaders(), HttpStatus.FORBIDDEN);
+//	}
+	public Object exceptionHandler(Exception e, HttpServletRequest request) {
+
+		logger.warn("[exceptionHandler] Exception : " + e.getMessage());
+
+		if ( e.getMessage().equals("java.io.IOException: Broken pipe")) {   //(2)
+			return null;        //(2)	socket is closed, cannot return any response
+		} else {
+			return new HttpEntity<>(e.getMessage());  //(3)
+		}
+	}
+
 	/**
 	 * Collect and save all local host names and addresses
 	 * @throws Exception
@@ -112,6 +129,10 @@ public class ImageController {
 		} catch (UnknownHostException e) {
 			logger.warn(e.getMessage());
 		}
+
+
+
+
 	}
 
 	/*=============================================================================================
@@ -174,9 +195,8 @@ public class ImageController {
 			throw new  ExceptionInvalidRequest("Media not found for Object=" + PhotoId);
 		}
 
-
 		//
-		//   Extract input request headers^ and retransmit  they to remote site request generator
+		//   Extract input request headers and retransmit  they to remote site request generator
 		//
 		HeadersContainer inputHeaders  = new HeadersContainer();
 		for (String hdrName : transmittedHeaders) {
@@ -188,14 +208,16 @@ public class ImageController {
 			}
 		}
 
+		logger.trace("[downloadImage] REQUEST headers:\n" + inputHeaders);
 
 		//
 		//   Retransmit request
 		//
 		SiteMediaPipe responsPipe  = connector.loadMediaByPath(mediaObject.getPath(),inputHeaders);
 
+
 		//
-		//   Extract the received respons header lines when open stream from site
+		//   Extract the received response header lines when open stream from site
 		//
 		HttpHeaders hdrList = new HttpHeaders();
 
@@ -215,23 +237,43 @@ public class ImageController {
 			hdrList.setContentLength(mediaObject.getSize());
 		}
 
+		//
+		//    Check is content partail
+		//
+
+		HeadersContainer responseHeadres = responsPipe.getHeaders();
+
+		if ((responseHeadres.getFirstValue("Content-Range") != null ) &&
+				(responseHeadres.getFirstValue("Content-Length") != null) &&
+				(responsPipe.getStatus() != null)
+				) {
+			String tmp = responseHeadres.getFirstValue("Content-Range");
+			long totalLength = Long.parseLong(tmp.substring(tmp.lastIndexOf("/") + 1));
+			long receivedLength = Long.parseLong(responseHeadres.getFirstValue("Content-Length"));
+			if ( totalLength > receivedLength) {
+				logger.trace("[downloadImage] TotalLength > ReceivedLength. Set 'Partial Content' (206) response.");
+				responsPipe.setStatus("206");
+			}
+		}
+
+
+		logger.trace("[downloadImage] RESPONSE headers:\n" + responsPipe.getHeaders());
 		logger.debug("[downloadImage] Replay with image. "
 				+" Mime type="+hdrList.getContentType()  + "("+mediaObject.getMimeType()+ ")"
 				+", size="+hdrList.getContentLength() +"("+mediaObject.getSize()+ ")"
 				+", access type="+mediaObject.getAccessType()
 				+", path="+mediaObject.getPath());
 
-		//logger.trace("[ImageController.downloadImage] Replay headers " + hdrList );
-		logger.trace("[ImageController.downloadImage] Error " + (responsPipe.getError() == null?"not":responsPipe.getError()));
-		logger.trace("[ImageController.downloadImage] Status " + (responsPipe.getStatus()==null?"error":responsPipe.getStatus()));
-
+		logger.trace("[ImageController.downloadImage] Response Error " + (responsPipe.getError() == null?"not":responsPipe.getError()));
+		logger.trace("[ImageController.downloadImage] Response Status " + (responsPipe.getStatus()==null?"error":responsPipe.getStatus()));
 
 		ResponseEntity<InputStreamResource> resp = null;
 
 		if (responsPipe.getStatus() != null) {
+			//resp = ResponseEntity.ok()
 			resp = ResponseEntity.status(Integer.parseInt(responsPipe.getStatus()))
 					.headers(hdrList)
-					.body(new InputStreamResource(responsPipe.getInputStream()));
+					.body(new InputStreamResource(responsPipe.getInputStream(),"Object="+PhotoId));
 		}
 		else {
 			resp = ResponseEntity.status(Integer.parseInt(responsPipe.getError()))
@@ -259,7 +301,7 @@ public class ImageController {
 	 * @return
 	 * @throws Exception
 	 */
-	@RequestMapping(value = "/thumb/{thumbFolder}/{thumbId}.{ext}", method = RequestMethod.GET)
+	@RequestMapping(value = "/thumb/{thumbFolder}/{thumbId}", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<InputStreamResource> downloadThumb(
 	        final HttpServletRequest HTTPrequest,
@@ -269,28 +311,10 @@ public class ImageController {
 		
 		logger.debug(">>> GET Request for /thumb/"+thumbId);
 		ResponseEntity<InputStreamResource> resp = null;
-		String realPath = confService.getValue(ConfVarEnum.LOCAL_THUMB_PATH,"");
-		String fileExt = confService.getValue(ConfVarEnum.LOCAL_THUMB_FMT,"png");
 
-		realPath = realPath + "/" 
-				+ thumbFolder+"/" 
-				+ thumbId + "." 
-				+ fileExt;
-		
-		File imageFile = new File(realPath);
+		File imageFile  = new File(thumbService.getThumbPath(thumbId));
+		String fileExt  =  imageFile.getName().substring(imageFile.getName().lastIndexOf(".") + 1);
 
-//	    HttpHeaders headers = headerBuild.getHttpHeader(HTTPrequest);
-//		headers.setContentLength(imageFile.length());
-//		headers.setContentType(new MediaType("image",fileExt));
-		
-		logger.debug("Send file: " + imageFile.getName());
-
-		/*
-		resp =  new ResponseEntity<InputStreamResource>(
-				new InputStreamResource(new FileInputStream(imageFile)),
-				headers,
-				HttpStatus.OK);
-		*/
 
 		resp = ResponseEntity.ok()
 	            .contentLength(imageFile.length())

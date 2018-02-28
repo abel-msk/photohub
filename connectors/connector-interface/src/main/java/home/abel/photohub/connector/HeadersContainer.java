@@ -34,5 +34,17 @@ public class HeadersContainer extends HashMap<String,List<String>> {
         return null;
     }
 
+    public String toString() {
+        StringBuilder resp = new StringBuilder();
+        for (String key : getHdrKeys()) {
+            resp.append(key).append(": [");
+            for (String value :getHdrValues(key)) {
+                resp.append("'").append(value).append("',");
+            }
+            resp.append("]\n");
+        }
+        return resp.toString();
+    }
+
 
 }

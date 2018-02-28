@@ -230,7 +230,8 @@ define(["jquery",
                 $("#site_name").text(model.get('name'));
                 $("#connect_btn").attr("site", model.get('id'));
                 $("#site_connector_type").text(model.get('connectorType'));
-
+                $("#site_total").text(model.get('sizeTotal'));
+                $("#site_space_limit").text(model.get('sizeLimit'));
                 //---------------------------------------------------------------------
                 //  Заряжаем перехват кастомных событий
                 //---------------------------------------------------------------------
