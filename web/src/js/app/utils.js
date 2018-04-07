@@ -135,6 +135,21 @@ define(["jquery","logger","moment"],function ($,logger,moment) {
     };
 
 
+    //------------------------------------------------------------
+    //   Convert number to human readable size
+    //------------------------------------------------------------
+    utilsObj.size2h = function(sizeNum) {
+        var dimAr = [ " bytes", " kB"," mB"," gB"," tB"];
+        var resNum = parseFloat(sizeNum);
+        var resDimId = 0;
+        while (resNum > 1024.0 ) {
+            resNum /= 1024.0;
+            resDimId++;
+        }
+        return resNum.toFixed(2).toString() + dimAr[resDimId];
+
+    };
+
     //------------------------------------------------------------------------------
     //
     //    Сканирует дерево DOM объекта от листа  помеченного элементом 'element'
