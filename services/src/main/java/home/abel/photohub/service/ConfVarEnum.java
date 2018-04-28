@@ -4,32 +4,20 @@ package home.abel.photohub.service;
 
 public enum ConfVarEnum {
 		//                 | property name            |type  		|access | store_in_db	|sort_order
-		LOCAL_THUMB_URL    ("localThumbUrl",          "str", 		"rw", 	true,			10),
-				//"The root path of url for access images thumb.  Use 'local' for access 
-				// throught internal web server"
 		LOCAL_THUMB_PATH   ("localThumbPath",         "local_path",	"rw", 	true,			20),
 				//"The thumb store root catalog path on local computer."		
 		LOCAL_THUMB_FMT    ("localThumbFormat",       "str",		"rw", 	true,			30),
 				//"The default thumb image file format. use: gif or png"
 		DEFAULT_FLD_THUMB  ("defualtFolderThumb",     "local_path",	"rw", 	true,			40),
 				//"The thumbnail image for use when new folder created"
-		LOCAL_PHOTO_URL    ("localPhotoUrl",          "str",		"rw", 	true,			50),
-				//"The root path of url for access original image.  
-				// Use 'local' for access throught internal web server"
-		LOCAL_PHOTO_PATH   ("localPhotoPath",         "local_path",	"rw", 	true,			60),
-				//"The image store path to root folder. Used whrn new images uploaded"
 		INSTALLATION_TYPE  ("installationType",       "str",		"ro", 	false,			70),
 				//"Current server mode. Use 'standalone' or 'server'"),
-		USE_IMAGE_WEB      ("imageWebSrv",            "bool",		"rw", 	true,			80),
-				//"Use internal web server for access to stored images or thumbnails"
-		USE_AUTH		   ("useAuth",                "bool",		"rw", 	true,			90),
-				//"Use auth for access to api calls and for web server access"
-		USE_DB             ("photohub.store.conf","bool",			"none",	false,			100),
+		USE_DB             ("conf.save","bool",			"none",	false,			100),
 				//"Use accessed DB for store modifyed config parameters"
 		DEFAULT_USER       ("defaultUserName",        "str",		"none",	true,			110),
 				//"The default user name for store objects in db for single user mode (standalone)"
 		DEFAULT_PASS       ("defaultPassword",        "str",		"none",	true,			110),
-		//"The default user name for store objects in db for single user mode (standalone)"
+		        //"The default user name for store objects in db for single user mode (standalone)"
 		;
 
 		private final String name;   

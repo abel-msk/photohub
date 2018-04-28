@@ -37,9 +37,9 @@ public class ConfigService {
 	 */
 	final Logger logger = LoggerFactory.getLogger(ConfigService.class);
 
-	public static final String LOCAL_THUMB_URL = "LOCAL_THUMB_URL";
-	public static final String LOCAL_PHOTO_URL = "LOCAL_PHOTO_URL";
-	public static final String URL_SELF_PREFIX = "self";
+//	public static final String LOCAL_THUMB_URL = "LOCAL_THUMB_URL";
+//	public static final String LOCAL_PHOTO_URL = "LOCAL_PHOTO_URL";
+//	public static final String URL_SELF_PREFIX = "self";
 	
 	private boolean useDB = true;
 	
@@ -86,14 +86,14 @@ public class ConfigService {
 		//--------
 		//   Check most required properties
 		
-		if (getValue(ConfVarEnum.LOCAL_PHOTO_PATH) == null)  {
-			String errMsg = "Init property " + ConfVarEnum.LOCAL_PHOTO_PATH.getName() +" Required";
-			logger.error("Cannot start application. " + errMsg);
-			//throw new Exception(errMsg);
-		}
+//		if (getValue(ConfVarEnum.LOCAL_PHOTO_PATH) == null)  {
+//			String errMsg = "Init property " + ConfVarEnum.LOCAL_PHOTO_PATH.getName() +" Required";
+//			logger.error("Cannot start application. " + errMsg);
+//			//throw new Exception(errMsg);
+//		}
 		
 		if (getValue(ConfVarEnum.LOCAL_THUMB_PATH) == null) {
-			String errMsg = "Init property " + ConfVarEnum.LOCAL_PHOTO_PATH.getName() +" Required";
+			String errMsg = "Init property " + ConfVarEnum.LOCAL_THUMB_PATH.getName() +" Required";
 			logger.error("Cannot start application. " + errMsg);
 			//throw new Exception(errMsg);
 		}
@@ -317,21 +317,21 @@ public class ConfigService {
 	}
 	
 	
-	public boolean isSelfImageWeb() {
-		/*
-		//logger.debug("Use self as web server = " + getValue(ConfVarEnum.USE_IMAGE_WEB,""));
-		String useImageWeb = getValue(ConfVarEnum.USE_IMAGE_WEB,"");
-		logger.debug("useImageWeb return = "+useImageWeb);
-		//return getValue(ConfVarEnum.USE_IMAGE_WEB,"").equalsIgnoreCase("true");
-		if ( useImageWeb.equalsIgnoreCase("true") ) {
-			logger.debug("TRUE is equal ");
-		}
-		else {
-			logger.debug("TRUE is NOT equal ");
-		}
-		*/
-		return getValue(ConfVarEnum.USE_IMAGE_WEB,"").equalsIgnoreCase("true");
-	}
+//	public boolean isSelfImageWeb() {
+//		/*
+//		//logger.debug("Use self as web server = " + getValue(ConfVarEnum.USE_IMAGE_WEB,""));
+//		String useImageWeb = getValue(ConfVarEnum.USE_IMAGE_WEB,"");
+//		logger.debug("useImageWeb return = "+useImageWeb);
+//		//return getValue(ConfVarEnum.USE_IMAGE_WEB,"").equalsIgnoreCase("true");
+//		if ( useImageWeb.equalsIgnoreCase("true") ) {
+//			logger.debug("TRUE is equal ");
+//		}
+//		else {
+//			logger.debug("TRUE is NOT equal ");
+//		}
+//		*/
+//		return getValue(ConfVarEnum.USE_IMAGE_WEB,"").equalsIgnoreCase("true");
+//	}
 	
 	
 }

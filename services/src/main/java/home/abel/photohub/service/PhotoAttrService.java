@@ -88,12 +88,13 @@ public class PhotoAttrService {
 			case 	PHOTO_URL:	
 				result = getPhotoUrl(theNode,false);
 				break;
-			case 	PHOTO_REALURL:	
-				result = getPhotoUrl(theNode,true);
-				break;				
-			case 	PHOTO_THUMB:
-				result = thumbService.getThumbUrl(thePhoto.getId());
-				break;
+//			case 	PHOTO_REALURL:
+//				result = getPhotoUrl(theNode,true);
+//				break;
+//			case 	PHOTO_THUMB:
+//				//TODO:  Generate path to self url with photo id
+//				//result = thumbService.getThumbUrl(thePhoto.getId());
+//				break;
 			case 	PHOTO_DESCR:
 				result = thePhoto.getDescr();
 				break;
@@ -285,10 +286,10 @@ public class PhotoAttrService {
 				}
 				thePhoto.setType(theNewType);
 				break;
-			case    PHOTO_THUMB:
-				thumbService.setThumb(value, thePhoto);
-				needSave = false;
-				break;
+//			case    PHOTO_THUMB:
+//				//thumbService.setThumb(value, thePhoto);
+//				needSave = false;
+//				break;
 			case   MOD_DATE:
 				thePhoto.setUpdateTime(dateFormat.parse(value));
 				break;				
@@ -336,22 +337,8 @@ public class PhotoAttrService {
 	 * @return
 	 */
 	private String getPhotoUrl(Node theNode, boolean requiredRealPath) {
-		String result = null;
+        return theNode.getPhoto().getBaseMedia().getPath();
 
-		if ( theNode.getPhoto().getType() != ModelConstants.OBJ_FOLDER ) {
-			if ((confService.isSelfImageWeb()) || (theNode.getPhoto().getRealUrl() == null)) {
-				result = confService.getValue(ConfVarEnum.LOCAL_PHOTO_URL);
-				result = result.endsWith("/") ? result : result + "/";
-				result = result + theNode.getId();
-			}
-			else {
-				result = theNode.getPhoto().getRealUrl().toString();
-			}
-		} 
-		else {
-			logger.debug("Request for photo url, return=NULL as far this is folder object");
-		}
-		return result;
 	}
 
 	

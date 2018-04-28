@@ -180,7 +180,7 @@ public class ImageController {
 		Photo thePhoto = photoService.getPhotoById(PhotoId);
 		//StringBuilder siteReqHeaders = new StringBuilder();
 
-		//  Необходимо загрузить конектор чтобы освежить авторизацию с сайтом-источником
+		//  Необходимо загрузить конектор что бы освежить авторизацию с сайтом-источником
 		SiteConnectorInt connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
 
 		Media mediaObject = null;

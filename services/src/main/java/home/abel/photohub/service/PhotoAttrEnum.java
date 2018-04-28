@@ -8,8 +8,8 @@ public enum PhotoAttrEnum {
 	//                            type
 	PHOTO_NAME  ("name",        "line",          "rw",          "photo",      "Photo Name"),
 	PHOTO_URL   ("photoUrl",    "image",         "none",        "photo",      "The source photo url"),
-	PHOTO_REALURL("photoRealUrl","image",       "none",        "photo",      "The source photo url wo subst"),
-	PHOTO_THUMB ("thumbUrl",    "image",         "rw",          "photo",      "Url to thumbnail image"),
+	//PHOTO_REALURL("photoRealUrl","image",       "none",        "photo",      "The source photo url wo subst"),
+	//PHOTO_THUMB ("thumbUrl",    "image",         "rw",          "photo",      "Url to thumbnail image"),
 	PHOTO_DESCR ("descr",       "text",          "rw",          "photo",      "Description"),
 	PHOTO_TYPE  ("type",        "line",          "none",        "photo",      "Store object type"),
 	PHOTO_PATH  ("photoPath",   "line",          "ro",          "photo",      "Path to file on site"),

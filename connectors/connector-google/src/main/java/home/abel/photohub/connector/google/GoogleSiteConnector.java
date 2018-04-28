@@ -179,28 +179,29 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 		this.callback = callback;
 		SiteBaseCredential excahgeCread = new SiteBaseCredential(this);
 		logger.trace("[Google.doConnect] callback="+callback);
-		
 
-		if (callback != null)  {
-			//   Save callback url
-			//apiKeys.setListenerUri(callback == null?GoogleAPIKeys.getDefaultUri():callback.toURI());
-			apiKeys.setListenerUri(callback.toURI());
-			if (apiKeys.isCanUseCallback()) {
-				excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_NET);
-			}
-			else {
+		if ((googleCred == null)  ||  ( !refreshAuth()) ) {
+			if (callback != null) {
+
+				//   Save callback url
+				//apiKeys.setListenerUri(callback == null?GoogleAPIKeys.getDefaultUri():callback.toURI());
+				apiKeys.setListenerUri(callback.toURI());
+				if (apiKeys.isCanUseCallback()) {
+					excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_NET);
+				} else {
+					excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_DIRECT);
+				}
+				logger.trace("Listener url = " + apiKeys.getListenerUri().toString() + ", Auth receive type =" + excahgeCread.getAuthReceiveType().toString());
+
+
+			} else {
+				apiKeys.setListenerUri(GoogleAPIKeys.getDefaultUri());
 				excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_DIRECT);
 			}
-			logger.trace("Listener url = "+apiKeys.getListenerUri().toString()+", Auth receive type =" + excahgeCread.getAuthReceiveType().toString());
-		}
-		else {
-			apiKeys.setListenerUri(GoogleAPIKeys.getDefaultUri());
-			excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_DIRECT);
-		}
 
-		googleCred = googleAuthLib.initAuthFlow(apiKeys);
-		logger.trace("[Google.doConnect] googleCred = "+ (googleCred==null?"null":"not null") +  ",  STATE="+ getState());
-
+			googleCred = googleAuthLib.initAuthFlow(apiKeys);
+			logger.trace("[Google.doConnect] googleCred = " + (googleCred == null ? "null" : "not null") + ",  STATE=" + getState());
+		}
 		//
 		//   У нас уже есть авторизационный токен и сайт не помечен как Disconnect
 		//   Восстанавливаем соединение		
@@ -236,9 +237,31 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 		excahgeCread.setState(getState());
 		return (SiteCredentialInt)excahgeCread;
 	}
-	
 
-	
+
+	/**-------------------------------------------------------------------------
+	 *
+	 *    Try to refresh auth token
+	 *
+	 * @return
+	 *
+	 --------------------------------------------------------------------------*/
+	public boolean refreshAuth() {
+		boolean ret = false;
+		try {
+			if (googleCred != null) {
+				logger.trace("[Google.refreshAuth] Refresh Credential.");
+				ret = googleCred.refreshToken();
+			}
+		}
+		catch (IOException ioe) {
+			logger.warn("[Google.refreshAuth] Refresh Credential Error.",ioe.getMessage());
+			return false;
+		}
+		return ret;
+	}
+
+
 	/**-------------------------------------------------------------------------
 	 * 
 	 *   Берет авторизацтоный токен из объекта (SiteCredentialInt cred)

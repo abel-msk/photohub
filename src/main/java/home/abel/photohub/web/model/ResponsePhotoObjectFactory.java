@@ -72,8 +72,8 @@ public class ResponsePhotoObjectFactory {
 					attrService.getAttr(curNode,PhotoAttrEnum.CREATE_DATE)));
 			rpo.setModDate(prepareAttrValue(PhotoAttrEnum.MOD_DATE,
 					attrService.getAttr(curNode,PhotoAttrEnum.MOD_DATE)));
-			rpo.setThumbUrl(prepareAttrValue(PhotoAttrEnum.PHOTO_THUMB,
-					attrService.getAttr(curNode,PhotoAttrEnum.PHOTO_THUMB)));
+//			rpo.setThumbUrl(prepareAttrValue(PhotoAttrEnum.PHOTO_THUMB,
+//					attrService.getAttr(curNode,PhotoAttrEnum.PHOTO_THUMB)));
 			
 			//  Create Photo url
 			if (curNode.getPhoto().getType() != ModelConstants.OBJ_FOLDER) {

@@ -225,7 +225,28 @@ public class Photo implements Serializable {
 		mediaObject.setPhoto(null);
 		return mediaObject;
 	}
-	
+
+	public Media getBaseMedia() {
+		int mediaType = Media.MEDIA_IMAGE;
+		if ( getMediaType().startsWith("video")) {
+			mediaType = Media.MEDIA_VIDEO;
+		}
+
+		Media mediaObject = null;
+		for(Media media: getMediaObjects()) {
+			if (media.getType() == mediaType) {
+				mediaObject = media;
+				break;
+			}
+		}
+		return mediaObject;
+	}
+
+
+
+
+
+
 	public boolean isHidden() {
 		return hidden;
 	}
@@ -426,4 +447,7 @@ public class Photo implements Serializable {
 	public void setAllMediaSize(long allMediaSize) {
 		this.allMediaSize = allMediaSize;
 	}
+
+
+
 }

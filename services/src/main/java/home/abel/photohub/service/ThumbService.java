@@ -206,12 +206,12 @@ public class ThumbService {
 				File.separator +  genSubPath(photoId) + File.separator + photoId+ thumbExt);
 	}
 
-	public String getThumbUrl(String photoId) {
-		String val = confService.getValue(ConfVarEnum.LOCAL_THUMB_URL,"");
-		val = val.endsWith("/") ? val : val + "/";
-		val =  val + genSubPath(photoId) + "/" + photoId+ thumbExt;
-		return val;
-	}	
+//	public String getThumbUrl(String photoId) {
+//		String val = confService.getValue(ConfVarEnum.LOCAL_THUMB_URL,"");
+//		val = val.endsWith("/") ? val : val + "/";
+//		val =  val + genSubPath(photoId) + "/" + photoId+ thumbExt;
+//		return val;
+//	}
 	
 	/*=============================================================================================
 	 * 

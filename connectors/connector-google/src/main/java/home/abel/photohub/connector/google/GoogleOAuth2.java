@@ -6,6 +6,8 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
+import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -204,7 +206,10 @@ public class GoogleOAuth2 {
     	if ((this.getUserId() == null) || (this.getStoreKey() == null)) {
     		throw new ExceptionBreakAuthFlow("[Google.initAuthFlow] User id or store key is not defined.");
     	}
-    	
+
+    	// Alternate way     can use VerificationCodeReceiver
+		//this.credential = new AuthorizationCodeInstalledApp(authFlow, new LocalServerReceiver()).authorize("user");
+
     	this.credential = authFlow.loadCredential(this.getUserId() +"."+ this.getStoreKey());
 //    	if (this.credential  != null) {
 //    		//  Has google user credential
