@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+##  Link launch script from distribution source to launchctl lib.
+
+if /bin/launchctl list "home.abel.photohub" &> /dev/null; then
+    /bin/launchctl unload "/Library/LaunchDaemons/home.abel.photohub.plist"
+fi
