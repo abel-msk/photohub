@@ -107,6 +107,32 @@ module.exports = function(grunt) {
                         dest: 'src/js/lib/locale/'
                     },
 
+
+                    {
+                        expand: true,
+                        nonull: true,
+                        flatten: true,
+                        filter: 'isFile',
+                        cwd: 'node_modules/',
+                        src: [
+                            'requirejs-plugins/lib/text.js',
+                        ],
+                        dest: 'src/js/lib/require/'
+                    },
+
+                    {
+                        expand: true,
+                        nonull: true,
+                        flatten: true,
+                        filter: 'isFile',
+                        cwd: 'node_modules/',
+                        src: [
+                            'requirejs-plugins/src/json.js',
+                        ],
+                        dest: 'src/js/lib/require/'
+                    },
+
+
                     //
                     //    Copy FONTS
                     //
@@ -239,6 +265,9 @@ module.exports = function(grunt) {
                                 'login',
                                 'logger',
                                 'const'
+                            ],
+                            exclude: [
+                                'json!../../property.json'
                             ]
                         },
 

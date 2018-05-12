@@ -1,17 +1,36 @@
 
-define(["jquery"],function ($) {
+define(["jquery","json!../../property.json!bust"],function ($, Data) {
     "use strict";
     var Obj = {};
     var properties = {
-        'apiUrl': 'http://localhost:8081/api'
+        "apiUrl": 'http://localhost:8081/api'
     };
 
+    properties = $.extend(true, {}, properties, Data || {});
+    console.log("[Const.init ] Load properties : ") ;
 
-    $.getJSON("property.json", function(data) {
-        if (data.apiUrl && (data.apiUrl.substring(0,1)  != '$' )) {
-            properties = $.extend(true, properties, data || {});
-        }
-    });
+
+    // console.log("[Const.init ] START Load properties") ;
+    // require(["json!../../property.json!bust"], function(data){
+    //     //if (data.apiUrl && (data.apiUrl.substring(0,1)  != '@' )) {
+    //     properties = $.extend(true, {}, properties, data || {});
+    //     //}
+    //
+    //     console.log("[Const.init ] Load properties : ") ;
+    //     console.log(data);
+    // });
+
+
+    //console.log( require(["json!../../property.json!bust" )] );
+
+    // $.getJSON("property.json", function(data) {
+    //     //if (data.apiUrl && (data.apiUrl.substring(0,1)  != '@' )) {
+    //         properties = $.extend(true, {}, properties, data || {});
+    //     //}
+    //
+    //     console.log("[Const.init ] Load properties : ") ;
+    //     console.log(properties) ;
+    // });
 
 
     Obj.MEDIA_THUMB = 11;
@@ -25,6 +44,8 @@ define(["jquery"],function ($) {
     };
 
     Obj.getAPIPath = function() {
+        console.log("[Const.getAPIPath ] list properties : ") ;
+        console.log(properties) ;
         return properties['apiUrl'];
     };
 

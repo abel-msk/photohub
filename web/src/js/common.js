@@ -13,7 +13,9 @@ requirejs.config({
         'bootstrap': '../lib/bootstrap',
         'dropzone': '../lib/dropzone-amd-module',
         'pikaday': '../lib/pikaday',
-        'const': '../const'
+        'const': '../const',
+        'json': '../lib/require/json',
+        'text': '../lib/require/text'
     },
 
 
