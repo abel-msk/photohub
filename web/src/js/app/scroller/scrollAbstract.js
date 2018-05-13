@@ -48,7 +48,7 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
 
         "use strict";
 
-        var DEBUG = false;
+        var DEBUG = true;
         var TRACE = false;
 
         var STATE_FREE = 1;
@@ -266,17 +266,29 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
         ScrollerAbstract.prototype.append = function(elementObj,insert) {
             try {
 
+                //  Добавляем елемент (снизу) в список текущих
                 insert && this.tailspacer.parentNode.insertBefore(elementObj.element, this.tailspacer);
                 var removedObj = this.viewSlots.append(elementObj);
-                DEBUG && logger.debug("[ScrollerAbstract.append] Append Element ",elementObj,  this.viewSlots);
+                TRACE && logger.debug("[ScrollerAbstract.append] Append Element ",elementObj,  this.viewSlots);
+                DEBUG && logger.debug("[ScrollerAbstract.append] Append Element '"+elementObj.data.getId()+"' height="+DomUtils.getHeight(elementObj.element));
 
+
+                //  Если список текущих  достиг максимального размера то удаляем верхний - removedObj
+                //  И изменяем размеры  вставок в начале и в конце
                 if (removedObj) {
-                    this.headspacer.style.height = (parseInt(this.headspacer.style.height) + DomUtils.getHeight(removedObj.element)) + "px";
-                    this.tailspacer.style.height = Math.max(
-                        parseInt(this.tailspacer.style.height) - DomUtils.getHeight(elementObj.element), 0) + "px";
+                    var newHeadSpacer = (parseInt(this.headspacer.style.height) + DomUtils.getHeight(removedObj.element))
+                    var newTailspacer = Math.max(
+                        parseInt(this.tailspacer.style.height) - DomUtils.getHeight(elementObj.element), 0);
+
+                    DEBUG && logger.debug("[ScrollerAbstract.append] Remove old Element '"+elementObj.data.getId()+"'. Element нeight="+DomUtils.getHeight(elementObj.element)+
+                        ", HEAD space before="+this.headspacer.style.height+","+ ", after="+newHeadSpacer+
+                        ", TAIL space before="+this.tailspacer.style.height+", after="+newTailspacer);
+
+                    this.headspacer.style.height = newHeadSpacer + "px";
+                    this.tailspacer.style.height = newTailspacer + "px"
                     removedObj.element.parentNode.removeChild(removedObj.element);
                 }
-
+                //DEBUG && logger.debug("[ScrollerAbstract.append] Set loadState="+STATE_FREE);
                 this.loadState = STATE_FREE;
                 return removedObj;
 
@@ -296,14 +308,22 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
 
                 insert && this.headspacer.parentNode.insertBefore(elementObj.element, this.headspacer.nextSibling);
                 var removedObj = this.viewSlots.prepend(elementObj);
-                DEBUG && logger.debug("[ScrollerAbstract.prepend] Prepend Element ", elementObj, this.viewSlots);
+                TRACE && logger.debug("[ScrollerAbstract.prepend] Prepend Element ", elementObj, this.viewSlots);
+                DEBUG && logger.debug("[ScrollerAbstract.prepend] Prepend Element '"+elementObj.data.getId()+"' height="+DomUtils.getHeight(elementObj.element));
+
 
                 if (removedObj) {
-                    this.tailspacer.style.height = (parseInt(this.tailspacer.style.height) + DomUtils.getHeight(removedObj.element)) + "px";
-                    this.headspacer.style.height = Math.max(
+
+                    var newTailspacer = (parseInt(this.tailspacer.style.height) + DomUtils.getHeight(removedObj.element));
+                    var newHeadSpacer = Math.max(
                             parseInt(this.headspacer.style.height) - DomUtils.getHeight(elementObj.element), 0) + "px";
-                    DEBUG && logger.debug("[ScrollerAbstract.prepend] Prepend Element. Decrease headspacer by " +
-                        DomUtils.getHeight(elementObj.element));
+
+                    DEBUG && logger.debug("[ScrollerAbstract.prepend] Remove old Element '"+elementObj.data.getId()+"'. Element нeight="+DomUtils.getHeight(elementObj.element)+
+                        ", HEAD space before="+this.headspacer.style.height+","+ ", after="+newHeadSpacer+
+                        ", TAIL space before="+this.tailspacer.style.height+", after="+newTailspacer);
+
+                    this.tailspacer.style.height = newTailspacer + "px";
+                    this.headspacer.style.height = newHeadSpacer + "px";
                     removedObj.element.parentNode.removeChild(removedObj.element);
                 }
 
@@ -338,7 +358,7 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
                 if (scrollTop > this.lastScrollTop) {
                     this.lastScrollTop = scrollTop;
 
-                    DEBUG && TRACE && logger.debug("[ScrollerAbstract._onScroll] scrolldown scrollTop="+ scrollTop
+                    TRACE && logger.debug("[ScrollerAbstract._onScroll] scrolldown scrollTop="+ scrollTop
                         +", last page offset="+ (this.viewSlots.getLast().element.offsetTop - startOffset)
                         +", scroll pos of bot view area=" + (scrollTop + DomUtils.getInnerHeight(this.o.viewport))
                         );
@@ -347,7 +367,7 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
                     if ((this.loadState == STATE_FREE)
                         && ((this.viewSlots.getLast().element.offsetTop - startOffset) < (scrollTop + DomUtils.getInnerHeight(this.o.viewport))))
                     {
-                        DEBUG && logger.debug("[ScrollerAbstract._onScroll] Got last block ",
+                        DEBUG && TRACE && logger.debug("[ScrollerAbstract._onScroll] Got last block ",
                             this.viewSlots.getLast().element);
 
                         this.loadState = STATE_LOAD;

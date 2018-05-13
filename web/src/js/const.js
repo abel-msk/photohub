@@ -1,13 +1,12 @@
 
-define(["jquery","json!../../property.json!bust"],function ($, Data) {
+define(["jquery","json!../../property.json!bust"],function ($, properties) {
     "use strict";
     var Obj = {};
-    var properties = {
-        "apiUrl": 'http://localhost:8081/api'
-    };
+    var testUrl = 'http://192.168.1.200:8081/api';
 
-    properties = $.extend(true, {}, properties, Data || {});
-    console.log("[Const.init ] Load properties : ") ;
+
+    // properties = $.extend(true, {}, properties, Data || {});
+    // console.log("[Const.init ] Load properties : ") ;
 
 
     // console.log("[Const.init ] START Load properties") ;
@@ -44,8 +43,10 @@ define(["jquery","json!../../property.json!bust"],function ($, Data) {
     };
 
     Obj.getAPIPath = function() {
-        console.log("[Const.getAPIPath ] list properties : ") ;
-        console.log(properties) ;
+        if (properties.apiUrl && (properties.apiUrl.substring(0,1)  == '@' )) {
+            properties.apiUrl = testUrl;
+            return testUrl;
+        }
         return properties['apiUrl'];
     };
 

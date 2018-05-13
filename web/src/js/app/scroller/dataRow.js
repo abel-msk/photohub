@@ -40,7 +40,7 @@ define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) 
     "use strict";
 
 
-    var DEBUG = false;
+    var DEBUG = true;
     var TRACE = false;
     var DEBUG_ITEM = '';
 
@@ -424,14 +424,17 @@ define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) 
 
     //------------------------------------------------------------------------------------------
     //
-    //     Generate custom vent
+    //     Generate custom event
     //     insert photo_image_id
     //     dispatch bubbling event from image-frame
+    //
+    //     Событие генерируется для каждого объекта как только его вставили в
+    //     отображаемый документ (объект может быть скрыт из=зм скрола)
     //
     //------------------------------------------------------------------------------------------
     Row.prototype.startEvent = function(el,object) {
 
-        DEBUG && logger.debug("[Row.startEvent] dispatch event. id="+object.item.id);
+        //DEBUG && logger.debug("[Row.startEvent] dispatch event. id="+object.item.id);
 
         var event = new CustomEvent("photorendered", {
             bubbles: true,

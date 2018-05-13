@@ -446,6 +446,7 @@ public class LocalPhotoObject extends BasePhotoObj {
 							( isValidImage(curFile) ||  curFile.isDirectory())
 							) {
 						try {
+							//TODO: check is file an image.
 							LocalPhotoObject item = new LocalPhotoObject(this.getConnector(),curFile.getAbsolutePath());
 							list.add(item);		
 						} catch (IOException ioe) {

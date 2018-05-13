@@ -92,6 +92,7 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                 var lastPage = this.getLastViewed()?this.getLastViewed().data:null;
                 var newPageId = (lastPage ? lastPage.getId() : -1) + 1;
 
+                //   Создаеь новый объект для страницы
                 var page = new Page(dataList, {
                     'limit': options.limit,
                     'offset': options.offset,
@@ -99,6 +100,7 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                     'viewport': this.container
                 });
 
+                // Добавляем новую страницу в скроллер ( Вызывем родительский класс )
                 //this.insertAtLast(page.getElement());
                 Abstract.prototype.append.apply(this,[{'element': page.getElement(), 'data': page}, true]);
 
@@ -108,8 +110,8 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                 DEBUG && logger.debug("[Scroller.append]  New page id=" + newPageId
                     + ", limit="+this.loadedPages[newPageId].limit
                     + ", offset="+options.offset
-                    + ", clear loadedPages from pos="+ (newPageId + 1)
-                    , this.loadedPages,page);
+                    + ", insert position " + newPageId + 1);
+                TRACE && logger.debug("[Scroller.append] Page object:",page);
 
                 this.loadedPages.splice(newPageId + 1);
 
@@ -151,8 +153,10 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                 DEBUG && logger.debug("[Scroller.prepend]  New page id=" + newPageId
                     + ", limit="+this.loadedPages[newPageId].limit
                     + ", offset="+options.offset
-                    + ", remove loadedPages from pos="+removedPage.data.getId()
-                    , this.loadedPages,page);
+                    + ", remove loadedPages from pos="+removedPage.data.getId());
+
+                TRACE && logger.debug("[Scroller.prepend] Page object:" + page);
+
 
                 //  Удаляем страницы из loadedPages после текущей последней видимой
                 this.loadedPages.splice(removedPage.data.getId());
@@ -288,8 +292,9 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
             DEBUG && logger.debug("[Scroller.getScrollPos] Scroll pos="+scrollPos
                 +", element count="+this.currentView.count
                 +", el top="+element.getBoundingClientRect().top
-                +", el offset="+this.currentView.offset
-                ,element);
+                +", el offset="+this.currentView.offset);
+
+            TRACE && logger.debug("[Scroller.getScrollPos] Current element:",element);
 
             return scrollPos;
         };
@@ -316,9 +321,9 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                         var pos = viewedAR[i].data.getElementOnScreen(viewPosition);
                         if (pos.offset >= 0) {
 
-                            TRACE && logger.debug("[Scroller.onScrollBefore] Viewport scroll pos="+ this.viewport.scrollTop
-                                +" View pos.x="+viewPosition.x  +", pos.y="+viewPosition.y
-                            );
+                            // TRACE && logger.debug("[Scroller.onScrollBefore] Viewport scroll pos="+ this.viewport.scrollTop
+                            //     +" View pos.x="+viewPosition.x  +", pos.y="+viewPosition.y + ", Element ID ="+pos.element.getAttribute('data-id')
+                            // );
 
                             this.currentView = {
                                 'offset': pos.offset,
@@ -367,7 +372,7 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                         page.redraw();
                     }
                     else {
-                        logger.debug("[Scroller.removeItem] Cannot find page with ID=" + pageId, this.viewSlots);
+                        DEBUG && logger.debug("[Scroller.removeItem] Cannot find page with ID=" + pageId, this.viewSlots);
                         throw new Error("[Scroller.removeItem] Problems with pages counting. Page with ID=" + pageId);
                     }
                 }
