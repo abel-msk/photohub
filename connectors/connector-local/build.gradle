@@ -55,7 +55,9 @@ repositories {
 dependencies {
 
     //compile project('connectors:connector-interface')
-
+    if ( rootProject == null) {
+        compile fileTree(dir: '../connectors/connector-interface/build/libs', include: '*.jar')
+    }
 
     //  Spring
     compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}"

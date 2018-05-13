@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
+import home.abel.photohub.utils.image.ImageMetadataProcessor;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.common.RationalNumber;
@@ -447,8 +448,13 @@ public class LocalPhotoObject extends BasePhotoObj {
 							) {
 						try {
 							//TODO: check is file an image.
-							LocalPhotoObject item = new LocalPhotoObject(this.getConnector(),curFile.getAbsolutePath());
-							list.add(item);		
+							if (ImageMetadataProcessor.isValidImage(curFile) || (curFile.isDirectory())) {
+								LocalPhotoObject item = new LocalPhotoObject(this.getConnector(), curFile.getAbsolutePath());
+								list.add(item);
+							}
+							else {
+								logger.warn("[LocalPhotoObject.listSubObjects] invalid image file found "+curFile.getAbsolutePath()+". Ignored.");
+							}
 						} catch (IOException ioe) {
 							logger.warn("Wrong image format. Skiping. File " + photoObjectsFile.getAbsolutePath());
 						}
