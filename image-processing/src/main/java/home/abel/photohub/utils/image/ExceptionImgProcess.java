@@ -1,6 +1,6 @@
 package home.abel.photohub.utils.image;
 
-public class ExceptionImgProcess extends Exception {
+public class ExceptionImgProcess extends RuntimeException {
 
 	/**
 	 * 

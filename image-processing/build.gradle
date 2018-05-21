@@ -69,6 +69,8 @@ dependencies {
     compile group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'
 
     compile group: 'org.apache.directory.studio', name: 'org.apache.commons.io', version: "2.4"
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version: "3.3.2"  // ImageIO plugin
+
 
 
     //	Logging
@@ -77,6 +79,14 @@ dependencies {
     compile group: 'org.slf4j', name: 'log4j-over-slf4j', version: "${props.slf4jVersion}"
     compile group: 'ch.qos.logback', name: 'logback-classic', version: "${props.logbackVersion}"
 
+
+    //Spring
+    compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-context', version: "${props.springFrameworkVersion}"
+
+    //	Testing
+    testCompile group: 'com.github.springtestdbunit', name: 'spring-test-dbunit', version: '1.2.1'
+    testCompile group: 'org.springframework', name: 'spring-test', version: "${props.springFrameworkVersion}"
     testCompile group: 'junit', name: 'junit', version: props.junitVersion
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.6.2'
 

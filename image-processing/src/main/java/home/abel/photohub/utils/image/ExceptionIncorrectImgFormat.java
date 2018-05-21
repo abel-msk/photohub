@@ -1,6 +1,6 @@
 package home.abel.photohub.utils.image;
 
-public class ExceptionIncorrectImgFormat extends Exception {
+public class ExceptionIncorrectImgFormat extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 	
 	public ExceptionIncorrectImgFormat(String message) {
