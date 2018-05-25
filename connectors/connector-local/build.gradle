@@ -57,6 +57,8 @@ dependencies {
     //compile project('connectors:connector-interface')
     if ( rootProject == null) {
         compile fileTree(dir: '../connectors/connector-interface/build/libs', include: '*.jar')
+        compile fileTree(dir: '../image-processing/build/libs', include: '*.jar')
+
     }
 
     //  Spring

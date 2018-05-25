@@ -62,8 +62,8 @@ public class GoogleRootObject extends BasePhotoObj {
 	 * @see home.abel.photohub.connector.BasePhotoObj#listSubObjects()
 	 */
 	@Override
-	public List<PhotoObjectInt> listSubObjects() throws Exception {
-		List<PhotoObjectInt> resultList = new ArrayList<PhotoObjectInt>();
+	public List<String> listSubObjects() throws Exception {
+		List<String> resultList = new ArrayList<>();
 		URL feedUrl = new URL("https://picasaweb.google.com/data/feed/api/user/"+getGoogleProfileId()+"?kind=album");
 		UserFeed userFeed = null;
 
@@ -88,7 +88,8 @@ public class GoogleRootObject extends BasePhotoObj {
         	//logger.trace("Gogole root album "+albumEntry.getMediaGroup().getTitle().getPlainTextContent());
 
         	try {
-        		resultList.add(new GoogleAlbumObject(this.connector,albumEntry));
+				GoogleAlbumObject album = new GoogleAlbumObject(this.connector,albumEntry);
+        		resultList.add(album.getId());
         	} catch(Exception e)  {
         		logger.error("Cannot load album " + albumEntry.getMediaGroup().getTitle().getPlainTextContent(), e);
         	}

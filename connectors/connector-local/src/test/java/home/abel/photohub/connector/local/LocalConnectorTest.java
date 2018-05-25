@@ -13,6 +13,7 @@ import home.abel.photohub.connector.HeadersContainer;
 import home.abel.photohub.connector.SiteMediaPipe;
 import home.abel.photohub.connector.prototype.*;
 
+import home.abel.photohub.utils.image.Metadata;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -90,16 +91,16 @@ public class LocalConnectorTest {
 			System.out.println("Metadata. UnicId = " + metadata.getUnicId() );
 			System.out.println("Metadata. CameraMake = " + metadata.getCameraMake() );
 			System.out.println("Metadata. CameraModel = " + metadata.getCameraModel() );		
-			System.out.println("Metadata. Date = " + metadata.getCreationTime());	
+			System.out.println("Metadata. Date = " + metadata.getDateCreated());
 			
 			
 			System.out.println("\n------------ Testing Edit metadata ------------");
 		
 			//metadata = new BasePhotoMetadata();
-			metadata.setUnicId(UUID.randomUUID().toString());
+			metadata.setUnicId(Metadata.generateUUID());
 			metadata.setLatitude(55.634875);
 			metadata.setLongitude(38.0831805);
-			metadata.setAperture("2.8");
+			metadata.setAperture(new Double("2.8"));
 			metadata.setCameraMake("Abel home");
 			metadata.setCameraModel("A-5");
 			photoObj.setMeta(metadata);
@@ -111,13 +112,13 @@ public class LocalConnectorTest {
 			System.out.println("Metadata. UnicId = " + metadata.getUnicId() );
 			System.out.println("Metadata. CameraMake = " + metadata.getCameraMake() );
 			System.out.println("Metadata. CameraModel = " + metadata.getCameraModel() );		
-			System.out.println("Metadata. Date = " + metadata.getCreationTime());	
+			System.out.println("Metadata. Date = " + metadata.getDateCreated());
 			
 			System.out.println("\n------------ Testing doScan ------------");
 
 			//System.out.println("Connector root path = " + connector.getRootObjects());
 			
-			doScann(connector.getRootObjects());
+			doScann(connector, connector.getRootObjects());
 			
 				
 				
@@ -132,7 +133,7 @@ public class LocalConnectorTest {
 			System.out.println("Metadata. UnicId = " + metadata.getUnicId() );
 			System.out.println("Metadata. CameraMake = " + metadata.getCameraMake() );
 			System.out.println("Metadata. CameraModel = " + metadata.getCameraModel() );		
-			System.out.println("Metadata. Date = " + metadata.getCreationTime());
+			System.out.println("Metadata. Date = " + metadata.getDateCreated());
 
 			PhotoMediaObjectInt media = photoObj.getMedia(EnumMediaType.IMAGE);
 
@@ -177,18 +178,23 @@ public class LocalConnectorTest {
     		e.printStackTrace();
     	}
 	}
-	public void doScann(List<PhotoObjectInt> objList) throws Exception {
+	public void doScann(SiteConnectorInt connector, List<String> objList) throws Exception {
 		if ( objList != null ) {
-			for (PhotoObjectInt Item: objList) {
-				logger.trace("Add scanned object to db. objectId="+Item.getId());
+			for (String ItemKey: objList) {
+				logger.trace("Add scanned object to db. objectId="+ItemKey);
+
+				PhotoObjectInt ItenObj = connector.loadObject(ItemKey);
+
 				//  Если это фоолдер то сканируем его содержимое
-				if ( Item.isFolder() ) {
-					List<PhotoObjectInt> subList =  Item.listSubObjects();
+				//List<String> subList =  ItenObj.listSubObjects();
+
+				if ( ItenObj.isFolder() ) {
+					List<String> subList =  ItenObj.listSubObjects();
 					if ( subList != null ) {
-						doScann(Item.listSubObjects());
+						doScann(connector, ItenObj.listSubObjects());
 					}
 					else {
-						logger.warn("folder contnet list is null for object="+Item.getId() );
+						logger.warn("folder contnet list is null for object="+ItenObj.getId() );
 					}
 				}
 			}

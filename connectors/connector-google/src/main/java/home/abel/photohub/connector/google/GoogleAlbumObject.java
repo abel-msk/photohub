@@ -143,8 +143,8 @@ public class GoogleAlbumObject extends BasePhotoObj {
 	 * @see home.abel.photohub.connector.BasePhotoObj#listSubObjects()
 	 */
 	@Override
-	public List<PhotoObjectInt> listSubObjects() throws Exception {		
-		List<PhotoObjectInt> googlePhotoObjectsList = new ArrayList<PhotoObjectInt>();
+	public List<String> listSubObjects() throws Exception {
+		List<String> googlePhotoObjectsList = new ArrayList<>();
 		//
 		//    Can append   ?fields=media:group/media:*&imgmax=1600
 		//    imgmax = 94, 110, 128, 200, 220, 288, 320, 400, 512, 576, 640, 720, 800, 912, 1024, 1152, 1280, 1440, 1600
@@ -168,7 +168,7 @@ public class GoogleAlbumObject extends BasePhotoObj {
 				GooglePhotoObject photoObject= new GooglePhotoObject( this.googleConnector, photoEntry);
 				if ( ! photoObject.getType().equalsIgnoreCase("unknown") ) {
 					logger.trace("Got album entry id="+ photoObject.getId() + ", type="+ photoObject.getType());
-					googlePhotoObjectsList.add(photoObject);
+					googlePhotoObjectsList.add(photoObject.getId());
 				}
 			} catch ( Exception e) {
 				logger.error("Cannot cast to PhotoEntry object ",e );
@@ -212,7 +212,7 @@ public class GoogleAlbumObject extends BasePhotoObj {
 //			mediaObject.setWidth(maxThumb.getWidth());
 //			mediaObject.setPath(maxThumb.getUrl().toString());
 			mediaObject.setType(EnumMediaType.THUMB_NET);
-			
+			//TODO:  check for unknown Extension
 			String ext  = maxThumb.getUrl().toString().substring(maxThumb.getUrl().toString().lastIndexOf('.') + 1);
 			mediaObject.setMimeType("image/"+ext.toLowerCase());
 			

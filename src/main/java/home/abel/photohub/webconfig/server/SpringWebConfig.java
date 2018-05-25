@@ -1,6 +1,6 @@
 package home.abel.photohub.webconfig.server;
 
-import home.abel.photohub.web.model.ResponsePhotoObjectFactory;
+//import home.abel.photohub.web.model.ResponsePhotoObjectFactory;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -35,11 +35,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 //@Profile("server")
 public class SpringWebConfig extends WebMvcConfigurerAdapter  {
 	
-	@Bean
-	public ResponsePhotoObjectFactory responsePhotoObjectFactory(){
-		ResponsePhotoObjectFactory rof = new ResponsePhotoObjectFactory();
-		return rof;
-	}
+//	@Bean
+//	public ResponsePhotoObjectFactory responsePhotoObjectFactory(){
+//		ResponsePhotoObjectFactory rof = new ResponsePhotoObjectFactory();
+//		return rof;
+//	}
 	
     @Bean
     public MultipartResolver multipartResolver() {

@@ -263,10 +263,10 @@ public class Photo implements Serializable {
 	 -------------------------------------*/
 	
 	private String unicId;
-	private String aperture;
+	private double aperture;
 	private String camMake;
 	private String camModel;
-	private String shutterSpeed;
+	private double shutterSpeed;
 	
 	@Index
 	@Temporal(TemporalType.TIMESTAMP)
@@ -275,21 +275,28 @@ public class Photo implements Serializable {
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date digitTime;
 	private String dpi;
-	private String expTime;
+	private double expTime;
 
-	@Column(name="focal_len")
-	private String focalLen;
+	//@Column(name="focal_len")
+	private double focalLen;
 	private String focusDist;
-	private String isoSpeed;
+	private int iso;
 
-	@Lob
-	private String gpsAlt;
+	//@Lob
+	private double gpsAlt;
 
 	private double gpsDir;
 
 	private double gpsLat;
 
 	private double gpsLon;
+
+
+	private int flash;
+	private int orientation;
+	private String software;
+	private String userComment;
+	private double brightness;
 
 
 	
@@ -306,14 +313,7 @@ public class Photo implements Serializable {
 	public void setUnicId(String unicId) {
 			this.unicId = unicId;
 	}
-	
-	public String getAperture() {
-		return this.aperture;
-	}
 
-	public void setAperture(String aperture) {
-		this.aperture = aperture;
-	}
 
 	public String getCamMake() {
 		return this.camMake;
@@ -350,29 +350,7 @@ public class Photo implements Serializable {
 		this.dpi = dpi;
 	}
 
-	public String getShutterSpeed() {
-		return this.shutterSpeed;
-	}
 
-	public void setShutterSpeed(String shutterSpeed) {
-		this.shutterSpeed = shutterSpeed;
-	}
-
-	public String getExpTime() {
-		return this.expTime;
-	}
-
-	public void setExpTime(String expTime) {
-		this.expTime = expTime;
-	}
-
-	public String getFocalLen() {
-		return this.focalLen;
-	}
-
-	public void setFocalLen(String focalLen) {
-		this.focalLen = focalLen;
-	}
 
 	public String getFocusDist() {
 		return this.focusDist;
@@ -382,13 +360,6 @@ public class Photo implements Serializable {
 		this.focusDist = focusDist;
 	}
 
-	public String getGpsAlt() {
-		return this.gpsAlt;
-	}
-
-	public void setGpsAlt(String gpsAlt) {
-		this.gpsAlt = gpsAlt;
-	}
 
 	public double getGpsDir() {
 		return this.gpsDir;
@@ -414,14 +385,94 @@ public class Photo implements Serializable {
 		this.gpsLon = gpsLon;
 	}
 
-	public String getIsoSpeed() {
-		return this.isoSpeed;
+
+	public double getAperture() {
+		return aperture;
 	}
 
-	public void setIsoSpeed(String isoSpeed) {
-		this.isoSpeed = isoSpeed;
+	public void setAperture(double aperture) {
+		this.aperture = aperture;
 	}
 
+	public double getShutterSpeed() {
+		return shutterSpeed;
+	}
+
+	public void setShutterSpeed(double shutterSpeed) {
+		this.shutterSpeed = shutterSpeed;
+	}
+
+	public double getExpTime() {
+		return expTime;
+	}
+
+	public void setExpTime(double expTime) {
+		this.expTime = expTime;
+	}
+
+	public double getFocalLen() {
+		return focalLen;
+	}
+
+	public void setFocalLen(double focalLen) {
+		this.focalLen = focalLen;
+	}
+
+	public int getIso() {
+		return iso;
+	}
+
+	public void setIso(int iso) {
+		this.iso = iso;
+	}
+
+	public double getGpsAlt() {
+		return gpsAlt;
+	}
+
+	public void setGpsAlt(double gpsAlt) {
+		this.gpsAlt = gpsAlt;
+	}
+
+	public int getFlash() {
+		return flash;
+	}
+
+	public void setFlash(int flash) {
+		this.flash = flash;
+	}
+
+	public int getOrientation() {
+		return orientation;
+	}
+
+	public void setOrientation(int orientation) {
+		this.orientation = orientation;
+	}
+
+	public String getSoftware() {
+		return software;
+	}
+
+	public void setSoftware(String software) {
+		this.software = software;
+	}
+
+	public String getUserComment() {
+		return userComment;
+	}
+
+	public void setUserComment(String userComment) {
+		this.userComment = userComment;
+	}
+
+	public double getBrightness() {
+		return brightness;
+	}
+
+	public void setBrightness(double brightness) {
+		this.brightness = brightness;
+	}
 
 	public Date getLastScanDate() {
 		return lastScanDate;

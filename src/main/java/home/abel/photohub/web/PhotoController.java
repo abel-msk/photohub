@@ -1,54 +1,32 @@
 package home.abel.photohub.web;
 
-import home.abel.photohub.model.ModelConstants;
 import home.abel.photohub.model.Node;
 import home.abel.photohub.model.Photo;
-import home.abel.photohub.model.QPhoto;
-import home.abel.photohub.model.Site;
-import home.abel.photohub.service.ExceptionInvalidArgument;
-import home.abel.photohub.service.ExceptionPhotoProcess;
-import home.abel.photohub.service.PhotoAttrService;
 import home.abel.photohub.service.PhotoListFilter;
 import home.abel.photohub.service.PhotoService;
 import home.abel.photohub.service.SiteService;
 import home.abel.photohub.service.ThumbService;
-import home.abel.photohub.utils.FileUtils;
-import home.abel.photohub.utils.InternetDateFormat;
 import home.abel.photohub.web.model.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.querydsl.QPageRequest;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 @CrossOrigin
@@ -66,11 +44,11 @@ public class PhotoController {
 	@Autowired 
 	ThumbService thumbService; 
 
-	@Autowired
-	PhotoAttrService photoAttrService;
+//	@Autowired
+//	PhotoAttrService photoAttrService;
 	
-	@Autowired 
-	ResponsePhotoObjectFactory photoObjFactory;
+//	@Autowired
+//	ResponsePhotoObjectFactory photoObjFactory;
 	
 	@Autowired
 	HeaderBuilderService headerBuild;
@@ -544,99 +522,99 @@ public class PhotoController {
 //		return new ResponseEntity<ResponseFileUpload>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
 //	}
 	
-	
-	/*=============================================================================================
-	*
-	*   Handle request Object Attributes 
-	* 
-	=============================================================================================*/
-	
-	@RequestMapping(value = "/object/{objectId:[\\d]+}/attr/{name}", method = RequestMethod.OPTIONS)
-	ResponseEntity<String> acceptObjectAttributes(HttpServletRequest request) throws IOException, ServletException {
-    	logger.debug("Request OPTION  for /object/{id}/attr/**");
-	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
-	}	
-	/**
-	 * 
-	 * @param objectId
-	 * @return
-	 * @throws Exception
-	 */
-	@RequestMapping(value = "/object/{objectId:\\d+}/attr", method = RequestMethod.GET, 
-			produces="application/json")
-	@ResponseBody
-	public ResponseEntity<List<ResponsePhotoAttr>> getObjectAttrList(
-	        final HttpServletRequest HTTPrequest,
-	        final HttpServletResponse HTTPresponse,
-	        @PathVariable("objectId") String objectId) throws Exception {
-		logger.debug(">>> Request GET for /object/" + objectId + "/attr");	
-		
-		List<ResponsePhotoAttr> theAttrList = photoObjFactory.getAttrsList(objectId);
-		
-		String attrlistStr = "";
-		for(ResponsePhotoAttr theAttrObj : theAttrList) {
-			attrlistStr = attrlistStr + theAttrObj.getName() + "=" + theAttrObj.getValue() +"; ";
-		}
-		logger.debug("<<< Response: " + attrlistStr);
-		return new ResponseEntity<List<ResponsePhotoAttr>>(theAttrList,headerBuild.getHttpHeader(HTTPrequest),HttpStatus.OK); 
-	}
-	/**
-	 * Get photo object attribute  by Name
-	 * 
-	 * @param objectId
-	 * @param theAttrName
-	 * @return
-	 * @throws Exception
-	 */
-	@RequestMapping(value = "/object/{objectId:\\d+}/attr/{name}", method = RequestMethod.GET, 
-			produces="application/json")
-	@ResponseBody
-	public ResponseEntity<ResponsePhotoAttr> getObjectAttr(
-	        final HttpServletRequest HTTPrequest,
-	        final HttpServletResponse HTTPresponse,
-	        @PathVariable("objectId") String objectId,
-	        @PathVariable("name") String theAttrName) throws Exception {
-		logger.debug(">>> Request GET for /object/" + objectId + "/attr/" + theAttrName);	
-		
-		ResponsePhotoAttr theAttrObj = photoObjFactory.getAttrObj(objectId,theAttrName);
-		
-		logger.debug("<<< Response: " + theAttrName + "=" + theAttrObj.getValue());		
-		return new ResponseEntity<ResponsePhotoAttr>(theAttrObj,headerBuild.getHttpHeader(HTTPrequest),HttpStatus.OK); 
-	}	
-	
-	/**
-	 *    Set object attribute value by sending full attribute object
-	 *    {
-	 *    		"name":"PHOTO_NAME",
-	 *    		"value":"villa 15-v2.5.3.hgjh",
-	 *    		"type":"line","access":"rw",
-	 *    		"namespace":"photo",
-	 *    		"displayName":"Name",
-	 *    		"priority":100
-	 *    } 
-	 *    Used variable 'value'.
-	 *    
-	 * @param objectId   - the object id
-	 * @param theAttrName - Attribute name
-	 * @param theArrtObj -  Attribute object.
-	 * @return
-	 * @throws Exception
-	 */
-	@RequestMapping(value = "/object/{objectId}/attr/{name}", method = RequestMethod.PUT, 
-			produces="application/json")
-	@ResponseBody
-	public ResponseEntity<ResponsePhotoAttr> setObjectAttr(
-	        final HttpServletRequest HTTPrequest,
-	        final HttpServletResponse HTTPresponse,
-	        @PathVariable("objectId") String objectId,
-	        @PathVariable("name") String theAttrName,
-	        @RequestBody ResponsePhotoAttr theArrtObj) throws Exception {
-		logger.debug(">>> Request PUT for /object/" + objectId + "/attr/" + theAttrName);	
-		logger.debug( "Save attribute " + theArrtObj.getName() +" value : " + theArrtObj.getValue());
-		photoAttrService.setAttr(objectId,theArrtObj.getName(),theArrtObj.getValue());
-		ResponsePhotoAttr response =  photoObjFactory.getAttr(objectId,theAttrName);
-		logger.debug(">>> Response: " + response.getName() + ",  value=" + response.getValue());	
-		return new ResponseEntity<ResponsePhotoAttr>(response,headerBuild.getHttpHeader(HTTPrequest),HttpStatus.OK); 
-	}	
-	
+//
+//	/*=============================================================================================
+//	*
+//	*   Handle request Object Attributes
+//	*
+//	=============================================================================================*/
+//
+//	@RequestMapping(value = "/object/{objectId:[\\d]+}/attr/{name}", method = RequestMethod.OPTIONS)
+//	ResponseEntity<String> acceptObjectAttributes(HttpServletRequest request) throws IOException, ServletException {
+//    	logger.debug("Request OPTION  for /object/{id}/attr/**");
+//	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+//	}
+//	/**
+//	 *
+//	 * @param objectId
+//	 * @return
+//	 * @throws Exception
+//	 */
+//	@RequestMapping(value = "/object/{objectId:\\d+}/attr", method = RequestMethod.GET,
+//			produces="application/json")
+//	@ResponseBody
+//	public ResponseEntity<List<ResponsePhotoAttr>> getObjectAttrList(
+//	        final HttpServletRequest HTTPrequest,
+//	        final HttpServletResponse HTTPresponse,
+//	        @PathVariable("objectId") String objectId) throws Exception {
+//		logger.debug(">>> Request GET for /object/" + objectId + "/attr");
+//
+//		List<ResponsePhotoAttr> theAttrList = photoObjFactory.getAttrsList(objectId);
+//
+//		String attrlistStr = "";
+//		for(ResponsePhotoAttr theAttrObj : theAttrList) {
+//			attrlistStr = attrlistStr + theAttrObj.getName() + "=" + theAttrObj.getValue() +"; ";
+//		}
+//		logger.debug("<<< Response: " + attrlistStr);
+//		return new ResponseEntity<List<ResponsePhotoAttr>>(theAttrList,headerBuild.getHttpHeader(HTTPrequest),HttpStatus.OK);
+//	}
+//	/**
+//	 * Get photo object attribute  by Name
+//	 *
+//	 * @param objectId
+//	 * @param theAttrName
+//	 * @return
+//	 * @throws Exception
+//	 */
+//	@RequestMapping(value = "/object/{objectId:\\d+}/attr/{name}", method = RequestMethod.GET,
+//			produces="application/json")
+//	@ResponseBody
+//	public ResponseEntity<ResponsePhotoAttr> getObjectAttr(
+//	        final HttpServletRequest HTTPrequest,
+//	        final HttpServletResponse HTTPresponse,
+//	        @PathVariable("objectId") String objectId,
+//	        @PathVariable("name") String theAttrName) throws Exception {
+//		logger.debug(">>> Request GET for /object/" + objectId + "/attr/" + theAttrName);
+//
+//		ResponsePhotoAttr theAttrObj = photoObjFactory.getAttrObj(objectId,theAttrName);
+//
+//		logger.debug("<<< Response: " + theAttrName + "=" + theAttrObj.getValue());
+//		return new ResponseEntity<ResponsePhotoAttr>(theAttrObj,headerBuild.getHttpHeader(HTTPrequest),HttpStatus.OK);
+//	}
+//
+//	/**
+//	 *    Set object attribute value by sending full attribute object
+//	 *    {
+//	 *    		"name":"PHOTO_NAME",
+//	 *    		"value":"villa 15-v2.5.3.hgjh",
+//	 *    		"type":"line","access":"rw",
+//	 *    		"namespace":"photo",
+//	 *    		"displayName":"Name",
+//	 *    		"priority":100
+//	 *    }
+//	 *    Used variable 'value'.
+//	 *
+//	 * @param objectId   - the object id
+//	 * @param theAttrName - Attribute name
+//	 * @param theArrtObj -  Attribute object.
+//	 * @return
+//	 * @throws Exception
+//	 */
+//	@RequestMapping(value = "/object/{objectId}/attr/{name}", method = RequestMethod.PUT,
+//			produces="application/json")
+//	@ResponseBody
+//	public ResponseEntity<ResponsePhotoAttr> setObjectAttr(
+//	        final HttpServletRequest HTTPrequest,
+//	        final HttpServletResponse HTTPresponse,
+//	        @PathVariable("objectId") String objectId,
+//	        @PathVariable("name") String theAttrName,
+//	        @RequestBody ResponsePhotoAttr theArrtObj) throws Exception {
+//		logger.debug(">>> Request PUT for /object/" + objectId + "/attr/" + theAttrName);
+//		logger.debug( "Save attribute " + theArrtObj.getName() +" value : " + theArrtObj.getValue());
+//		photoAttrService.setAttr(objectId,theArrtObj.getName(),theArrtObj.getValue());
+//		ResponsePhotoAttr response =  photoObjFactory.getAttr(objectId,theAttrName);
+//		logger.debug(">>> Response: " + response.getName() + ",  value=" + response.getValue());
+//		return new ResponseEntity<ResponsePhotoAttr>(response,headerBuild.getHttpHeader(HTTPrequest),HttpStatus.OK);
+//	}
+//
 }

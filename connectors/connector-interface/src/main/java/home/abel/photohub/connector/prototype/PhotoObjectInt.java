@@ -37,7 +37,7 @@ public interface PhotoObjectInt {
 	public void setMeta(PhotoMetadataInt newMetaData) throws Exception;
 	
 	public boolean isFolder();
-	public List<PhotoObjectInt> listSubObjects() throws Exception;
+	public List<String> listSubObjects() throws Exception;
 	
 	public boolean hasPhotoSource();
 	/**

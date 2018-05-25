@@ -94,23 +94,30 @@ public class GoogleConnectorTest {
 				System.out.println("+++ AUTH OK +++");
 			}
 
-			List<PhotoObjectInt> rootList = connector.getRootObjects();
+			List<String> rootList = connector.getRootObjects();
 
-			for (PhotoObjectInt Item : rootList) {
-				logger.debug("Item=" + Item.getName());
+			for (String ItemKey : rootList) {
+				PhotoObjectInt ItemObj = connector.loadObject(ItemKey);
+				logger.debug("Item=" + ItemObj.getName());
 			}
 
-			List<PhotoObjectInt> filePhotos = null;
-			PhotoObjectInt AlbmObject = rootList.get(0);
-			if (AlbmObject.isFolder()) {
-				filePhotos = AlbmObject.listSubObjects();
+			List<String> filePhotos = null;
+			String AlbmObjectKey = rootList.get(0);
+			PhotoObjectInt AlomObj = connector.loadObject(AlbmObjectKey);
+
+			if (AlomObj.isFolder()) {
+				filePhotos = AlomObj.listSubObjects();
 			}
 
-			SiteMediaPipe  pipe = filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getContentStream();
+			PhotoObjectInt firstInList = connector.loadObject(filePhotos.get(0));
+			assertThat(firstInList).isNotNull();
+
+			SiteMediaPipe  pipe  = firstInList.getMedia(EnumMediaType.IMAGE).getContentStream();
+			//SiteMediaPipe  pipe = filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getContentStream();
 			assertThat(pipe.getInputStream().available()>0).isTrue();
 			pipe.getInputStream().close();
 
-			pipe = connector.loadMediaByPath(filePhotos.get(0).getMedia(EnumMediaType.IMAGE).getPath(),null);
+			pipe = connector.loadMediaByPath(firstInList.getMedia(EnumMediaType.IMAGE).getPath(),null);
 			assertThat(pipe.getInputStream().available() > 0);
 
 
@@ -183,15 +190,15 @@ public class GoogleConnectorTest {
     
     
     
-	public void doScann(List<PhotoObjectInt> objList) throws Exception {
-		if ( objList != null ) {
-			for (PhotoObjectInt Item: objList) {
-				logger.trace("Add scanned object to db. objectId="+Item.getId());
-				//  Если это фоолдер то сканируем его содержимое
-				if ( Item.isFolder() ) {
-					doScann(Item.listSubObjects());
-				}
-			}
-		}		
-	}
+//	public void doScann(List<PhotoObjectInt> objList) throws Exception {
+//		if ( objList != null ) {
+//			for (PhotoObjectInt Item: objList) {
+//				logger.trace("Add scanned object to db. objectId="+Item.getId());
+//				//  Если это фоолдер то сканируем его содержимое
+//				if ( Item.isFolder() ) {
+//					doScann(Item.listSubObjects());
+//				}
+//			}
+//		}
+//	}
 }

@@ -13,56 +13,71 @@ public interface PhotoMetadataInt {
 	public String  getCameraModel();
 	public void setCameraModel(String cameraModel);
 	
-	public String getAperture();
-	public void setAperture(String str);	
+	public double getAperture();
+	public void setAperture(double aperture);
 	
-	public String getDistance();
-	public void setDistance(String str);
+//	public String getDistance();
+//	public void setDistance(String distance);
 	
-	public String getExposureTime();
-	public void setExposureTime(String str);
+	public double getExposureTime();
+	public void setExposureTime(double exposureTime);
 
-	public String getFocal();
-	public void setFocal(String str);
+	public double getFocalLength();
+	public void setFocalLength(double focalLength);
 	
-	public String getIso();
-	public void setIso(String str);
+	public int getIso();
+	public void setIso(int iso);
 	
-	public String getFocus();
-	public void setFocus(String str);	
+//	public String getFocus();
+//	public void setFocus(String focus);
 
+	public double getLatitude();
+	public void  setLatitude(double latitude);
 	
-	public Double getLatitude();
-	public void  setLatitude(Double lat);
+	public double getLongitude();
+	public void setLongitude(double longitude);
 	
-	public Double getLongitude();
-	public void setLongitude(Double lon);
+	public double getAltitude();
+	public void setAltitude(double altitude);
 	
-	public String getAltitude();
-	public void setAltitude(String alt);
-	
-	public Date getCreationTime();	
-	public void setCreationTime(Date time);
-	
+	public Date getDateCreated();
+	public void setDateCreated(Date time);
+
+	public Date getDateOriginal();
+	public void setDateOriginal(Date time);
+
+	public Date getDateUpdate();
+	public void setDateUpdate(Date dateUpdate);
+
 	public String getUnicId();
 	public void setUnicId(String uuid);
-	
-	
-	public Integer getFlash();
-	public void setFlash(Integer flash);
-	
-	
-//	public void setCameraMake(String str);
-//	public void setCameraModel(String str);
-//	public void setAperture(String str);
-//	public void setDistance(String str);
-//	public void setExposureTime(String str);
-//	public void setFocal(String str);
-//	public void setIso(String str);
-//	public void setCreationTime(Date date);
-//	public void setGepoPos(Double lat, Double lon);
-//	public void setImgUnicId(String id);
 
-	public void setMetaTag(ExifMetadataTags tag, String value);
-	public String getMetaTag(ExifMetadataTags tag);
+	public int getFlash();
+	public void setFlash(int flash);
+
+	public int getTzOffset();
+	public void setTzOffset(int tzOffset);
+
+	public int getOrientation();
+	public void setOrientation(int orientation);
+
+	public String getSoftware();
+	public void setSoftware(String software);
+
+	public double getResolution();
+	public void setResolution(double resolution);
+
+	public double getShutterSpeed();
+	public void setShutterSpeed(double shutterSpeed);
+
+
+	public double getBrightness();
+	public void setBrightness(double brightness);
+
+
+	public String getUserComment();
+	public void setUserComment(String userComment);
+
+//	public void setMetaTag(ExifMetadataTags tag, String value);
+//	public String getMetaTag(ExifMetadataTags tag);
 }

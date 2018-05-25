@@ -151,7 +151,7 @@ public class BasePhotoObj implements PhotoObjectInt {
 	}
 
 	@Override
-	public List<PhotoObjectInt> listSubObjects() throws Exception{
+	public List<String> listSubObjects() throws Exception{
 		return null;
 	}
 

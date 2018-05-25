@@ -128,7 +128,7 @@ public class dbTest {
     	theSite = siteRepository.save(theSite);
        	
     	Iterable<Site> sList = siteRepository.findAll();
-    	assertThat(sList).hasSize(2);
+    	assertThat(sList).hasSize(3);
     	assertThat(theSite.getName()).isEqualTo(newSiteName);
     	
     	theSite.addProperty(newSitePropName, "/tmp/");
@@ -443,6 +443,24 @@ public class dbTest {
 //		ON tt.home = groupedtt.home
 //		AND tt.datetime = groupedtt.MaxDateTime
 	}
+
+	@Test
+	public void testSiteSize() {
+		Site theSite = siteRepository.findOne("2");
+
+
+		long totalSize = 0;
+		JPAQuery<?> query = new JPAQuery<Void>(entityManager);
+		QPhoto photo = QPhoto.photo;
+
+		totalSize = query.select(photo.allMediaSize.sum())
+				.from(photo)
+				.where(photo.siteBean.id.eq(theSite.getId())
+						.and(photo.type.eq(1))
+				).fetchOne();
+		logger.debug("Site "+ theSite + ", has totale size =" + totalSize) ;
+	}
+
 
 	private void dumpDB() throws Exception {
 

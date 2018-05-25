@@ -53,8 +53,8 @@ public class SiteBaseConnector implements SiteConnectorInt{
 	}
 	
 	@Override
-	public List<PhotoObjectInt> getRootObjects() throws Exception {
-		return new ArrayList<PhotoObjectInt>();
+	public List<String> getRootObjects() throws Exception {
+		return new ArrayList<>();
 	}
 	
 	@Override
@@ -98,7 +98,6 @@ public class SiteBaseConnector implements SiteConnectorInt{
 
 	/**
 	 * Indicate that new objects can be added to sites
-	 * @see home.abel.photohub.connector.prototype.SiteConnectorInt#isUpdateble()
 	 */
 	@Override
 	public boolean isCanUpdate() {
@@ -117,7 +116,6 @@ public class SiteBaseConnector implements SiteConnectorInt{
 
 	/**
 	 * Indicate that exiten object or theirs metadata can bee changed.
-	 * @see home.abel.photohub.connector.prototype.SiteConnectorInt#isWritable()
 	 */
 	@Override
 	public boolean isCanDelete() {

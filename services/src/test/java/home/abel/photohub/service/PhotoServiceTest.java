@@ -114,8 +114,8 @@ public class PhotoServiceTest {
 	@Autowired
 	SiteRepository siteRepo;	
 	
-	@Autowired
-	PhotoAttrService photoAttrSvc; 
+//	@Autowired
+//	PhotoAttrService photoAttrSvc;
 	
 	@Autowired
 	NodeRepository nodeRepo; 

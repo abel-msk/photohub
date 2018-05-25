@@ -2,25 +2,23 @@ package home.abel.photohub.service;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import home.abel.photohub.model.*;
+import home.abel.photohub.utils.image.ImageData;
+import home.abel.photohub.utils.image.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.querydsl.QPageRequest;
@@ -29,19 +27,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.uuid.Generators;
-
-import static com.querydsl.core.group.GroupBy.*;
-import com.querydsl.core.Tuple;
-import com.querydsl.core.group.Group;
-import com.querydsl.core.group.GroupBy;
 import com.querydsl.jpa.impl.JPAQuery;
 
-import com.querydsl.core.types.dsl.BooleanExpression;
 
-
-
-import home.abel.photohub.connector.BasePhotoMetadata;
 import home.abel.photohub.connector.prototype.EnumMediaType;
 import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
 import home.abel.photohub.connector.prototype.PhotoMetadataInt;
@@ -49,7 +37,6 @@ import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
 import home.abel.photohub.utils.FileUtils;
-import home.abel.photohub.utils.image.ImageMetadataProcessor;
 
 
 /***
@@ -111,8 +98,8 @@ public class PhotoService {
 	@Autowired 
 	private SiteService siteService; 	
 	
-	@Autowired
-	private PhotoAttrService photoAttrService;
+//	@Autowired
+//	private PhotoAttrService photoAttrService;
 
 	public  PhotoService() {
 
@@ -183,7 +170,7 @@ public class PhotoService {
 		
 		//   Create on site folder
 		try {
-			onSiteObject = uploadPhotoObject((File)null,theNode);
+			onSiteObject = uploadPhotoObject((ImageData)null,theNode);
 			thePhoto = convertToPhoto(onSiteObject,thePhoto,null);
 		} catch (NullPointerException e) {
 			throw new ExceptionInvalidArgument(e);
@@ -223,14 +210,15 @@ public class PhotoService {
 //	}
 	/**
 	 *  
-	 *   Add new Photo to DB.
-	 *     
+	 *      Add new Photo to DB and site
+	 *      Добавляем  файл с картинкой ( возможно видео )  на выбранный сайт
+	 *      и записываем информациюю и метаданные в базу
 	 *  
-	 * @param inputImageFile
-     * @param name
-	 * @param descr
-	 * @param parentId
-	 * @param siteId
+	 * @param inputImageFile input image file
+     * @param name           photo name os file name
+	 * @param descr          any addition comments
+	 * @param parentId       link to parent object  like folder or any other container
+	 * @param siteId         Site where object should be stored
 	 * @return
 	 * @throws ExceptionInvalidArgument
 	 * @throws ExceptionPhotoProcess
@@ -239,44 +227,35 @@ public class PhotoService {
 	public Node addPhoto(File inputImageFile, String name, String descr, String parentId, String siteId) throws ExceptionInvalidArgument, ExceptionPhotoProcess{
 		
 		logger.trace("[addPhoto] Name="+name+", parentId="+parentId+", siteId=" + siteId);
+
+
+		if ( ! ImageData.isValidImage(inputImageFile)) {
+			logger.warn("Unsupported image  file type " +inputImageFile.getName() );
+			return null;
+		}
+
+
 		Site theSite = null;
 		Node theParentNode = null;
 		//File workFile = inputImageFile;
-		File workFile = null;
-		PhotoMetadataInt metadata = null;
+		//File workFile = null;
+		Metadata metadata = null;
+
 		Node theNode = null;
 		Photo thePhoto = null;
 		PhotoObjectInt onSiteObject = null;
+		ImageData image = null;
 		
 		try {
-			if ( ImageMetadataProcessor.isImgHasMeta(inputImageFile) ) {
-				//
-				//   Проверяем и подготавливаем метаданные, вставляем UUID
-				//
-				ImageMetadataProcessor imgProcessor = new ImageMetadataProcessor(inputImageFile);
-	
-				
-				logger.trace("[addPhoto] Load image metadata for file " + inputImageFile.getPath());
-				try {
-					metadata = imgProcessor.getMeta();
-				} catch (Exception e1) {
-					throw new ExceptionPhotoProcess("Gannot retrieve image metadata",e1);
-				}
-				
-				if (metadata.getUnicId() == null ) {
-					UUID uuid = Generators.timeBasedGenerator().generate();
-					String uuidStr = uuid.toString().replace('-', '\0');
-					metadata.setUnicId(uuidStr);
-					logger.trace("[addPhoto] Set UUID "+ uuid.toString()+" for file "+inputImageFile.getPath());
-		
-					try {						
-						workFile = imgProcessor.setMeta(metadata);
-						//workFile = imgProcessor.getImgFile();
-					} catch (Exception e) {
-						throw new ExceptionPhotoProcess("Cannot save UnicId metatag value.",e);
-					}
-				}
+
+			image = new ImageData(new FileInputStream(inputImageFile));
+			metadata = image.getMetadata();
+			if (metadata.getUnicId() == null) {
+				metadata.setUnicId(Metadata.generateUUID());
+				image.setMetadata(metadata);
 			}
+
+
 			//
 			//   Готовим родительскую директорию (если не указана) на сайте для загрузки файла
 		    //
@@ -312,10 +291,13 @@ public class PhotoService {
 					logger.trace("[addPhoto] Upload folder not found. Create new one. Name="+flName);
 			
 					theParentNode = addFolder(flName,
-							 "Automaticaly creaded folder for photos upload", 
+							 "Automatically created folder for photos upload",
 							 null, siteId);
 				}
 			}
+
+
+
 			logger.trace("[addPhoto]  Lookup Site. Id="+ (siteId==null?"null":siteId));
 			if (siteId != null) {
 				theSite = siteRepo.findOne(siteId);
@@ -328,7 +310,7 @@ public class PhotoService {
 			//
 			//   CREATE PHOTO OBJECT AND UPLOAD
 			//
-			logger.trace("[addPhoto]  Create DB phot's object");
+			logger.trace("[addPhoto]  Create DB photo object");
 			//   Создаем объекты в базе для файла (фото объекта)
 			thePhoto = new Photo(ModelConstants.OBJ_SINGLE, name, descr, theSite);
 			
@@ -339,22 +321,15 @@ public class PhotoService {
 			
 			//   Заливаем исходное фото на сайт
 			logger.trace("[addPhoto] Upload photo object, Name="+thePhoto+", Parent="+(theParentNode==null?"null":theParentNode.getPhoto().getName()));
+			onSiteObject = uploadPhotoObject(image,theNode);
 
-			if (workFile != null )  {
-				onSiteObject = uploadPhotoObject(workFile,theNode);
-				//workFile.delete();
-			}
-			else {
-				onSiteObject = uploadPhotoObject(inputImageFile,theNode);
-			}
 		
 		//
 		//   К этому моменту файл уже отправлен на сайт.  Так что временный файл надо удалить.
-		} finally {
-			if (workFile != null ) workFile.delete();
+		} catch ( IOException e ) {
+			throw new ExceptionInvalidArgument("Cannot read file : " + inputImageFile.getAbsolutePath(),e);
 		}
-			
-	
+
 		//
 		//   STORE IMAGE'S METADATA
 		//
@@ -386,9 +361,9 @@ public class PhotoService {
 	
 		
 	/**
+	 * 	    Save photo object in db. Create node object (set it root is no parent)
 	 * 		Сохраняем фото объект и создаем Node обект, привязываем к нем фото обект и тоже сохраняем.
-	 *		Save photo object in db. Create node object (set it root is no parent) 
-	 * 
+	 *
 	 * @param thePhoto
      * @param theParent
 	 * @return
@@ -428,9 +403,10 @@ public class PhotoService {
 	
 	/**
 	 * 
-	 *		Load photo object from site, create and save corresponding node in DB
-	 *	    Функция вызывается при сканировании сайта. Каждй объект (image filder video) добавляется в базу и для
-	 *	    каждого объекта скачивается и сохраняется  иконка.
+	 *		Load (image fоlder video) object from site, create and save corresponding node in DB
+	 *		and download thumbnail
+	 *	    Функция вызывается при сканировании сайта. Каждй объект (image fоlder video) добавляется в базу
+	 *	    и для каждого объекта скачивается  иконка.
 	 * 
 	 * @param onSiteObject
 	 * @param parentId
@@ -474,7 +450,7 @@ public class PhotoService {
 		setScanDate(thePhoto);
 
 		//--------------------------------------------------------------------------
-		//    Finally  generate Nod and links all together
+		//    Finally  cross link all  node, photos and site objects
 		//--------------------------------------------------------------------------
 		thePhoto = photoRepo.save(thePhoto);
 		theSite = siteRepo.save(theSite);
@@ -490,7 +466,7 @@ public class PhotoService {
 
 	/**
 	 *
-	 *
+	 *   Сохраняем текущую дату как дату последнего сканирования сайта  для заданного объекта
 	 *
 	 * @param thePhoto
 	 */
@@ -499,64 +475,6 @@ public class PhotoService {
 	}
 
 
-//	/**
-//	 *
-//	 *   Extract Media info datas and add to db' Photo object.
-//	 *
-//	 * @param sitesPhotoObject
-//	 * @param thePhoto
-//	 * @return
-//	 * @throws ExceptionPhotoProcess
-//	 */
-//	public Media convertMediaInfo(PhotoObjectInt sitesPhotoObject, Photo thePhoto) throws ExceptionPhotoProcess  {
-//		logger.debug("[convertMediaInfo] Extract objects media and save to DB entity=" +thePhoto);
-//		PhotoMediaObjectInt mObject = null;
-//		Media dbMObject = null;
-//
-//		if ((thePhoto != null) && ( ! sitesPhotoObject.isFolder()) ) {
-//			mObject = null;
-//			try {
-//
-//				if ( sitesPhotoObject.getType().equalsIgnoreCase("VIDEO")) {
-//					logger.trace("[convertMediaInfo] Load objects media info.");
-//					mObject =  sitesPhotoObject.getMedia(EnumMediaType.VIDEO);
-//
-//				}
-//
-//
-//
-//
-//				logger.trace("[convertMediaInfo] Load objects media info.");
-//				mObject =  sitesPhotoObject.getMedia(EnumMediaType.IMAGE);
-//			} catch (Exception e) {
-//				throw new ExceptionPhotoProcess("ERROR:  Extract image metadata. "+e.getMessage(),e);
-//			}
-//
-//			if (mObject == null) {
-//				logger.warn("Cannot retrieve media info from object Object="+sitesPhotoObject.getId());
-//			}
-//			else {
-//				logger.trace("[convertMediaInfo] Create local media object");
-//				dbMObject = new Media();
-//				dbMObject.setType(ModelConstants.MEDIA_PHOTO);
-//				dbMObject.setHeight(mObject.getHeight());
-//				dbMObject.setWidth(mObject.getWidth());
-//				dbMObject.setSize(mObject.getSize());
-//				dbMObject.setMimeType(mObject.getMimeType());
-//				dbMObject.setPath(mObject.getPath());
-//				if ( mObject.getType() == EnumMediaType.IMAGE_FILE ) {
-//					dbMObject.setAccessType(ModelConstants.ACCESS_LOCAL);
-//				} else {
-//					dbMObject.setAccessType(ModelConstants.ACCESS_NET);
-//				}
-//			}
-//		} else {
-//			if (sitesPhotoObject.isFolder()) {
-//				logger.warn("[convertMediaInfo] Try to extract metas from folder.");
-//			}
-//		}
-//		return dbMObject;
-//	}
 	
 	/**
 	 * 
@@ -586,6 +504,8 @@ public class PhotoService {
 			else {
 				thePhoto.setType(ModelConstants.OBJ_SINGLE);
 				thePhoto.setAllMediaSize(sitesPhotoObject.getSize());
+				logger.debug("[PhotoService.convertToPhoto] Get object size =" + sitesPhotoObject.getSize());
+
 			}
 			//  No other type can be received from site
 		}
@@ -594,6 +514,7 @@ public class PhotoService {
 			thePhoto.setOnSiteId(sitesPhotoObject.getId());
 			thePhoto.setUpdateTime(new Date());
 			thePhoto.setMediaType(sitesPhotoObject.getMimeType());
+			logger.debug("[convertToPhoto] MimeType = "+sitesPhotoObject.getMimeType());
 		}
 		catch (Exception e) {
 			throw new ExceptionPhotoProcess("[convertToPhoto] Canot process photo object. ON Site object ="+sitesPhotoObject+", photo="+thePhoto,e);
@@ -607,6 +528,7 @@ public class PhotoService {
 		//--------------------------------------------------------------------------
 
 		if ( ! sitesPhotoObject.isFolder() ) {
+			//TODO:  Check for unknown mimeType
 			String baseMediaObject = thePhoto.getMediaType().substring(0,thePhoto.getMediaType().indexOf("/"));
 			Media dbMedia = new Media();
 
@@ -678,19 +600,19 @@ public class PhotoService {
 				thePhoto.setCamMake(metadata.getCameraMake());
 				thePhoto.setCamModel(metadata.getCameraModel());
 				thePhoto.setAperture(metadata.getAperture());
-				thePhoto.setCreateTime(metadata.getCreationTime());
+				thePhoto.setCreateTime(metadata.getDateCreated());
 				thePhoto.setExpTime(metadata.getExposureTime());
 				//thePhoto.setExpMode("");
-				thePhoto.setFocalLen(metadata.getFocal());
+				thePhoto.setFocalLen(metadata.getFocalLength());
 				//thePhoto.setFocusDist("");
 				//thePhoto.setDpi("");
-				if ( metadata.getAltitude() != null )
+				if ( metadata.getAltitude() != 0 )
 				thePhoto.setGpsAlt(metadata.getAltitude());
-				if ( metadata.getLongitude() != null )
+				if ( metadata.getLongitude() != 0 )
 					thePhoto.setGpsLon(metadata.getLongitude());
-				if ( metadata.getLatitude() != null )
+				if ( metadata.getLatitude() != 0 )
 					thePhoto.setGpsLat(metadata.getLatitude());
-				thePhoto.setIsoSpeed(metadata.getIso());
+				thePhoto.setIso(metadata.getIso());
 			}
 		}
 		
@@ -735,10 +657,10 @@ public class PhotoService {
 	
 	/**
 	 *
-	 *   Create or Upload  photo file to site
+	 *   Create or Upload  image to site
 	 *   Создает(загружает)  объект на удаленном сайте.
  	 *
-	 * @param inputImgFile  Image file
+	 * @param inputImage  input image
      * @param theNode the node  where photo object will be linked as child
 	 * @return
 	 * @throws ExceptionPhotoProcess
@@ -746,7 +668,7 @@ public class PhotoService {
 	 */
 	@Transactional
 	public  PhotoObjectInt uploadPhotoObject(
-			File inputImgFile,
+			ImageData inputImage,
 			Node theNode
 			) throws ExceptionPhotoProcess, ExceptionInvalidArgument
 	{	
@@ -767,11 +689,18 @@ public class PhotoService {
 		} catch (Exception e) {
 			throw new ExceptionPhotoProcess("Cannot upload file. Nested Exception : " + e.getMessage(),e);
 		}
-	
+
+		//
+		//   Check is connector writable
+		//
+		if ( ! connector.isCanWrite()) {
+			throw new ExceptionInvalidArgument("Non writable site "+connector.getSiteType());
+		}
+
 		try {
 			//  Если родительский объект существует и из того же сайта то используем его.
 			//  Иначе посылаем null - тогда объект будет создан в корне сайта
-			if ((parentNode != null ) && 
+			if ((parentNode != null) &&
 					(parentNode.getPhoto().getSiteBean().getId().equals(thePhoto.getSiteBean().getId()))) {
 				parentPhotoObject = getOnSiteObject(parentNode);
 			}
@@ -779,25 +708,25 @@ public class PhotoService {
 			//-------------------------
 			//   Create folder
 			//-------------------------
-			if ( thePhoto.getType() == ModelConstants.OBJ_FOLDER) {
+			if (thePhoto.getType() == ModelConstants.OBJ_FOLDER) {
 				sitesPhotoObject = connector.createFolder(thePhoto.getName(), parentPhotoObject);
 			}
 			//-------------------------
 			//   Create Object
 			//-------------------------
 			else {
-				if ( ! inputImgFile.exists() ) 
+				if (inputImage == null)
 					throw new ExceptionInvalidArgument("Input stream for upload is null, but object is not a folder.");
-				sitesPhotoObject = connector.createObject(thePhoto.getName(), parentPhotoObject, inputImgFile);
+				sitesPhotoObject = connector.createObject(thePhoto.getName(), parentPhotoObject, inputImage.saveJPEG());
 			}
+		} catch (Exception e) {
+			throw new ExceptionPhotoProcess("Cannot create object. Nested Exception : " + e.getMessage(), e);
 		}
-		catch (Exception e) {
-			throw new ExceptionPhotoProcess("Cannot create object. Nested Exception : " + e.getMessage(),e);
-		}
-			
-		logger.trace("[uploadPhotoObject] Remote create " +(sitesPhotoObject.isFolder()?"Folder":"Object")+ " = "+sitesPhotoObject+
-				", with parent="+(parentPhotoObject==null?"null":parentPhotoObject)
+
+		logger.trace("[uploadPhotoObject] Remote create " + (sitesPhotoObject.isFolder() ? "Folder" : "Object") + " = " + sitesPhotoObject +
+				", with parent=" + (parentPhotoObject == null ? "null" : parentPhotoObject)
 		);
+
 		return sitesPhotoObject;
 	}
 
@@ -1033,7 +962,7 @@ public class PhotoService {
 	 =============================================================================================*/
 	
 	/**
-	 * Возвращает список Photo объектов сортрованных по доятк и с учетом фильтров
+	 * Возвращает список Photo объектов сортрованных по дате и с учетом фильтров
 	 * Объекты тива FOLDER или с признаком  HIDDEN  не возвращаются.
 	 * 
 	 * List photo objects with requested filter and offset/limit

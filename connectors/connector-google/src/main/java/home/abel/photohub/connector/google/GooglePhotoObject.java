@@ -346,7 +346,7 @@ public class GooglePhotoObject extends BasePhotoObj {
 	}
 	
 	@Override
-	public List<PhotoObjectInt> listSubObjects() {
+	public List<String> listSubObjects() {
 		return null;
 	}
 	
@@ -374,31 +374,37 @@ public class GooglePhotoObject extends BasePhotoObj {
 		ExifTags  metas = getPhotoEntry().getExifTags();
 		BasePhotoMetadata metaDataObject = new BasePhotoMetadata();
 
-		for ( ExifTag tag: metas.getExifTags()) {
-			if (tag.hasValue() && (tag.getName() != null)) {
-				try {
-					metaDataObject.setMetaTag(tagNameToEnum(tag.getName()),tag.getValue());
-					//logger.trace("[getMeta] Get meta tag name " +tag.getName()+", value="+ tag.getValue());
-				} catch (Exception e) {
-					//logger.warn("[getMeta] Cannot get tag="+(tag.getName()!=null?tag.getName():"NULL"));
-				}
-			}
-		}
-    	
-    	Point geoPoint = getPhotoEntry().getGeoLocation();
-    	if (geoPoint != null ) {
-    		metaDataObject.setLatitude(geoPoint.getLatitude());
-    		metaDataObject.setLongitude(geoPoint.getLongitude());
-    		logger.trace("Photo geoLocation - Latitude=" + geoPoint.getLatitude() + ", Longitude=" + geoPoint.getLongitude() );
-    	}
+		metaDataObject.setCameraMake(metas.getCameraMake());
+		metaDataObject.setCameraModel(metas.getCameraModel());
+		metaDataObject.setIso(metas.getIsoEquivalent());
+		metaDataObject.setExposureTime(metas.getExposureTime());
+		metaDataObject.setAperture(metas.getApetureFNumber());
+		//metas.getDistance()
+		metaDataObject.setDateOriginal(metas.getTime());
+		metaDataObject.setDateCreated(metas.getTime());
+		metaDataObject.setFocalLength(metas.getFocalLength());
+		metaDataObject.setUnicId(metas.getImageUniqueID());
 
+		if (metas.getFlashUsed()) {
+			metaDataObject.setFlash(1);
+		}
+		else {
+			metaDataObject.setFlash(0x10);
+		}
+
+		Point geoPoint = getPhotoEntry().getGeoLocation();
+		if (geoPoint != null ) {
+			metaDataObject.setLatitude(geoPoint.getLatitude());
+			metaDataObject.setLongitude(geoPoint.getLongitude());
+			logger.trace("Photo geoLocation - Latitude=" + geoPoint.getLatitude() + ", Longitude=" + geoPoint.getLongitude() );
+		}
 
 		// Для видео файла дата создания мы устанавливаем  как датау загрузки в гугл.
 		if (getType().toUpperCase().startsWith("VIDEO")) {
-			metaDataObject.setCreationTime(new Date(this.thePhotoEntryObject.getPublished().getValue()));
+			metaDataObject.setDateOriginal(new Date(this.thePhotoEntryObject.getPublished().getValue()));
+			metaDataObject.setDateCreated(new Date(this.thePhotoEntryObject.getPublished().getValue()));
+
 		}
-
-
 		return (PhotoMetadataInt)metaDataObject;
 	}
 
@@ -581,87 +587,87 @@ public class GooglePhotoObject extends BasePhotoObj {
 	@Override
 	public void setMeta(PhotoMetadataInt newMetaData) throws Exception{
 		
-		PhotoEntry googlePhotoObject = getPhotoEntry();
-		ExifTags  metas = getPhotoEntry().getExifTags();
-		ExifMetadataTags[] values = ExifMetadataTags.values();
-		
-		Double geoLat = null;
-		Double geoLon = null;
-		
-		for (int i = 0; i < values.length; i++) {
-			ExifMetadataTags tagEnum = values[i];
-			if ( newMetaData.getMetaTag(tagEnum) != null) {
-					switch (tagEnum) {
-					case CAMERA_MAKE:
-						metas.setCameraMake(newMetaData.getCameraMake());
-						break;
-					case CAMERA_MODEL:
-						metas.setCameraModel(newMetaData.getCameraModel());
-						break;
-					case DATE_CREATED:
-						metas.setTime(newMetaData.getCreationTime());
-						break;
-					case APERTURE:
-						metas.setApetureFNumber(new Float(newMetaData.getAperture()));
-						break;
-					case EXPOSURE_TIME:
-						metas.setExposureTime(new Float(newMetaData.getExposureTime()));
-						break;
-					case FOCAL_LENGTH:
-						metas.setFocalLength(new Float(newMetaData.getFocal()));
-						break;
-					case FLASH:
-						short flashValue = newMetaData.getFlash().shortValue();
-						byte  flashFlag = (byte)(flashValue & 0x0001);
-						metas.setFlashUsed(flashFlag==0?false:true);
-						break;
-					case ISO_EQUIVALENT:
-						metas.setIsoEquivalent(new Integer(newMetaData.getIso()));
-						break;
-					case GPS_LATITUDE:
-						geoLat = newMetaData.getLatitude();
-						break;
-					case GPS_LONGITUDE:
-						geoLon = newMetaData.getLongitude();
-						break;
-					case UNIQUE_ID:
-						metas.setImageUniqueID(newMetaData.getUnicId());
-						break;
-					default:	
-				}
-			}
-		} /// end for
-		
-		
-		if ((geoLat != null) && (geoLon != null)) {
-			googlePhotoObject.setGeoLocation(geoLat,geoLon);
-		}
+//		PhotoEntry googlePhotoObject = getPhotoEntry();
+//		ExifTags  metas = getPhotoEntry().getExifTags();
+//		ExifMetadataTags[] values = ExifMetadataTags.values();
+//
+//		Double geoLat = null;
+//		Double geoLon = null;
+//
+//		for (int i = 0; i < values.length; i++) {
+//			ExifMetadataTags tagEnum = values[i];
+//			if ( newMetaData.getMetaTag(tagEnum) != null) {
+//					switch (tagEnum) {
+//					case CAMERA_MAKE:
+//						metas.setCameraMake(newMetaData.getCameraMake());
+//						break;
+//					case CAMERA_MODEL:
+//						metas.setCameraModel(newMetaData.getCameraModel());
+//						break;
+//					case DATE_CREATED:
+//						metas.setTime(newMetaData.getCreationTime());
+//						break;
+//					case APERTURE:
+//						metas.setApetureFNumber(new Float(newMetaData.getAperture()));
+//						break;
+//					case EXPOSURE_TIME:
+//						metas.setExposureTime(new Float(newMetaData.getExposureTime()));
+//						break;
+//					case FOCAL_LENGTH:
+//						metas.setFocalLength(new Float(newMetaData.getFocal()));
+//						break;
+//					case FLASH:
+//						short flashValue = newMetaData.getFlash().shortValue();
+//						byte  flashFlag = (byte)(flashValue & 0x0001);
+//						metas.setFlashUsed(flashFlag==0?false:true);
+//						break;
+//					case ISO_EQUIVALENT:
+//						metas.setIsoEquivalent(new Integer(newMetaData.getIso()));
+//						break;
+//					case GPS_LATITUDE:
+//						geoLat = newMetaData.getLatitude();
+//						break;
+//					case GPS_LONGITUDE:
+//						geoLon = newMetaData.getLongitude();
+//						break;
+//					case UNIQUE_ID:
+//						metas.setImageUniqueID(newMetaData.getUnicId());
+//						break;
+//					default:
+//				}
+//			}
+//		} /// end for
+//
+//
+//		if ((geoLat != null) && (geoLon != null)) {
+//			googlePhotoObject.setGeoLocation(geoLat,geoLon);
+//		}
 		//googlePhotoObject.update();
 	}
-	
-	/**
-	 *   Convert google exif tag names to ExifMetaTagEnum
-	 * @param name
-	 * @return
-	 */
-	protected ExifMetadataTags tagNameToEnum(String name) {
-		if ( name.equals("fstop")) {
-			return ExifMetadataTags.APERTURE;
-		} else if( name.equals("make")) {
-			return ExifMetadataTags.CAMERA_MAKE;
-		} else if( name.equals("model")) {
-			return ExifMetadataTags.CAMERA_MODEL;
-		} else if( name.equals("flash")) {
-			return ExifMetadataTags.FLASH;
-		} else if( name.equals("focallength")) {
-			return ExifMetadataTags.FOCAL_LENGTH;
-		} else if( name.equals("iso")) {
-			return ExifMetadataTags.ISO_EQUIVALENT;
-		} else if( name.equals("time")) {
-			return ExifMetadataTags.DATE_CREATED;
-		} else if( name.equals("imageUniqueID")) {
-			return ExifMetadataTags.UNIQUE_ID;
-		}
-		return null;		
-	}
+//
+//	/**
+//	 *   Convert google exif tag names to ExifMetaTagEnum
+//	 * @param name
+//	 * @return
+//	 */
+//	protected ExifMetadataTags tagNameToEnum(String name) {
+//		if ( name.equals("fstop")) {
+//			return ExifMetadataTags.APERTURE;
+//		} else if( name.equals("make")) {
+//			return ExifMetadataTags.CAMERA_MAKE;
+//		} else if( name.equals("model")) {
+//			return ExifMetadataTags.CAMERA_MODEL;
+//		} else if( name.equals("flash")) {
+//			return ExifMetadataTags.FLASH;
+//		} else if( name.equals("focallength")) {
+//			return ExifMetadataTags.FOCAL_LENGTH;
+//		} else if( name.equals("iso")) {
+//			return ExifMetadataTags.ISO_EQUIVALENT;
+//		} else if( name.equals("time")) {
+//			return ExifMetadataTags.DATE_CREATED;
+//		} else if( name.equals("imageUniqueID")) {
+//			return ExifMetadataTags.UNIQUE_ID;
+//		}
+//		return null;
+//	}
 }

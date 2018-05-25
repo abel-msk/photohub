@@ -1,57 +1,33 @@
 package home.abel.photohub.web;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.Enumeration;
-import java.util.List;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.gdata.data.media.mediarss.MediaKeywords;
 import home.abel.photohub.connector.HeadersContainer;
 import home.abel.photohub.connector.SiteMediaPipe;
-import home.abel.photohub.connector.prototype.EnumMediaType;
-import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.model.Media;
-import home.abel.photohub.model.ModelConstants;
-import home.abel.photohub.model.Node;
 import home.abel.photohub.model.Photo;
-import home.abel.photohub.service.ConfVarEnum;
 import home.abel.photohub.service.ConfigService;
-import home.abel.photohub.service.PhotoAttrEnum;
-import home.abel.photohub.service.PhotoAttrService;
 import home.abel.photohub.service.PhotoService;
 import home.abel.photohub.service.SiteService;
 import home.abel.photohub.service.ThumbService;
-import home.abel.photohub.web.model.DefaultObjectResponse;
 
-import org.apache.tomcat.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.core.io.UrlResource;
-import org.springframework.core.io.support.ResourceRegion;
-import org.springframework.web.context.request.WebRequest;
 
 
 /**
@@ -83,8 +59,8 @@ public class ImageController {
 	@Autowired 
 	ThumbService thumbService; 
 	
-	@Autowired 
-	PhotoAttrService attrService;
+//	@Autowired
+//	PhotoAttrService attrService;
 	
 	@Autowired 
 	PhotoService photoService;

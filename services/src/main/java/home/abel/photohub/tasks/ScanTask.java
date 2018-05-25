@@ -73,7 +73,7 @@ public class ScanTask extends BaseTask {
 		Date startDate = new Date();
 
 		try {
-			doScann(connector.getRootObjects(), null);
+			doScann(connector, connector.getRootObjects(), null);
 
 		}
 		finally {
@@ -86,35 +86,36 @@ public class ScanTask extends BaseTask {
 	
 	//@Transactional
 	//@Transactional (propagation=Propagation.REQUIRES_NEW)
-	private void doScann(List<PhotoObjectInt> objList, Node parentNode) throws Throwable {
+	private void doScann(SiteConnectorInt connector, List<String> objKeyList, Node parentNode) throws Throwable {
 			
-		if ( objList != null ) {
+		if ( objKeyList != null ) {
 			try {
-				for (PhotoObjectInt Item : objList) {
+				for (String itemKey : objKeyList) {
 
 					//   Проверяем существует ли такой объект в базе.  Ищем по его ID
-					Node theNode = photoService.isPhotoExist(Item.getId());
+					Node theNode = photoService.isPhotoExist(itemKey);
+					PhotoObjectInt photoObj = connector.loadObject(itemKey);
 
 					//
 					//  Process folder
 					//
-					if (Item.isFolder()) {
+					if (photoObj.isFolder()) {
 						if (theNode == null) {
-							logger.trace("[doScann] Add folder to db with id=" + Item.getId() + ", name=" + Item.getName());
+							logger.trace("[doScann] Add folder to db with id=" + photoObj.getId() + ", name=" + photoObj.getName());
 							theNode = photoService.addObjectFromSite(
-									Item,
+									photoObj,
 									parentNode != null ? parentNode.getId() : null,
 									getSite().getId());
 						}
-						doScann(Item.listSubObjects(), theNode);
+						doScann(connector,photoObj.listSubObjects(), theNode);
 					}
 					//
 					//  Process Object
 					//
 					else {
 
-						logger.trace("[doScann] Add " + Item.getMimeType() + " object to db with id=" + Item.getId() + ", name=" + Item.getName());
-						this.printMsg("Process object " + Item.getName() + "(" + Item.getId() + ")");
+						logger.trace("[doScann] Add " + photoObj.getMimeType() + " object to db with id=" + photoObj.getId() + ", name=" + photoObj.getName());
+						this.printMsg("Process object " + photoObj.getName() + "(" + photoObj.getId() + ")");
 
 						// TODO: Надо проверять существует ли фотка с таким  UUID
 						//Node existObjNode = photoService.isPhotoExistByUUID(Item.getMeta().getUnicId());
@@ -122,7 +123,7 @@ public class ScanTask extends BaseTask {
 
 						if (theNode == null) {
 							theNode = photoService.addObjectFromSite(
-									Item,
+									photoObj,
 									parentNode != null ? parentNode.getId() : null,
 									getSite().getId());
 						}
@@ -136,7 +137,7 @@ public class ScanTask extends BaseTask {
 			}catch (ExceptionTaskAbort ex1) {
 				throw ex1;
 			} catch (Exception ex) {
-				logger.error("[doScan] Error "+ex.getMessage());
+				logger.error("[doScan] Error "+ex.getMessage(),ex);
 				throw new ExceptionTaskAbort(ex.getMessage(),ex);
 			}
 		}

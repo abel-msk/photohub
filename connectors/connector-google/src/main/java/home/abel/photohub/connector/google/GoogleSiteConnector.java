@@ -393,7 +393,7 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 	}
 
 	@Override
-	public List<PhotoObjectInt> getRootObjects() throws Exception {
+	public List<String> getRootObjects() throws Exception {
 		GoogleRootObject root = new GoogleRootObject(this);
 		return root.listSubObjects();
 	}
@@ -415,7 +415,7 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			return (PhotoObjectInt) new GoogleAlbumObject(this,combinedObjectId);
 		}
 		else {
-			// Object is photo obect
+			// Object is photo object
 			String albumId = combinedObjectId.substring(0,combinedObjectId.indexOf('.'));
 			String objectId = combinedObjectId.substring(combinedObjectId.indexOf('.')+1);
 			return (PhotoObjectInt) new GooglePhotoObject(this,albumId,objectId);

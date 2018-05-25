@@ -35,7 +35,7 @@ public interface SiteConnectorInt {
 	 * 
 	 */
 	
-	public List<PhotoObjectInt> getRootObjects() throws Exception;
+	public List<String> getRootObjects() throws Exception;
 
 	
 	/**

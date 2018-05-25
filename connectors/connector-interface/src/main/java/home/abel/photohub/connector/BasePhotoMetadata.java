@@ -16,231 +16,255 @@ import org.slf4j.LoggerFactory;
 public class BasePhotoMetadata implements PhotoMetadataInt {
 	final Logger logger = LoggerFactory.getLogger(BasePhotoMetadata.class);
 
+	private String unicId = null;
+	private Date dateOriginal = null;
+	private Date dateCreated = null;
+	private Date dateUpdate = null;
+	private int tzOffset = 0;
 	private String cameraMake = null;
 	private String cameraModel = null;
-	private String Aperture = null;
-	private String Distance = null;
-	private String ExposureTime = null;
-	private String Focal = null;
-	private String Iso = null;
-	private String focus = null;
-	private Double Latitude = null;
-	private Double Longitude = null;
-	private String Altitude =  null;
-	private Date CreationTime = null;
-	private String UnicId = null;
-	private Integer flash = null;
-	
+	private int orientation = 0;
+	private String software = null;
+	private double resolution = 0;
+	private int iso = 0;
+	private double shutterSpeed = 0;
+	private double aperture = 0;
+	private double brightness = 0;
+	private String gpsLattRef = null;
+	private double latitude = 0;
+	private String gpsLongRef = null;
+	private double longitude = 0;
+	private int flash =0;
+	private double exposureTime = 0;
+	private double focalLength = 0;
+	private double altitude = 0;
+	private String userComment = null;
+
+
+
+	@Override
+	public String getUnicId() {
+		return unicId;
+	}
+
+	@Override
+	public void setUnicId(String unicId) {
+		this.unicId = unicId;
+	}
+
+	@Override
+	public Date getDateOriginal() {
+		return dateOriginal;
+	}
+
+	@Override
+	public void setDateOriginal(Date dateOriginal) {
+		this.dateOriginal = dateOriginal;
+	}
+
+	@Override
+	public Date getDateCreated() {
+		return dateCreated;
+	}
+
+	@Override
+	public void setDateCreated(Date dateCreated) {
+		this.dateCreated = dateCreated;
+	}
+
+	@Override
+	public Date getDateUpdate() {
+		return dateUpdate;
+	}
+
+	@Override
+	public void setDateUpdate(Date dateUpdate) {
+		this.dateUpdate = dateUpdate;
+	}
+
+	@Override
+	public int getTzOffset() {
+		return tzOffset;
+	}
+
+	@Override
+	public void setTzOffset(int tzOffset) {
+		this.tzOffset = tzOffset;
+	}
+
 	@Override
 	public String getCameraMake() {
 		return cameraMake;
 	}
 
+	@Override
 	public void setCameraMake(String cameraMake) {
 		this.cameraMake = cameraMake;
 	}
-	
+
 	@Override
 	public String getCameraModel() {
 		return cameraModel;
 	}
-	
+
+	@Override
 	public void setCameraModel(String cameraModel) {
 		this.cameraModel = cameraModel;
 	}
-	
+
 	@Override
-	public String getAperture() {
-		return Aperture;
-	}
-	
-	public void setAperture(String aperture) {
-		Aperture = aperture;
-	}
-	
-	@Override
-	public String getDistance() {
-		return Distance;
-	}
-	public void setDistance(String distance) {
-		Distance = distance;
-	}
-	
-	@Override
-	public String getExposureTime() {
-		return ExposureTime;
-	}
-	public void setExposureTime(String exposureTime) {
-		ExposureTime = exposureTime;
-	}
-	
-	@Override
-	public String getFocal() {
-		return Focal;
-	}
-	public void setFocal(String focal) {
-		Focal = focal;
-	}
-	
-	@Override
-	public String getIso() {
-		return Iso;
-	}
-	public void setIso(String iso) {
-		Iso = iso;
-	}
-	
-	@Override
-	public Double getLatitude() {
-		return Latitude;
-	}
-	public void setLatitude(Double latitude) {
-		Latitude = latitude;
-	}
-	
-	@Override
-	public Double getLongitude() {
-		return Longitude;
-	}
-	public void setLongitude(Double longitude) {
-		Longitude = longitude;
-	}
-	
-	@Override
-	public Date getCreationTime() {
-		return CreationTime;
-	}
-	@Override
-	public void setCreationTime(Date creationTime) {
-		CreationTime = creationTime;
-	}
-	
-	@Override
-	public String getUnicId() {
-		return UnicId;
-	}
-	@Override
-	public void setUnicId(String unicId) {
-		UnicId = unicId;
+	public int getOrientation() {
+		return orientation;
 	}
 
 	@Override
-	public String getAltitude() {
-		// TODO Auto-generated method stub
-		return Altitude;
+	public void setOrientation(int orientation) {
+		this.orientation = orientation;
 	}
 
 	@Override
-	public void setAltitude(String alt) {
-		this.Altitude = alt;
-		
+	public String getSoftware() {
+		return software;
 	}
 
 	@Override
-	public String getFocus() {
-		return focus;
+	public void setSoftware(String software) {
+		this.software = software;
 	}
 
 	@Override
-	public void setFocus(String focus) {
-		this.focus = focus;
+	public double getResolution() {
+		return resolution;
 	}
-	
+
 	@Override
-	public Integer getFlash() {
+	public void setResolution(double resolution) {
+		this.resolution = resolution;
+	}
+
+	@Override
+	public int getIso() {
+		return iso;
+	}
+
+	@Override
+	public void setIso(int iso) {
+		this.iso = iso;
+	}
+
+	@Override
+	public double getShutterSpeed() {
+		return shutterSpeed;
+	}
+
+	@Override
+	public void setShutterSpeed(double shutterSpeed) {
+		this.shutterSpeed = shutterSpeed;
+	}
+
+	@Override
+	public double getAperture() {
+		return aperture;
+	}
+
+	@Override
+	public void setAperture(double aperture) {
+		this.aperture = aperture;
+	}
+
+	@Override
+	public double getBrightness() {
+		return brightness;
+	}
+
+	@Override
+	public void setBrightness(double brightness) {
+		this.brightness = brightness;
+	}
+
+//	public String getGpsLattRef() {
+//		return gpsLattRef;
+//	}
+//
+//	public void setGpsLattRef(String gpsLattRef) {
+//		this.gpsLattRef = gpsLattRef;
+//	}
+
+	@Override
+	public double getLatitude() {
+		return latitude;
+	}
+
+	@Override
+	public void setLatitude(double latitude) {
+		this.latitude = latitude;
+	}
+
+//	public String getGpsLongRef() {
+//		return gpsLongRef;
+//	}
+//
+//	public void setGpsLongRef(String gpsLongRef) {
+//		this.gpsLongRef = gpsLongRef;
+//	}
+
+	@Override
+	public double getLongitude() {
+		return longitude;
+	}
+
+	@Override
+	public void setLongitude(double longitude) {
+		this.longitude = longitude;
+	}
+
+	@Override
+	public int getFlash() {
 		return flash;
 	}
-	
+
 	@Override
-	public void setFlash(Integer flash) {
+	public void setFlash(int flash) {
 		this.flash = flash;
-	}
-	
-	@Override
-	public void setMetaTag(ExifMetadataTags tag, String value) {
-//		try {
-			switch (tag) {
-			case CAMERA_MAKE:
-				this.cameraMake = value;
-				break;
-			case CAMERA_MODEL:
-				this.cameraModel = value;
-				break;
-			case DATE_CREATED:
-				this.CreationTime = new Date(new Long(value));
-				break;
-			case APERTURE:
-				this.Aperture = value;
-				break;
-			case EXPOSURE_TIME:
-				this.ExposureTime = value;
-				break;
-			case FOCAL_LENGTH:
-				this.Focal = value;
-				break;
-			case FLASH:
-				this.flash = new Integer(value);
-				break;
-			case ISO_EQUIVALENT:
-				this.Iso = value;
-				break;
-			case ALTITUDE:
-				this.Altitude = value;
-				break;
-			case GPS_LATITUDE:
-				this.Latitude = new Double(value);
-				break;
-			case GPS_LONGITUDE:
-				this.Longitude = new Double(value);
-				break;
-			case UNIQUE_ID:
-				this.UnicId = value;
-				break;
-			default:
-			}
-//		} catch (Exception e) {
-//			logger.error("[setMetaTag] cannto assign tag="+(tag!=null?"NULL":tag)
-//					+", value="+(value!=null?value:"NULL")
-//					,e);
-//		}
 	}
 
 	@Override
-	public String getMetaTag(ExifMetadataTags tag) {
-//		try {
-			switch (tag) {
-				case CAMERA_MAKE:
-					return this.cameraMake;
-				case CAMERA_MODEL:
-					return this.cameraModel;
-				case DATE_CREATED:
-					return (this.CreationTime == null?null:String.valueOf(this.CreationTime.getTime()));
-				case APERTURE:
-					return this.Aperture;
-				case EXPOSURE_TIME:
-					return this.ExposureTime;
-				case FOCAL_LENGTH:
-					return this.Focal;
-				case FLASH:
-					return (this.flash==null?null:this.flash.toString());
-				case ISO_EQUIVALENT:
-					return this.Iso;
-				case ALTITUDE:
-					return this.Altitude;
-				case GPS_LATITUDE:
-					return (this.Latitude==null?null:this.Latitude.toString());
-				case GPS_LONGITUDE:
-					return (this.Longitude==null?null:this.Longitude.toString());
-				case UNIQUE_ID:
-					return this.UnicId;
-				default:
-					return "";	
-			}
-//		} catch (Exception e) {
-//			logger.error("[getMetaTag] Cannot get tag="+(tag!=null?"NULL":tag)
-//					,e);
-//		}
-//		return "";
+	public double getExposureTime() {
+		return exposureTime;
 	}
-	
+
+	@Override
+	public void setExposureTime(double exposureTime) {
+		this.exposureTime = exposureTime;
+	}
+
+	@Override
+	public double getFocalLength() {
+		return focalLength;
+	}
+
+	@Override
+	public void setFocalLength(double focalLength) {
+		this.focalLength = focalLength;
+	}
+
+	@Override
+	public double getAltitude() {
+		return altitude;
+	}
+
+	@Override
+	public void setAltitude(double altitude) {
+		this.altitude = altitude;
+	}
+
+	@Override
+	public String getUserComment() {
+		return userComment;
+	}
+
+	@Override
+	public void setUserComment(String userComment) {
+		this.userComment = userComment;
+	}
 }

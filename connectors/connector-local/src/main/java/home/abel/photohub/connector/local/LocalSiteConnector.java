@@ -150,16 +150,16 @@ public class LocalSiteConnector extends SiteBaseConnector {
 //	}
 
 	@Override
-	public PhotoObjectInt loadObject(String ObjectId) throws IOException {
+	public PhotoObjectInt loadObject(String ObjectId) throws Exception {
 		return new LocalPhotoObject(this,ObjectId);
 	}
 
-	public PhotoObjectInt loadObject(File photoSource) throws IOException {
+	public PhotoObjectInt loadObject(File photoSource) throws Exception {
 		return new LocalPhotoObject(this,photoSource);
 	}
 
 	@Override
-	public List<PhotoObjectInt> getRootObjects() throws Exception {
+	public List<String> getRootObjects() throws Exception {
 		File rootPath = new File(getLocalStore());
 		if (! rootPath.exists() ) {
 			throw new InitializationException("[LocalSiteConnector.getRootObjects] Loacl store path does not exist. Path=" + getLocalStore());
