@@ -146,9 +146,14 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
         //
         //------------------------------------------------------------------------------------------------
         ScrollerAbstract.prototype.getLastViewed = function() {
-            var i = this.viewSlots.length() - 1;
+
+            var i = parseInt(this.viewSlots.length() - 1);
+            logger.debug("[ScrollerAbstract.getLastViewed] viewSlots.length() = " + i);
+
             while (i >= 0 ) {
-                if (this.viewSlots.getByPos(i)) return this.viewSlots.getByPos(i);
+                if (this.viewSlots.getByPos(i)) {
+                    return this.viewSlots.getByPos(i);
+                }
                 i-- ;
             }
             return null;
@@ -214,6 +219,7 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
         // };
 
         ScrollerAbstract.prototype.destroy = function() {
+            logger.debug("[ScrollerAbstract.destroy]");
             this.container.parentNode.removeChild(this.container);
             this.o.viewport.removeEventListener("scroll", this._onScroll());
         };

@@ -15,6 +15,8 @@
         'viewport':         -   фрейм внутри которого будут скролиться данные
         'loadAsLast':       -   функция callback Вызывается когда доскролили до последней страницы (блока)
         'loadAsFirst':      -   функция callback Вызывается когда доскролили до первой страницы (блока)
+        'imageBodyHtml':null, -  Функция или  строка содержит/возвращает  HTML для  отрисовки врейма каждой фотки (thumbnail)
+         rem - 'renderAll': false  -   Выводить всюсраницу не искать смену даты для установки окончания страницы
     }
 
 
@@ -45,18 +47,32 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
 
 
         var DEBUG = true;
-        var TRACE = true;
+        var TRACE = false;
+
+        var defaultOptions = {
+            'loadAsLast':null,
+            'loadAsFirst':null,
+            'viewport':null,
+            'imageBodyHtml':null,
+            'renderAll': false
+        };
+
 
         function Scroller(optParams) {
+
             try {
+                this.options = $.extend(true, {}, defaultOptions, optParams || {});
+
                 if (optParams) {
-                    this.loadAsLast = optParams.loadAsLast;
-                    this.loadAsFirst = optParams.loadAsFirst;
-                    this.viewport = optParams.viewport;
+                    this.loadAsLast = this.options.loadAsLast;
+                    this.loadAsFirst = this.options.loadAsFirst;
+                    this.viewport = this.options.viewport;
+
                     if ( ! this.viewport) {
                         throw new Error("[Scroller.init] Error viewport parmetr required.");
                     }
                 }
+
 
                 var caller = this;
 
@@ -97,7 +113,8 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                     'limit': options.limit,
                     'offset': options.offset,
                     'id': newPageId,
-                    'viewport': this.container
+                    'viewport': this.container,
+                    'imageBodyHtml':  this.options.imageBodyHtml
                 });
 
                 // Добавляем новую страницу в скроллер ( Вызывем родительский класс )
@@ -136,19 +153,17 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
 
                 var newPageId = firstPage.getId() - 1;
 
-
                 var page = new Page(dataList, {
                     'limit': this.loadedPages[newPageId].limit,
                     'offset': options.offset,
                     'id': newPageId,
                     'viewport': this.container,
-                    'renderAll': true
+                    'renderAll': true,
+                    'imageBodyHtml':  this.options.imageBodyHtml
                 });
 
                 //this.insertAtFirst(page.getElement());
                 var removedPage = Abstract.prototype.prepend.apply(this,[{'element': page.getElement(), 'data': page},true]);
-
-
 
                 DEBUG && logger.debug("[Scroller.prepend]  New page id=" + newPageId
                     + ", limit="+this.loadedPages[newPageId].limit
@@ -461,14 +476,18 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
             return null;
         };
 
+
         //------------------------------------------------------------------------------------------------
         //
         //   Удаяем и очищаем данные
         //
         //------------------------------------------------------------------------------------------------
         Scroller.prototype.destroy = function() {
+
+            logger.debug("[Scroller.destroy]");
             var caller = this;
-            this.destroy();
+            //this.destroy();
+            Abstract.prototype.destroy.apply(this);
             window.removeEventListener("resize",function(){ caller._onResize.call(caller); });
             delete this.abstract;
         };

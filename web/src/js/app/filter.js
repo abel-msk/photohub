@@ -42,7 +42,9 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
 
 
                 $("#apply-filter").on("click", {'caller':this}, function(event) {
-                    caller.load.call(caller,caller.filter);
+                    var target = event.target || event.srcElement;
+                    var caller = event.data.caller;
+                    caller.load(caller.filter);
                 });
 
                 this.load(this.filter);

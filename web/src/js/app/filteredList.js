@@ -15,6 +15,10 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
             this.viewportElement = (viewportElement instanceof jQuery) ? viewportElement[0] : viewportElement;
             this.filter = $.extend(true, defFilter, initialFilter || {});
 
+            DEBUG && logger.debug("[FilteredList.init]  initialFilter=",initialFilter);
+            DEBUG && logger.debug("[FilteredList.init]  filter=",this.filter);
+
+
             this.setFilter(this.filter);
         }
 
@@ -34,9 +38,15 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
                         'limit': DEFAULT_PAGE_SIZE,
                         'offset': 0,
                         'sitesList': filter.sitesList ? filter.sitesList : null,
-                        'minDate': filter.fromDate ? filter.fromDate.toISOString() : null,
-                        'maxDate': filter.toDate ? filter.toDate.toISOString() : null
+                        'minDate': filter.minDate ? filter.minDate.toISOString() : null,
+                        'maxDate': filter.maxDate ? filter.maxDate.toISOString() : null
+                        // 'minDate': filter.fromDate ? filter.fromDate.toISOString() : null,
+                        // 'maxDate': filter.toDate ? filter.toDate.toISOString() : null
                     };
+
+                    DEBUG && logger.debug("[FilteredList.setFilter] New filter  created filter=", this.filter);
+
+
 
                     this.scroller = new Scroller({
                             'viewport': this.viewportElement,
@@ -48,6 +58,8 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
                             }
                         }
                     );
+
+
 
                     this._loadPage("append", this.filter, null);
                 }
@@ -86,7 +98,7 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
         FilteredList.prototype._loadPage = function(direction,filter,el) {
 
             DEBUG && logger.debug("[FilteredList._loadPage]  Direction="+ direction
-                +", Filter="+filter);
+                +", Filter=",filter);
 
             var caller = this;
             Api.photoList(
@@ -94,7 +106,9 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
                 //  on Success
                 function(response) {
                     if (response.object) {
+                        DEBUG && logger.debug("[FilteredList._loadPage] got new list with filter, limit="+  response.limit + ", offset=" +response.offset );
                         if (direction === "append") {
+
                             caller.scroller.append(response.object, {
                                 'limit': response.limit,
                                 'offset': response.offset

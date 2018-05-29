@@ -451,6 +451,7 @@ define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) 
     //------------------------------------------------------------------------------------------
     //
     //     Готовит HTML для содержимого контейнера фотографии
+    //     Шспользуется только если при создании класса не включен параметр bodyHTML
     //
     //------------------------------------------------------------------------------------------
     Row.prototype.getBodyHtml = function(o) {
@@ -459,6 +460,18 @@ define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) 
             headerHTML = '<div class="img-header">' + utils.toDateString(o.item.createTime) + '</div>';
         } else if (o.header) {
             headerHTML =  '<div class="img-header"></div>'
+        }
+
+        //logger.debug("[getBodyHtml] input object o=",o);
+
+        var siteIcon = "fa-google-plus";
+        switch (o.item.siteType) {
+            case "Google":
+                siteIcon = "fa-google-plus";
+                break;
+            case "Local":
+                siteIcon = "fa-database";
+                break;
         }
 
         return headerHTML +
@@ -472,7 +485,7 @@ define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) 
             '      <div class="img-btn img-info"><i class="fa fa-info-circle"></i></div>' +
             '   </div>' +
             '   <div class="info-bar">'+
-            '      <div class="sign pull-right"><i class="fa fa-google-plus"></i></div>' +
+            '      <div class="sign pull-right"><i class="fa '+siteIcon+'"></i></div>' +
             '   </div>' +
             '</div>';
     };

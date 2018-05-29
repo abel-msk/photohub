@@ -2,8 +2,8 @@
 define(["jquery","json!../../property.json!bust"],function ($, properties) {
     "use strict";
     var Obj = {};
-    var testUrl = 'http://192.168.1.200:8081/api';
-
+    //var testUrl = 'http://192.168.1.200:8081/api';
+    var testUrl = 'http://localhost:8081/api';
 
     // properties = $.extend(true, {}, properties, Data || {});
     // console.log("[Const.init ] Load properties : ") ;

@@ -20,7 +20,8 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
             'limit': 0,
             'offset': 0,
             'id': new Date().getTime(),
-            'viewport': null
+            'viewport': null,
+            'imageBodyHtml':""
         };
 
         var DEBUG = true;
@@ -32,17 +33,21 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
         //   PAGE:  Accumulate and render block of rows
         //
         //   Параметры:
-        //      $viewPortObj  DOM объект для основного фрейма  в который бедет втавлен HTML код для страницы
+        //
+        //      objectsList - Список JSON объектов - фоток, полученных от сервера
         //      pageOptions   Опции для подготовки страницы
         //             {
         //                 limit  -  макимальное к-во элементов возвращаемое при запросе от сервера
         //                 offset -  номер  позиции первого обрабатываемого и возвращаемого элемента от сервера
         //                 id     -  id этой страницы
-        //                 viewport
+        //                 viewport -
         //                 'convToObject': convertToInternalFormat  --  функция предобработки считанных данных для фоток
-        //                 'convToHTML': imageObjectHTML            --  функция которая генерирует  HTML код для
-        //                                                              отображения одного фрейма фотографии
+        //                 'imageBodyHtml':  -  функция которая генерирует  HTML код для
+        //                                      отображения одного фрейма фотографии
         //             }
+        //
+        //     // Удалить
+        //     // $viewPortObj  DOM объект для основного фрейма  в который бедет втавлен HTML код для страницы
         //
         //==========================================================================================
         function Page(objectsList, initOptions) {
@@ -151,7 +156,14 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
                 var isPageClosed = false;
                 this.objectsList = [];
                 this.areaWidth = DomUtils.getInnerWidth(this.viewport);
-                var curRow = new Row({'id':rowId++, 'areaWidth':this.areaWidth});
+
+                var rowParams = {
+                    'id':rowId++,
+                    'areaWidth':this.areaWidth,
+                    'bodyHTML': this.pageOptions.imageBodyHtml
+                };
+                //var curRow = new Row({'id':rowId++, 'areaWidth':this.areaWidth});
+                var curRow = new Row(rowParams);
 
                 //  Render Frame
                 var pageFrame = document.createElement('div');

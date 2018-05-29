@@ -17,6 +17,58 @@ import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+
+/*
+https://commons.apache.org/proper/commons-imaging/apidocs/org/apache/commons/imaging/formats/tiff/constants/TiffTagConstants.html
+
+
+static TagInfoAscii	TIFF_TAG_IMAGE_DESCRIPTION
+static TagInfoShortOrLong	TIFF_TAG_IMAGE_LENGTH
+static TagInfoShortOrLong	TIFF_TAG_IMAGE_WIDTH
+
+static TagInfoAscii	TIFF_TAG_DATE_TIME
+static TagInfoAscii	TIFF_TAG_DOCUMENT_NAME
+static TagInfoAscii	TIFF_TAG_DOCUMENT_NAME
+static TagInfoAscii	TIFF_TAG_DATE_TIME
+
+
+static TagInfoRationals	TIFF_TAG_WHITE_POINT
+
+TIFF_TAG_XRESOLUTION
+TIFF_TAG_YRESOLUTION
+
+
+static TagInfoShort	TIFF_TAG_RESOLUTION_UNIT
+	static int	RESOLUTION_UNIT_VALUE_CM
+	static int	RESOLUTION_UNIT_VALUE_INCHES
+	static int	RESOLUTION_UNIT_VALUE_NONE
+
+
+
+https://commons.apache.org/proper/commons-imaging/apidocs/index.html
+
+
+static TagInfoAscii	EXIF_TAG_SMOOTHNESS
+static TagInfoShort	EXIF_TAG_WHITE_BALANCE_1
+static TagInfoAscii	EXIF_TAG_WHITE_BALANCE_2
+static int	WHITE_BALANCE_1_VALUE_AUTO
+static int	WHITE_BALANCE_1_VALUE_MANUAL
+
+static TagInfoShort	EXIF_TAG_SHARPNESS_1
+static TagInfoAscii	EXIF_TAG_SHARPNESS_2
+static int	SHARPNESS_1_VALUE_HARD
+static int	SHARPNESS_1_VALUE_NORMAL
+static int	SHARPNESS_1_VALUE_SOFT
+
+
+
+static TagInfoRationals	EXIF_TAG_FNUMBER
+
+
+
+
+ */
+
 /**
  *   This class covers apace image io Tiff tags and implements PhotoMetadataInt for use with site connetor
  */
@@ -34,7 +86,7 @@ public class Metadata implements PhotoMetadataInt  {
     private int tzOffset = 0;
     private String cameraMake = null;
     private String cameraModel = null;
-    private int orientation = 0;
+    private int orientation = -1;
     private String software = null;
     private double resolution = 0;
     private int iso = 0;
@@ -45,17 +97,19 @@ public class Metadata implements PhotoMetadataInt  {
     private double latitude = 0;
     private String gpsLongRef = null;
     private double longitude = 0;
-    private int flash = 0;
+    private int flash = -1;
     private double exposureTime = 0;
+    private int exposureMode = -1;
+    private int exposureProgram = -1;
     private double focalLength = 0;
     private double altitude = 0;
     private String userComment = null;
+    private int lightSource = 0;
 
 
 
-    private static final Map<Integer,String> orientationConsts;
+    private static final Map<Integer,String> orientationConsts = new HashMap<>();
     static {
-        orientationConsts = new HashMap<>();
         orientationConsts.put(TiffTagConstants.ORIENTATION_VALUE_HORIZONTAL_NORMAL, "Horizontal normal");
         orientationConsts.put(TiffTagConstants.ORIENTATION_VALUE_MIRROR_HORIZONTAL, "Horizontal mirror");
         orientationConsts.put(TiffTagConstants.ORIENTATION_VALUE_ROTATE_180, "Rotate 180");
@@ -66,9 +120,9 @@ public class Metadata implements PhotoMetadataInt  {
         orientationConsts.put(TiffTagConstants.ORIENTATION_VALUE_ROTATE_270_CW, "Rotate 90cw");
     }
 
-    private static final Map<Integer,String> flashConsts;
+    private static final Map<Integer,String> flashConsts = new HashMap<>();
     static {
-        flashConsts = new HashMap<>();
+        flashConsts.put(0, "No flash");
         flashConsts.put(ExifTagConstants.FLASH_VALUE_FIRED, "Flash fired.");
         flashConsts.put(ExifTagConstants.FLASH_VALUE_FIRED_RETURN_NOT_DETECTED, "Flash fired.");
         flashConsts.put(ExifTagConstants.FLASH_VALUE_FIRED_RETURN_DETECTED, "Flash fired.");
@@ -94,6 +148,52 @@ public class Metadata implements PhotoMetadataInt  {
         flashConsts.put(ExifTagConstants.FLASH_VALUE_AUTO_FIRED_RED_EYE_REDUCTION_RETURN_DETECTED, "Flash auto. Fired. Red eye reduction.");
     }
 
+
+    private static final Map<Integer,String> expoConsts =  new HashMap<>();;
+    static {
+        expoConsts.put(ExifTagConstants.EXPOSURE_MODE_VALUE_AUTO, "Auto");
+        expoConsts.put(ExifTagConstants.EXPOSURE_MODE_VALUE_AUTO_BRACKET, "Auto bracket");
+        expoConsts.put(ExifTagConstants.EXPOSURE_MODE_VALUE_MANUAL, "Manual");
+    }
+
+    private static final Map<Integer,String> expoProgConsts =  new HashMap<>();;
+    static {
+        expoConsts.put(0, "Not Defined");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_ACTION_HIGH_SPEED, "Action");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_APERTURE_PRIORITY_AE, "Aperture-priority");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_CREATIVE_SLOW_SPEED, "Creative");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_LANDSCAPE, "Landscape");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_MANUAL, "Manual");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_PORTRAIT, "Portrait");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_PROGRAM_AE,"Program");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_APERTURE_PRIORITY_AE, "Auto bracket");
+        expoConsts.put(ExifTagConstants.EXPOSURE_PROGRAM_VALUE_SHUTTER_SPEED_PRIORITY_AE, "Shutter speed priority");
+    }
+
+    private static final Map<Integer,String> lightSrcConsts =  new HashMap<>();
+    static {
+        lightSrcConsts.put(0,"Unknown");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_CLOUDY,"Cloudy");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_COOL_WHITE_FLUORESCENT,"Cool White Fluorescent");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_D50,"D50");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_D55,"D55");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_D65,"D65");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_D75,"D75");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_DAY_WHITE_FLUORESCENT,"Day White Fluorescent");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_DAYLIGHT,"Daylight");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_DAYLIGHT_FLUORESCENT,"Daylight Fluorescent");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_FINE_WEATHER,"Fine Weather");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_FLASH,"Flash");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_FLUORESCENT,"Fluorescent");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_ISO_STUDIO_TUNGSTEN,"ISO Studio Tungsten");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_OTHER,"Other");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_SHADE,"Shade");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_STANDARD_LIGHT_A,"Standard Light A");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_STANDARD_LIGHT_B,"Standard Light B");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_STANDARD_LIGHT_C,"Standard Light C");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_TUNGSTEN,"Tungsten (Incandescent)");
+        lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_WHITE_FLUORESCENT,"White Fluorescent");
+    }
 
     //   Tags description
     //   https://commons.apache.org/proper/commons-imaging/apidocs/org/apache/commons/imaging/formats/tiff/constants/ExifTagConstants.html
@@ -200,6 +300,24 @@ public class Metadata implements PhotoMetadataInt  {
             exposureTime = metadata.findField(ExifTagConstants.EXIF_TAG_EXPOSURE_TIME).getDoubleValue();
         } catch (Exception e) {
             logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_TIME.name);
+        }
+
+        try {
+            exposureTime = metadata.findField(ExifTagConstants.EXIF_TAG_EXPOSURE_MODE).getIntValue();
+        } catch (Exception e) {
+            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_MODE.name);
+        }
+
+        try {
+            exposureProgram = metadata.findField(ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM).getIntValue();
+        } catch (Exception e) {
+            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM.name);
+        }
+
+        try {
+            lightSource = metadata.findField(ExifTagConstants.EXIF_TAG_LIGHT_SOURCE).getIntValue();
+        } catch (Exception e) {
+            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_LIGHT_SOURCE.name);
         }
 
         try {
@@ -420,6 +538,36 @@ public class Metadata implements PhotoMetadataInt  {
                 }
             }
 
+            if ( getExposureTime() != 0) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_EXPOSURE_MODE);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_EXPOSURE_MODE, new Integer(getExposureMode()).shortValue());
+                } catch (Exception e) {
+                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_EXPOSURE_MODE.name, e);
+                }
+            }
+
+
+            if ( getExposureTime() != 0) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM, new Integer(getExposureProgram()).shortValue());
+                } catch (Exception e) {
+                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM.name, e);
+                }
+            }
+
+
+            if ( getExposureTime() != 0) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_LIGHT_SOURCE);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_LIGHT_SOURCE, new Integer(getLightSource()).shortValue());
+                } catch (Exception e) {
+                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_LIGHT_SOURCE.name, e);
+                }
+            }
+
+
             if ( getFocalLength() != 0) {
                 try {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_FOCAL_LENGTH);
@@ -522,7 +670,17 @@ public class Metadata implements PhotoMetadataInt  {
         return  orientationConsts.get(Orientation);
     }
 
+    public static String getExposureModeRef(int exposureRef) {
+        return  expoConsts.get(exposureRef);
+    }
 
+    public static String getExposureProgRef(int exposureProgRef) {
+        return  expoProgConsts.get(exposureProgRef);
+    }
+
+    public static String getLightSource(int lightSource) {
+        return  lightSrcConsts.get(lightSource);
+    }
 
 
     @Override
@@ -717,6 +875,34 @@ public class Metadata implements PhotoMetadataInt  {
         this.exposureTime = exposureTime;
         changed = true;
     }
+
+
+    public int getExposureMode() {
+        return exposureMode;
+    }
+
+    public void setExposureMode(int exposureMode) {
+        this.exposureMode = exposureMode;
+    }
+
+
+    public int getExposureProgram() {
+        return exposureProgram;
+    }
+
+    public void setExposureProgram(int exposureProgram) {
+        this.exposureProgram = exposureProgram;
+    }
+
+
+    public int getLightSource() {
+        return lightSource;
+    }
+
+    public void setLightSource(int lightSource) {
+        this.lightSource = lightSource;
+    }
+
     @Override
     public double getFocalLength() {
         return focalLength;
