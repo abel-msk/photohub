@@ -67,7 +67,7 @@ define(["jquery","pikaday","modalDialog","utils","moment","logger"],function($,P
         //'					<p><button type="button" class="btn btn-default btn-block" >Last Year</button></p>' +
         '					<div class="apply">' +
         '						<button id="apply-'+frameId+'" type="button" class="btn btn-primary btn-default btn-block"  data-dismiss="dropdown-menu">' +
-        '							<span>Apply</span>' +
+        '							Apply' +
         '						</button>' +
         '					</div>' +
         '				</div>' +
