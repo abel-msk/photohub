@@ -13,6 +13,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import home.abel.photohub.connector.prototype.*;
 import home.abel.photohub.model.*;
 import home.abel.photohub.utils.image.ImageData;
 import home.abel.photohub.utils.image.Metadata;
@@ -30,12 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.querydsl.jpa.impl.JPAQuery;
 
 
-import home.abel.photohub.connector.prototype.EnumMediaType;
-import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
-import home.abel.photohub.connector.prototype.PhotoMetadataInt;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
-import home.abel.photohub.connector.prototype.SiteConnectorInt;
-import home.abel.photohub.connector.prototype.SiteStatusEnum;
 import home.abel.photohub.utils.FileUtils;
 
 
@@ -140,7 +135,7 @@ public class PhotoService {
 		PhotoObjectInt onSiteObject = null;
 			
 		
-		logger.debug("[addFolder]  Name="+name+", parentId="+parentId+", siteId="+siteId);
+		logger.trace("[addFolder]  Name="+name+", parentId="+parentId+", siteId="+siteId);
 		if (parentId  !=  null ) {
 			theParentNode = nodeRepo.findOne(QNode.node.id.eq(parentId));
 			if (theParentNode == null) throw new ExceptionInvalidArgument("Cannot find node with id="+parentId);
@@ -226,7 +221,7 @@ public class PhotoService {
 	@Transactional
 	public Node addPhoto(File inputImageFile, String name, String descr, String parentId, String siteId) throws ExceptionInvalidArgument, ExceptionPhotoProcess{
 		
-		logger.trace("[addPhoto] Name="+name+", parentId="+parentId+", siteId=" + siteId);
+		logger.info("[addPhoto] Name="+name+", parentId="+parentId+", siteId=" + siteId);
 
 
 		if ( ! ImageData.isValidImage(inputImageFile)) {
@@ -259,7 +254,7 @@ public class PhotoService {
 			//
 			//   Готовим родительскую директорию (если не указана) на сайте для загрузки файла
 		    //
-			logger.trace("[addPhoto]  Prepare parent directory." );	
+			logger.info("[addPhoto]  Prepare parent directory." );
 			if (parentId  !=  null ) {
 				theParentNode = nodeRepo.findOne(QNode.node.id.eq(parentId));
 				if (theParentNode == null) throw new ExceptionInvalidArgument("Cannot find node with id="+parentId);
@@ -376,7 +371,7 @@ public class PhotoService {
 		
 		Node theNode = new Node(thePhoto,theParent);			
 		theNode = nodeRepo.save(theNode);
-		logger.debug("Create and save node'="+theNode+"', photo='"+thePhoto+"', site='"+thePhoto.getSiteBean()+"'");
+		logger.debug("[saveObject] Create and save node'="+theNode+"', photo='"+thePhoto+"', site='"+thePhoto.getSiteBean()+"'");
 		return theNode;
 	 }
 	/*=============================================================================================
@@ -414,7 +409,7 @@ public class PhotoService {
 	 * @return
 	 */
 	@Transactional
-	public Node addObjectFromSite(PhotoObjectInt onSiteObject, String parentId, String siteId) throws ExceptionInvalidArgument, ExceptionPhotoProcess {
+	public Node addObjectFromSite(PhotoObjectInt onSiteObject, String parentId, String siteId) throws ExceptionInvalidArgument, ExceptionPhotoProcess, ExceptionUnknownFormat {
 		Site theSite = null;
 		Node theParentNode = null;
 		
@@ -489,7 +484,7 @@ public class PhotoService {
 	 * @throws ExceptionFileIO
 	 */
 	public Photo convertToPhoto(PhotoObjectInt sitesPhotoObject, Photo thePhoto, PhotoMetadataInt metadata) throws ExceptionPhotoProcess  {
-		logger.debug("Convert sites object to DB entity=" +thePhoto);
+		logger.info("[convertToPhoto] Convert sites object to DB entity=" +sitesPhotoObject);
 		//String newThumbPath = null;
 		
 		if ( thePhoto == null ) {
@@ -504,7 +499,7 @@ public class PhotoService {
 			else {
 				thePhoto.setType(ModelConstants.OBJ_SINGLE);
 				thePhoto.setAllMediaSize(sitesPhotoObject.getSize());
-				logger.debug("[PhotoService.convertToPhoto] Get object size =" + sitesPhotoObject.getSize());
+				logger.trace("[convertToPhoto] Get object size =" + sitesPhotoObject.getSize());
 
 			}
 			//  No other type can be received from site
@@ -514,7 +509,7 @@ public class PhotoService {
 			thePhoto.setOnSiteId(sitesPhotoObject.getId());
 			thePhoto.setUpdateTime(new Date());
 			thePhoto.setMediaType(sitesPhotoObject.getMimeType());
-			logger.debug("[convertToPhoto] MimeType = "+sitesPhotoObject.getMimeType());
+			logger.trace("[convertToPhoto] MimeType = "+sitesPhotoObject.getMimeType());
 		}
 		catch (Exception e) {
 			throw new ExceptionPhotoProcess("[convertToPhoto] Canot process photo object. ON Site object ="+sitesPhotoObject+", photo="+thePhoto,e);
@@ -575,7 +570,17 @@ public class PhotoService {
 					thePhoto.addMediaObject(dbMedia);
 				}
 
-				
+				logger.debug("[convertToPhoto] Convert media. " + sitesPhotoObject
+						+ ", type="+dbMedia.getType()
+						+ ", acc_type="+dbMedia.getAccessType()
+						+ ", mimetype="+dbMedia.getMimeType()
+						+ ", width="+dbMedia.getWidth()
+						+ ", height="+dbMedia.getHeight()
+						+ ", size="+dbMedia.getSize()
+						+ ", path="+dbMedia.getPath()
+				);
+
+
 			} catch (Exception e) {
 				logger.warn("[convertToPhoto] Cannot get media object. Site="+sitesPhotoObject+", photo="+thePhoto,e);
 			}
@@ -615,7 +620,8 @@ public class PhotoService {
 				thePhoto.setIso(metadata.getIso());
 			}
 		}
-		
+		logger.debug("[convertToPhoto] Convert sites object to DB. On site=" + sitesPhotoObject + ", DB entry=" +thePhoto);
+
 		return thePhoto;
 	}
 
@@ -626,34 +632,6 @@ public class PhotoService {
 	 *      
 	 *      
 	 =============================================================================================*/
-//
-//	/**
-//	 *
-//	 *   Upload  photo file to site
-//	 *
-//	 * @param fileToUpload
-//     * @param theNode
-//     * @return  return object from site
-//	 * @throws ExceptionPhotoProcess
-//	 * @throws ExceptionInvalidArgument
-//	 */
-//
-//	@Transactional
-//	public  PhotoObjectInt uploadPhotoObject(
-//			String fileToUpload,
-//			Node theNode
-//			) throws ExceptionPhotoProcess, ExceptionInvalidArgument
-//	{
-//		PhotoObjectInt onSiteObj = null;
-//		File inputImageFile = new File(fileToUpload);
-//		if ( inputImageFile.exists() ) {
-//			onSiteObj = uploadPhotoObject(inputImageFile,theNode);
-//		}
-//		else {
-//			throw new ExceptionInvalidArgument("The File "+fileToUpload+ " Not found.");
-//		}
-//		return onSiteObj;
-//	}
 	
 	/**
 	 *
@@ -723,7 +701,7 @@ public class PhotoService {
 			throw new ExceptionPhotoProcess("Cannot create object. Nested Exception : " + e.getMessage(), e);
 		}
 
-		logger.trace("[uploadPhotoObject] Remote create " + (sitesPhotoObject.isFolder() ? "Folder" : "Object") + " = " + sitesPhotoObject +
+		logger.debug("[uploadPhotoObject] Remote create " + (sitesPhotoObject.isFolder() ? "Folder" : "Object") + " = " + sitesPhotoObject +
 				", with parent=" + (parentPhotoObject == null ? "null" : parentPhotoObject)
 		);
 
@@ -859,12 +837,12 @@ public class PhotoService {
 		
 		//---   If this photo is not linked anywhere else, so delete photo object too
 
-		logger.debug("[deleteObject] Get nodes for photo id="+thePhoto.getId());
+		logger.info("[deleteObject] Get nodes for photo id="+thePhoto.getId());
 		List<Node> allNodes =  thePhoto.getNodes();
 
 
 		if (allNodes.size() <= 1) {	
-			logger.debug("[deleteObject] Object "+thePhoto+", has just one reference, so we can delete it.");
+			logger.trace("[deleteObject] Object "+thePhoto+", has just one reference, so we can delete it.");
 
 			//--- IF required, delete photoObject on site
 			if ( isDeleteOnSite ) {
@@ -1010,7 +988,7 @@ public class PhotoService {
 	@Transactional
 	public Iterable<Node> listFolder (String theNodeId) throws ExceptionPhotoProcess {
 		Collection<Node> theList;
-		logger.debug("List folder. NodeID=" + theNodeId);
+		logger.info("[listFolder] List folder. NodeID=" + theNodeId);
 
 		if (theNodeId == null) {
 			theList = nodeRepo.findFolders();
@@ -1073,9 +1051,6 @@ public class PhotoService {
 				.fetch();
 		return nodes;
 	}
-
-
-
 
 	
 } // End of class

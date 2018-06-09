@@ -2,13 +2,13 @@ package home.abel.photohub.utils.image;
 
 import com.fasterxml.uuid.Generators;
 import home.abel.photohub.connector.prototype.PhotoMetadataInt;
+import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.common.RationalNumber;
+import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
-import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
-import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
-import org.apache.commons.imaging.formats.tiff.constants.TiffEpTagConstants;
-import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
+import org.apache.commons.imaging.formats.tiff.constants.*;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
+import org.apache.commons.imaging.formats.tiff.write.TiffOutputField;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,40 +34,49 @@ static TagInfoAscii	TIFF_TAG_DATE_TIME
 
 static TagInfoRationals	TIFF_TAG_WHITE_POINT
 
+
+
+
+
+
 TIFF_TAG_XRESOLUTION
 TIFF_TAG_YRESOLUTION
 
 
-static TagInfoShort	TIFF_TAG_RESOLUTION_UNIT
-	static int	RESOLUTION_UNIT_VALUE_CM
-	static int	RESOLUTION_UNIT_VALUE_INCHES
-	static int	RESOLUTION_UNIT_VALUE_NONE
+static TagInfoShort	TIFF_TAG_RESOLUTION_UNIT    ++
+	static int	RESOLUTION_UNIT_VALUE_CM    ++
+	static int	RESOLUTION_UNIT_VALUE_INCHES    ++
+	static int	RESOLUTION_UNIT_VALUE_NONE    ++
 
 
 
 https://commons.apache.org/proper/commons-imaging/apidocs/index.html
 
 
-static TagInfoAscii	EXIF_TAG_SMOOTHNESS
-static TagInfoShort	EXIF_TAG_WHITE_BALANCE_1
-static TagInfoAscii	EXIF_TAG_WHITE_BALANCE_2
-static int	WHITE_BALANCE_1_VALUE_AUTO
-static int	WHITE_BALANCE_1_VALUE_MANUAL
+static TagInfoAscii	EXIF_TAG_SMOOTHNESS     ++
 
-static TagInfoShort	EXIF_TAG_SHARPNESS_1
-static TagInfoAscii	EXIF_TAG_SHARPNESS_2
-static int	SHARPNESS_1_VALUE_HARD
-static int	SHARPNESS_1_VALUE_NORMAL
-static int	SHARPNESS_1_VALUE_SOFT
+static TagInfoShort	EXIF_TAG_WHITE_BALANCE_1    ++
+static TagInfoAscii	EXIF_TAG_WHITE_BALANCE_2    ++
+static int	WHITE_BALANCE_1_VALUE_AUTO    ++
+static int	WHITE_BALANCE_1_VALUE_MANUAL  ++
 
-
-
-static TagInfoRationals	EXIF_TAG_FNUMBER
+static TagInfoShort	EXIF_TAG_SHARPNESS_1  ++
+static TagInfoAscii	EXIF_TAG_SHARPNESS_2  ++
+static int	SHARPNESS_1_VALUE_HARD    ++
+static int	SHARPNESS_1_VALUE_NORMAL  ++
+static int	SHARPNESS_1_VALUE_SOFT   ++
 
 
+
+static TagInfoRationals	EXIF_TAG_FNUMBER  ++
+
+
+Transformaion
+https://stackoverflow.com/questions/5905868/how-to-rotate-jpeg-images-based-on-the-orientation-metadata/26130136
 
 
  */
+
 
 /**
  *   This class covers apace image io Tiff tags and implements PhotoMetadataInt for use with site connetor
@@ -78,6 +87,7 @@ public class Metadata implements PhotoMetadataInt  {
 
     private boolean changed = false;
     private TiffImageMetadata metadata = null;
+    private TiffOutputSet outputSet = null;
 
     private String unicId = null;
     private Date dateOriginal = null;
@@ -88,7 +98,6 @@ public class Metadata implements PhotoMetadataInt  {
     private String cameraModel = null;
     private int orientation = -1;
     private String software = null;
-    private double resolution = 0;
     private int iso = 0;
     private double shutterSpeed = 0;
     private double aperture = 0;
@@ -105,6 +114,20 @@ public class Metadata implements PhotoMetadataInt  {
     private double altitude = 0;
     private String userComment = null;
     private int lightSource = 0;
+    private double fNumber = 0;
+    private int sharpness = -1;
+    private String sharpnessRef = null;
+    private int whiteBalance = -1;
+    private String whiteBalanceRef = null;
+    private String smoothness = null;
+    private int saturation = -1;
+    private String saturationRef = null;
+    private int resolutionUnit = -1;
+    private double xResolution = -1;
+    private double yResolution = -1;
+
+
+
 
 
 
@@ -195,6 +218,39 @@ public class Metadata implements PhotoMetadataInt  {
         lightSrcConsts.put(ExifTagConstants.LIGHT_SOURCE_VALUE_WHITE_FLUORESCENT,"White Fluorescent");
     }
 
+    private static final Map<Integer,String> sharpnessConsts =  new HashMap<>();
+    static {
+        sharpnessConsts.put(-1,"Unknown");
+        sharpnessConsts.put(ExifTagConstants.SHARPNESS_1_VALUE_HARD,"Hard");
+        sharpnessConsts.put(ExifTagConstants.SHARPNESS_1_VALUE_NORMAL,"Normal");
+        sharpnessConsts.put(ExifTagConstants.SHARPNESS_1_VALUE_SOFT,"Soft");
+    }
+
+    private static final Map<Integer,String> whiteBalanceConsts =  new HashMap<>();
+    static {
+        whiteBalanceConsts.put(-1,"Unknown");
+        whiteBalanceConsts.put(ExifTagConstants.WHITE_BALANCE_1_VALUE_AUTO,"Auto");
+        whiteBalanceConsts.put(ExifTagConstants.WHITE_BALANCE_1_VALUE_MANUAL,"Manual");
+    }
+
+
+    private static final Map<Integer,String> resolutionUnitConsts =  new HashMap<>();
+    static {
+        resolutionUnitConsts.put(-1,"Unknown");
+        resolutionUnitConsts.put(TiffTagConstants.RESOLUTION_UNIT_VALUE_CM,"Centimeters");
+        resolutionUnitConsts.put(TiffTagConstants.RESOLUTION_UNIT_VALUE_INCHES,"Inches");
+        resolutionUnitConsts.put(TiffTagConstants.RESOLUTION_UNIT_VALUE_NONE,"None");
+    }
+
+    private static final Map<Integer,String> saturationConsts =  new HashMap<>();
+    static {
+        saturationConsts.put(-1,"Unknown");
+        saturationConsts.put(ExifTagConstants.SATURATION_1_VALUE_HIGH,"High");
+        saturationConsts.put(ExifTagConstants.SATURATION_1_VALUE_LOW,"Low");
+        saturationConsts.put(ExifTagConstants.SATURATION_1_VALUE_NORMAL,"Normal");
+    }
+
+
     //   Tags description
     //   https://commons.apache.org/proper/commons-imaging/apidocs/org/apache/commons/imaging/formats/tiff/constants/ExifTagConstants.html
     //   https://commons.apache.org/proper/commons-imaging/apidocs/org/apache/commons/imaging/formats/tiff/constants/package-summary.html
@@ -203,6 +259,7 @@ public class Metadata implements PhotoMetadataInt  {
     //setDistance
 
     // TagInfoShort	EXIF_TAG_SATURATION_1
+    // https://commons.apache.org/proper/commons-imaging/apidocs/org/apache/commons/imaging/formats/tiff/constants/ExifTagConstants.html
     // static TagInfoAscii	EXIF_TAG_SERIAL_NUMBER
     //static TagInfoGpsText	EXIF_TAG_USER_COMMENT
 
@@ -218,134 +275,193 @@ public class Metadata implements PhotoMetadataInt  {
         try {
             unicId =  metadata.findField(ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID).getStringValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID.name);
         }
         try {
             dateOriginal = exifFormat.parse(metadata.findField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL).getStringValue());
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL.name);
         }
         try {
             dateCreated = exifFormat.parse(metadata.findField(ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED).getStringValue());
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED.name);
         }
         try {
             dateUpdate = exifFormat.parse(metadata.findField(TiffTagConstants.TIFF_TAG_DATE_TIME).getStringValue());
         } catch (Exception e) {
-            logger.warn("cannot read property " + TiffTagConstants.TIFF_TAG_DATE_TIME.name);
+            logger.info("Cannot read property " + TiffTagConstants.TIFF_TAG_DATE_TIME.name);
         }
         try {
             tzOffset = metadata.findField(TiffEpTagConstants.EXIF_TAG_TIME_ZONE_OFFSET).getIntValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + TiffEpTagConstants.EXIF_TAG_TIME_ZONE_OFFSET.name);
+            logger.info("Cannot read property " + TiffEpTagConstants.EXIF_TAG_TIME_ZONE_OFFSET.name);
         }
         try {
             cameraMake= metadata.findField(TiffTagConstants.TIFF_TAG_MAKE).getStringValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + TiffTagConstants.TIFF_TAG_MAKE.name);
+            logger.info("Cannot read property " + TiffTagConstants.TIFF_TAG_MAKE.name);
         }
         try {
             cameraModel = metadata.findField(TiffTagConstants.TIFF_TAG_MODEL).getStringValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + TiffTagConstants.TIFF_TAG_MODEL.name);
+            logger.info("Cannot read property " + TiffTagConstants.TIFF_TAG_MODEL.name);
         }
         try {
             orientation = metadata.findField(TiffTagConstants.TIFF_TAG_ORIENTATION).getIntValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + TiffTagConstants.TIFF_TAG_ORIENTATION.name);
+            logger.info("Cannot read property " + TiffTagConstants.TIFF_TAG_ORIENTATION.name);
         }
         try {
             software = metadata.findField(TiffTagConstants.TIFF_TAG_SOFTWARE).getStringValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + TiffTagConstants.TIFF_TAG_SOFTWARE.name);
+            logger.info("Cannot read property " + TiffTagConstants.TIFF_TAG_SOFTWARE.name);
         }
         try {
             userComment = metadata.findField(ExifTagConstants.EXIF_TAG_USER_COMMENT).getStringValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_USER_COMMENT.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_USER_COMMENT.name);
         }
         try {
-            resolution = metadata.findField(TiffTagConstants.TIFF_TAG_XRESOLUTION).getDoubleValue();
+            xResolution = metadata.findField(TiffTagConstants.TIFF_TAG_XRESOLUTION).getDoubleValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + TiffTagConstants.TIFF_TAG_XRESOLUTION.name);
+            logger.info("Cannot read property " + TiffTagConstants.TIFF_TAG_XRESOLUTION.name);
         }
+        try {
+             yResolution = metadata.findField(TiffTagConstants.TIFF_TAG_XRESOLUTION).getDoubleValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property " + TiffTagConstants.TIFF_TAG_YRESOLUTION.name);
+        }
+
         try {
             iso = metadata.findField(ExifTagConstants.EXIF_TAG_ISO).getIntValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_ISO.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_ISO.name);
         }
         try {
             flash = metadata.findField(ExifTagConstants.EXIF_TAG_FLASH).getIntValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_FLASH.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_FLASH.name);
         }
         try {
             shutterSpeed =  metadata.findField(ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE).getDoubleValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE.name);
         }
         try {
             aperture = metadata.findField(ExifTagConstants.EXIF_TAG_APERTURE_VALUE).getDoubleValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_APERTURE_VALUE.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_APERTURE_VALUE.name);
         }
         try {
             brightness = metadata.findField(ExifTagConstants.EXIF_TAG_BRIGHTNESS_VALUE).getDoubleValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_BRIGHTNESS_VALUE.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_BRIGHTNESS_VALUE.name);
         }
 
         try {
             exposureTime = metadata.findField(ExifTagConstants.EXIF_TAG_EXPOSURE_TIME).getDoubleValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_TIME.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_TIME.name);
         }
 
         try {
             exposureTime = metadata.findField(ExifTagConstants.EXIF_TAG_EXPOSURE_MODE).getIntValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_MODE.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_MODE.name);
         }
 
         try {
             exposureProgram = metadata.findField(ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM).getIntValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM.name);
         }
 
         try {
             lightSource = metadata.findField(ExifTagConstants.EXIF_TAG_LIGHT_SOURCE).getIntValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_LIGHT_SOURCE.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_LIGHT_SOURCE.name);
         }
 
         try {
             focalLength = metadata.findField(ExifTagConstants.EXIF_TAG_FOCAL_LENGTH).getDoubleValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + ExifTagConstants.EXIF_TAG_FOCAL_LENGTH.name);
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_FOCAL_LENGTH.name);
         }
-
 
         try {
             gpsLatRef = metadata.findField(GpsTagConstants.GPS_TAG_GPS_LATITUDE_REF).getStringValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + GpsTagConstants.GPS_TAG_GPS_LATITUDE_REF.name);
+            logger.info("Cannot read property " + GpsTagConstants.GPS_TAG_GPS_LATITUDE_REF.name);
         }
         try {
             latitude = metadata.findField(GpsTagConstants.GPS_TAG_GPS_LATITUDE).getDoubleValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + GpsTagConstants.GPS_TAG_GPS_LATITUDE.name);
+            logger.info("Cannot read property " + GpsTagConstants.GPS_TAG_GPS_LATITUDE.name);
         }
         try {
             gpsLongRef =   metadata.findField(GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF).getStringValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF.name);
+            logger.info("Cannot read property " + GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF.name);
         }
         try {
             longitude  =   metadata.findField(GpsTagConstants.GPS_TAG_GPS_LONGITUDE).getDoubleValue();
         } catch (Exception e) {
-            logger.warn("cannot read property " + GpsTagConstants.GPS_TAG_GPS_LONGITUDE.name);
+            logger.info("Cannot read property " + GpsTagConstants.GPS_TAG_GPS_LONGITUDE.name);
+        }
+
+        try {
+            resolutionUnit =  metadata.findField(TiffTagConstants.TIFF_TAG_RESOLUTION_UNIT).getIntValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property " + TiffTagConstants.TIFF_TAG_RESOLUTION_UNIT.name);
+        }
+
+        try {
+            smoothness = metadata.findField(ExifTagConstants.EXIF_TAG_SMOOTHNESS).getStringValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_SMOOTHNESS.name);
+        }
+
+        try {
+            whiteBalance =    metadata.findField(ExifTagConstants.EXIF_TAG_WHITE_BALANCE_1).getIntValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_WHITE_BALANCE_1.name);
+        }
+
+        try {
+            whiteBalanceRef =  metadata.findField(ExifTagConstants.EXIF_TAG_WHITE_BALANCE_2).getStringValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property " + ExifTagConstants.EXIF_TAG_WHITE_BALANCE_2.name);
+        }
+
+        try {
+            sharpness =  metadata.findField(ExifTagConstants.EXIF_TAG_SHARPNESS_1).getIntValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property  " + ExifTagConstants.EXIF_TAG_SHARPNESS_1.name);
+        }
+
+        try {
+            sharpnessRef =  metadata.findField(ExifTagConstants.EXIF_TAG_SHARPNESS_2).getStringValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property  " + ExifTagConstants.EXIF_TAG_SHARPNESS_2.name);
+        }
+
+        try {
+             fNumber =  metadata.findField(ExifTagConstants.EXIF_TAG_FNUMBER).getDoubleValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property  " + ExifTagConstants.EXIF_TAG_FNUMBER.name);
+        }
+
+        try {
+            saturation =  metadata.findField(ExifTagConstants.EXIF_TAG_SATURATION_1).getIntValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property  " + ExifTagConstants.EXIF_TAG_SATURATION_1.name);
+        }
+
+        try {
+            saturationRef =  metadata.findField(ExifTagConstants.EXIF_TAG_SATURATION_2).getStringValue();
+        } catch (Exception e) {
+            logger.info("Cannot read property  " + ExifTagConstants.EXIF_TAG_SATURATION_2.name);
         }
 
     }
@@ -372,13 +488,10 @@ public class Metadata implements PhotoMetadataInt  {
      * @return
      */
     public  TiffOutputSet saveOutputSet() {
-        TiffOutputSet out = null;
+        TiffOutputSet out;
+
         try {
-            if (metadata != null) {
-                out = metadata.getOutputSet();
-            } else {
-                out = new TiffOutputSet();
-            }
+            out = this.getOutputSet();
 
             TiffOutputDirectory rootDirectory = out.getOrCreateRootDirectory();
             TiffOutputDirectory exifDirectory = out.getOrCreateExifDirectory();
@@ -390,16 +503,17 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID, getUnicId());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID.name, e);
                 }
             }
+
 
             if (getDateOriginal() != null) {
                 try {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL, exifFormat.format(getDateOriginal()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL.name, e);
                 }
             }
 
@@ -408,7 +522,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED, exifFormat.format(getDateCreated()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED.name, e);
                 }
             }
 
@@ -417,7 +531,7 @@ public class Metadata implements PhotoMetadataInt  {
                     rootDirectory.removeField(TiffTagConstants.TIFF_TAG_DATE_TIME);
                     rootDirectory.add(TiffTagConstants.TIFF_TAG_DATE_TIME, exifFormat.format(getDateUpdate()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + TiffTagConstants.TIFF_TAG_DATE_TIME.name, e);
+                    logger.info("Cannot update value for tag " + TiffTagConstants.TIFF_TAG_DATE_TIME.name, e);
                 }
             }
 
@@ -426,7 +540,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(TiffEpTagConstants.EXIF_TAG_TIME_ZONE_OFFSET);
                     exifDirectory.add(TiffEpTagConstants.EXIF_TAG_TIME_ZONE_OFFSET, new Integer(getTzOffset()).shortValue());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + TiffEpTagConstants.EXIF_TAG_TIME_ZONE_OFFSET.name, e);
+                    logger.info("Cannot update value for tag " + TiffEpTagConstants.EXIF_TAG_TIME_ZONE_OFFSET.name, e);
                 }
             }
 
@@ -435,7 +549,7 @@ public class Metadata implements PhotoMetadataInt  {
                     rootDirectory.removeField(TiffTagConstants.TIFF_TAG_MAKE);
                     rootDirectory.add(TiffTagConstants.TIFF_TAG_MAKE, getCameraMake());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + TiffTagConstants.TIFF_TAG_MAKE.name, e);
+                    logger.info("Cannot update value for tag " + TiffTagConstants.TIFF_TAG_MAKE.name, e);
                 }
             }
 
@@ -444,7 +558,7 @@ public class Metadata implements PhotoMetadataInt  {
                     rootDirectory.removeField(TiffTagConstants.TIFF_TAG_MODEL);
                     rootDirectory.add(TiffTagConstants.TIFF_TAG_MODEL, getCameraMake());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + TiffTagConstants.TIFF_TAG_MODEL.name, e);
+                    logger.info("Cannot update value for tag " + TiffTagConstants.TIFF_TAG_MODEL.name, e);
                 }
             }
 
@@ -453,7 +567,7 @@ public class Metadata implements PhotoMetadataInt  {
                     rootDirectory.removeField(TiffTagConstants.TIFF_TAG_ORIENTATION);
                     rootDirectory.add(TiffTagConstants.TIFF_TAG_ORIENTATION, new Integer(getOrientation()).shortValue());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + TiffTagConstants.TIFF_TAG_ORIENTATION.name, e);
+                    logger.info("Cannot update value for tag " + TiffTagConstants.TIFF_TAG_ORIENTATION.name, e);
                 }
             }
 
@@ -462,7 +576,7 @@ public class Metadata implements PhotoMetadataInt  {
                     rootDirectory.removeField(TiffTagConstants.TIFF_TAG_SOFTWARE);
                     rootDirectory.add(TiffTagConstants.TIFF_TAG_SOFTWARE, getSoftware());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + TiffTagConstants.TIFF_TAG_SOFTWARE.name, e);
+                    logger.info("Cannot update value for tag " + TiffTagConstants.TIFF_TAG_SOFTWARE.name, e);
                 }
             }
 
@@ -471,16 +585,25 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_USER_COMMENT);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_USER_COMMENT, getUserComment());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_USER_COMMENT.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_USER_COMMENT.name, e);
                 }
             }
 
-            if  ( getResolution() != 0) {
+            if  ( getxResolution() != 0) {
                 try {
                     rootDirectory.removeField(TiffTagConstants.TIFF_TAG_XRESOLUTION);
-                    rootDirectory.add(TiffTagConstants.TIFF_TAG_XRESOLUTION, RationalNumber.valueOf(getResolution()));
+                    rootDirectory.add(TiffTagConstants.TIFF_TAG_XRESOLUTION, RationalNumber.valueOf(getxResolution()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + TiffTagConstants.TIFF_TAG_XRESOLUTION.name, e);
+                    logger.info("Cannot update value for tag " + TiffTagConstants.TIFF_TAG_XRESOLUTION.name, e);
+                }
+            }
+
+            if  ( getyResolution() != 0) {
+                try {
+                    rootDirectory.removeField(TiffTagConstants.TIFF_TAG_YRESOLUTION);
+                    rootDirectory.add(TiffTagConstants.TIFF_TAG_YRESOLUTION, RationalNumber.valueOf(getyResolution()));
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + TiffTagConstants.TIFF_TAG_YRESOLUTION.name, e);
                 }
             }
 
@@ -489,16 +612,16 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_ISO);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_ISO, new Integer(getIso()).shortValue());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_ISO.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_ISO.name, e);
                 }
             }
 
-            if ( getFlash() != 0 ) {
+            if ( getFlash() >= 0 ) {
                 try {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_FLASH);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_FLASH, new Integer(getFlash()).shortValue());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_FLASH.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_FLASH.name, e);
                 }
             }
 
@@ -507,7 +630,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE, RationalNumber.valueOf(getShutterSpeed()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_ISO.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_ISO.name, e);
                 }
             }
 
@@ -516,7 +639,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_APERTURE_VALUE);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_APERTURE_VALUE, RationalNumber.valueOf(getAperture()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_APERTURE_VALUE.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_APERTURE_VALUE.name, e);
                 }
             }
 
@@ -525,7 +648,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_BRIGHTNESS_VALUE);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_BRIGHTNESS_VALUE, RationalNumber.valueOf(getBrightness()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_BRIGHTNESS_VALUE.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_BRIGHTNESS_VALUE.name, e);
                 }
             }
 
@@ -534,7 +657,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_EXPOSURE_TIME);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_EXPOSURE_TIME, RationalNumber.valueOf(getExposureTime()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_EXPOSURE_TIME.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_EXPOSURE_TIME.name, e);
                 }
             }
 
@@ -543,7 +666,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_EXPOSURE_MODE);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_EXPOSURE_MODE, new Integer(getExposureMode()).shortValue());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_EXPOSURE_MODE.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_EXPOSURE_MODE.name, e);
                 }
             }
 
@@ -553,7 +676,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM, new Integer(getExposureProgram()).shortValue());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM.name, e);
                 }
             }
 
@@ -563,7 +686,7 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_LIGHT_SOURCE);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_LIGHT_SOURCE, new Integer(getLightSource()).shortValue());
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_LIGHT_SOURCE.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_LIGHT_SOURCE.name, e);
                 }
             }
 
@@ -573,24 +696,108 @@ public class Metadata implements PhotoMetadataInt  {
                     exifDirectory.removeField(ExifTagConstants.EXIF_TAG_FOCAL_LENGTH);
                     exifDirectory.add(ExifTagConstants.EXIF_TAG_FOCAL_LENGTH, RationalNumber.valueOf(getFocalLength()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + ExifTagConstants.EXIF_TAG_FOCAL_LENGTH.name, e);
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_FOCAL_LENGTH.name, e);
                 }
             }
+
+
+            //  GPS ALT
 
             if ( getAltitude() != 0) {
                 try {
                     gpsDirectory.removeField(GpsTagConstants.GPS_TAG_GPS_ALTITUDE);
                     gpsDirectory.add(GpsTagConstants.GPS_TAG_GPS_ALTITUDE, RationalNumber.valueOf(getAltitude()));
                 } catch (Exception e) {
-                    logger.warn("cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_ALTITUDE.name, e);
+                    logger.info("Cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_ALTITUDE.name, e);
                 }
             }
+
+            //  GPS LONG+LAT
 
             if (( getLongitude() != 0 ) && (getLatitude() != 0)) {
                 try {
                     out.setGPSInDegrees(getLongitude(), getLatitude());
                 } catch (Exception e) {
-                    logger.warn("Cannot update value for GPS tags ", e);
+                    logger.info("Cannot update value for GPS tags ", e);
+                }
+            }
+
+
+            if ( getResolutionUnit() >= 0) {
+                try {
+                    rootDirectory.removeField(TiffTagConstants.TIFF_TAG_RESOLUTION_UNIT);
+                    rootDirectory.add(TiffTagConstants.TIFF_TAG_RESOLUTION_UNIT, new Integer(getResolutionUnit()).shortValue());
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + TiffTagConstants.TIFF_TAG_RESOLUTION_UNIT.name, e);
+                }
+            }
+
+            if ( getSmoothness() != null) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_SMOOTHNESS);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_SMOOTHNESS,getSmoothness());
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_SMOOTHNESS.name, e);
+                }
+            }
+
+            if ( getWhiteBalance() >= 0) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_WHITE_BALANCE_1);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_WHITE_BALANCE_1,new Integer(getWhiteBalance()).shortValue());
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_WHITE_BALANCE_1.name, e);
+                }
+            }
+
+
+            if ( getWhiteBalanceRef() != null) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_WHITE_BALANCE_2);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_WHITE_BALANCE_2,getWhiteBalanceRef());
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_WHITE_BALANCE_2.name, e);
+                }
+            }
+
+
+            if ( getSharpness() >= 0) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_SHARPNESS_1);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_SHARPNESS_1,new Integer(getSharpness()).shortValue());
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_SHARPNESS_1.name, e);
+                }
+            }
+
+            if ( getSaturation() >= 0) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_SATURATION_1);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_SATURATION_1,new Integer(getSaturation()).shortValue());
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_SATURATION_1.name, e);
+                }
+            }
+
+
+            if ( getWhiteBalanceRef() != null) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_SHARPNESS_2);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_SHARPNESS_2,getSharpnessRef());
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_SHARPNESS_2.name, e);
+                }
+            }
+
+
+            //  FNUMBER
+
+            if ( getfNumber() != 0) {
+                try {
+                    exifDirectory.removeField(ExifTagConstants.EXIF_TAG_FNUMBER);
+                    exifDirectory.add(ExifTagConstants.EXIF_TAG_FNUMBER, RationalNumber.valueOf(getfNumber()));
+                } catch (Exception e) {
+                    logger.info("Cannot update value for tag " + ExifTagConstants.EXIF_TAG_FNUMBER.name, e);
                 }
             }
 
@@ -599,28 +806,28 @@ public class Metadata implements PhotoMetadataInt  {
 //                exifDirectory.removeField(GpsTagConstants.GPS_TAG_GPS_LATITUDE_REF);
 //                exifDirectory.add(GpsTagConstants.GPS_TAG_GPS_LATITUDE_REF, getGpsLattRef());
 //            } catch (Exception e) {
-//                logger.warn("cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_LATITUDE_REF.name, e);
+//                logger.info("Cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_LATITUDE_REF.name, e);
 //            }
 //
 //            try {
 //                exifDirectory.removeField(GpsTagConstants.GPS_TAG_GPS_LATITUDE);
 //                exifDirectory.add(GpsTagConstants.GPS_TAG_GPS_LATITUDE, RationalNumber.valueOf(getGpsLatt()));
 //            } catch (Exception e) {
-//                logger.warn("cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_LATITUDE.name, e);
+//                logger.info("Cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_LATITUDE.name, e);
 //            }
 //
 //            try {
 //                exifDirectory.removeField(GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF);
 //                exifDirectory.add(GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF, getGpsLattRef());
 //            } catch (Exception e) {
-//                logger.warn("cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF.name, e);
+//                logger.info("Cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF.name, e);
 //            }
 //
 //            try {
 //                exifDirectory.removeField(GpsTagConstants.GPS_TAG_GPS_LONGITUDE);
 //                exifDirectory.add(GpsTagConstants.GPS_TAG_GPS_LONGITUDE, RationalNumber.valueOf(getGpsLatt()));
 //            } catch (Exception e) {
-//                logger.warn("cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_LONGITUDE.name, e);
+//                logger.info("Cannot update value for tag " + GpsTagConstants.GPS_TAG_GPS_LONGITUDE.name, e);
 //            }
 
         }
@@ -630,6 +837,102 @@ public class Metadata implements PhotoMetadataInt  {
         logger.debug("[Metadata.saveOutputSet] Prepare metadata output set.");
         return out;
     }
+
+
+    public void dump() throws ImageWriteException{
+
+        //TiffImageMetadata meta = (md==null?metadata:md);
+        TiffImageMetadata meta = metadata;
+
+        logger.debug("\n\n=== Input metadata ===");
+
+        List<TiffField> tfldList = meta.getAllFields();
+
+        for (TiffField tfld : tfldList ) {
+            if ( tfld.getTagInfo().directoryType != null) {
+                logger.debug("Field =" + tfld.getTagName() + ", length=" + tfld.getCount()
+                          + ", Dir type name = " + tfld.getTagInfo().directoryType.name
+                          + ", type id = " + tfld.getTagInfo().directoryType.directoryType
+                );
+            }
+            else {
+                logger.debug("Field =" + tfld.getTagName() + ", length=" + tfld.getCount() + ", DIR=NULL");
+            }
+        }
+
+        logger.debug("\n\n=== Output metadata ===");
+        TiffOutputSet out = saveOutputSet();
+        try {
+            List<TiffOutputDirectory> dirList = out.getDirectories();
+            for (TiffOutputDirectory dir : dirList) {
+                logger.debug("Found directory. Name = " + dir.description() + ", item = " + dir.getItemDescription() + ", len = " + dir.getItemLength());
+                List<TiffOutputField> outFields = dir.getFields();
+                for (TiffOutputField fld : outFields) {
+                    logger.debug("Found Filed. Name = " + fld.tagInfo.name + ", len = " + fld.count);
+                }
+            }
+        }
+        catch ( Exception e ) {
+            logger.warn("[dump] Cannot read directory. " + e.getMessage());
+        }
+    }
+
+    /**
+     *
+     * @return
+     * @throws ImageWriteException
+     */
+    public TiffOutputSet copyOutputSet() throws ImageWriteException {
+
+        TiffImageMetadata meta = metadata;
+        List<TiffField> tfldList = meta.getAllFields();
+        TiffOutputSet out = new TiffOutputSet();
+
+
+        TiffOutputDirectory rootDirectory = out.getOrCreateRootDirectory();
+        TiffOutputDirectory exifDirectory = out.getOrCreateExifDirectory();
+        TiffOutputDirectory gpsDirectory = out.getOrCreateGPSDirectory();
+
+
+        //EXIF_TAG_PHOTOSHOP_SETTINGS
+
+        for (TiffField tfld : tfldList) {
+            if (tfld.getTagInfo().directoryType != null) {
+
+                switch (tfld.getTagInfo().directoryType.directoryType) {
+                    case TiffDirectoryConstants.DIRECTORY_TYPE_ROOT:   //https://commons.apache.org/proper/commons-imaging/apidocs/index.html
+                        copyValue(tfld, rootDirectory);
+                        break;
+                    case TiffDirectoryConstants.DIRECTORY_TYPE_GPS:    //https://commons.apache.org/proper/commons-imaging/apidocs/index.html
+                        copyValue(tfld, gpsDirectory);
+                        break;
+                    case TiffDirectoryConstants.DIRECTORY_TYPE_EXIF:   //https://commons.apache.org/proper/commons-imaging/apidocs/index.html
+                        copyValue(tfld, exifDirectory);
+                        break;
+                    default:
+                        logger.warn("[copyOutputSet] Cannot locate directory : " + tfld.getTagName());
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     *
+     * @param tfld
+     * @param dir
+     */
+    public void copyValue(TiffField tfld,TiffOutputDirectory dir) {
+
+        TiffOutputField tf = new TiffOutputField(tfld.getTagInfo(),
+                tfld.getFieldType(),
+                tfld.getBytesLength(),
+                tfld.getByteArrayValue()
+        );
+        dir.removeField(tfld.getTagInfo());
+        dir.add(tf);
+    }
+
 
 
     /**
@@ -682,6 +985,27 @@ public class Metadata implements PhotoMetadataInt  {
         return  lightSrcConsts.get(lightSource);
     }
 
+
+    public TiffOutputSet getOutputSet() throws ImageWriteException {
+
+        TiffOutputSet out = this.outputSet;
+
+        if ( out == null ) {
+            if (metadata != null) {
+                out = metadata.getOutputSet();
+                logger.debug("[getOutputSet] generate output set from metadata.");
+            } else {
+                out = new TiffOutputSet();
+                logger.debug("[getOutputSet] generate empty output set.");
+            }
+        }
+
+        return out;
+    }
+
+    public void setOutputSet(TiffOutputSet outputSet) {
+        this.outputSet = outputSet;
+    }
 
     @Override
     public String getUnicId() {
@@ -764,15 +1088,8 @@ public class Metadata implements PhotoMetadataInt  {
         this.software = software;
         changed = true;
     }
-    @Override
-    public double getResolution() {
-        return resolution;
-    }
-    @Override
-    public void setResolution(double resolution) {
-        this.resolution = resolution;
-        changed = true;
-    }
+
+
     @Override
     public int getIso() {
         return iso;
@@ -901,6 +1218,98 @@ public class Metadata implements PhotoMetadataInt  {
 
     public void setLightSource(int lightSource) {
         this.lightSource = lightSource;
+    }
+
+
+    public double getfNumber() {
+        return fNumber;
+    }
+
+    public void setfNumber(double fNumber) {
+        this.fNumber = fNumber;
+    }
+
+
+    public int getSharpness() {
+        return sharpness;
+    }
+
+    public void setSharpness(int sharpness) {
+        this.sharpness = sharpness;
+    }
+
+    public String getSharpnessRef() {
+        return sharpnessRef;
+    }
+
+    public void setSharpnessRef(String sharpnessRef) {
+        this.sharpnessRef = sharpnessRef;
+    }
+
+    public int getWhiteBalance() {
+        return whiteBalance;
+    }
+
+    public void setWhiteBalance(int whiteBalance) {
+        this.whiteBalance = whiteBalance;
+    }
+
+    public String getWhiteBalanceRef() {
+        return whiteBalanceRef;
+    }
+
+    public void setWhiteBalanceRef(String whiteBalanceRef) {
+        this.whiteBalanceRef = whiteBalanceRef;
+    }
+
+    public String getSmoothness() {
+        return smoothness;
+    }
+
+    public void setSmoothness(String smoothness) {
+        this.smoothness = smoothness;
+    }
+
+    public int getResolutionUnit() {
+        return resolutionUnit;
+    }
+
+    public int getSaturation() {
+        return saturation;
+    }
+
+    public void setSaturation(int saturation) {
+        this.saturation = saturation;
+    }
+
+    public String getSaturationRef() {
+        return saturationRef;
+    }
+
+    public void setSaturationRef(String saturationRef) {
+        this.saturationRef = saturationRef;
+    }
+
+    public void setResolutionUnit(int resolutionUnit) {
+        this.resolutionUnit = resolutionUnit;
+    }
+
+    @Override
+    public double getxResolution() {
+        return xResolution;
+    }
+    @Override
+    public void setxResolution(double xResolution) {
+        this.xResolution = xResolution;
+    }
+    @Override
+    public double getyResolution() {
+        return yResolution;
+    }
+
+    @Override
+    public void setyResolution(double yResolution) {
+        this.yResolution = yResolution;
     }
 
     @Override

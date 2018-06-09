@@ -3,11 +3,20 @@ package home.abel.photohub.utils.image;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.ImagingConstants;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
+import org.apache.commons.imaging.formats.jpeg.JpegPhotoshopMetadata;
 import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
+import org.apache.commons.imaging.formats.jpeg.iptc.IptcRecord;
+import org.apache.commons.imaging.formats.jpeg.iptc.IptcTypes;
+import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
+import org.apache.commons.imaging.formats.tiff.constants.TiffConstants;
+import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
+import org.apache.commons.imaging.formats.tiff.write.TiffOutputField;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
+import org.apache.commons.imaging.util.Debug;
 import org.apache.commons.io.IOUtils;
 import org.imgscalr.Scalr;
 import org.slf4j.Logger;
@@ -19,7 +28,11 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.channels.FileChannel;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class ImageData {
     final static Logger logger = LoggerFactory.getLogger(ImageData.class);
@@ -34,7 +47,7 @@ public class ImageData {
     int height = 0;
     int width = 0;
     Metadata theMetadataClass = null;
-
+    boolean readOnly = false;
 
      /*--------------------------------------------------------------------------------------------
 
@@ -108,11 +121,16 @@ public class ImageData {
             Iterator iter = ImageIO.getImageReaders(iis);
             if (!iter.hasNext()) throw new ExceptionIncorrectImgFormat("Unknown image format.");
             reader = (ImageReader) iter.next();
+            if ( reader == null ) {
+                throw new ExceptionIncorrectImgFormat("Cannot find reader fro input stream");
+            }
             reader.setInput(iis);
             srcFormat = reader.getFormatName();
 
-        } catch (Exception e ) {
-            reader.dispose();
+            //logger.debug("Image has "+ reader.getNumImages(true) + " images");
+
+        } catch (RuntimeException | IOException e ) {
+            if ( reader != null) reader.dispose();
             IOUtils.closeQuietly(iis);
             throw new ExceptionIncorrectImgFormat("[getImageProperties] Cannot get reader for input image.");
         }
@@ -201,6 +219,14 @@ public class ImageData {
         this.width = width;
     }
 
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
 
     /*--------------------------------------------------------------------------------------------
 
@@ -238,6 +264,7 @@ public class ImageData {
             writer.dispose();
             ios.close();
             jpegOut.close();
+
         } catch (IOException e) {
             throw new ExceptionImgProcess("[compileWithMeta] cannot prepare image with format " + outFormat);
         }
@@ -252,7 +279,9 @@ public class ImageData {
      * @param os
      * @throws RuntimeException
      */
-    public synchronized void saveJPEG(OutputStream os) throws RuntimeException {
+    public synchronized void saveJPEG(OutputStream os) throws RuntimeException, ExifRewriter.ExifOverflowException {
+
+        if ( isReadOnly() ) throw new ExceptionImgProcess("Image marked as readonly");
 
         byte[] jpegImageBytes = imageData;
 
@@ -262,6 +291,7 @@ public class ImageData {
         //
         if (  ! srcFormat.equalsIgnoreCase("JPEG")) {
             try {
+                logger.debug("[saveJPEG] Do format convert, Source format = " + srcFormat);
                 jpegImageBytes = compileImage(ImageIO.read(new ByteArrayInputStream(imageData)), "JPEG");
             }
             catch (IOException e) {
@@ -277,7 +307,7 @@ public class ImageData {
             TiffOutputSet outputSet = null;
             if ((theMetadataClass != null) && (theMetadataClass.isChanged())) {
                 outputSet = theMetadataClass.saveOutputSet();
-            } else if (tiffMetadata != null ){
+            } else if (tiffMetadata != null) {
                 outputSet = tiffMetadata.getOutputSet();
             }
 
@@ -285,13 +315,43 @@ public class ImageData {
             //      Merge Image  with metadata if exist
             //
             if (outputSet != null) {
+//                logger.debug("\n\n=== Input metadata ===");
+//
+//
+//                List<TiffField> tfldList = tiffMetadata.getAllFields();
+//                for (TiffField tfld : tfldList ) {
+//                    logger.debug("Field ="+tfld.getTagName()+", length="+tfld.getCount());
+//
+//                }
+//
+//                logger.debug("\n\n=== Output metadata ===");
+//                List<TiffOutputDirectory> dirList = outputSet.getDirectories();
+//                for (TiffOutputDirectory dir : dirList ) {
+//                    logger.debug("Dir description="+dir.description()+", item="+dir.getItemDescription()+", item lenght"+dir.getItemLength());
+//                    List<TiffOutputField> outFields = dir.getFields();
+//                    for (TiffOutputField fld : outFields) {
+//                        logger.debug("Filed name="+fld.tagInfo.name+", len="+fld.fieldType.getSize());
+//                    }
+//                }
+
+                //outputSet.removeField(TiffConstants.);
+//                ByteArrayOutputStream emptyJpeg = new ByteArrayOutputStream();
+//                new ExifRewriter().removeExifMetadata(jpegImageBytes,emptyJpeg);
+//                emptyJpeg.close();
+
                 new ExifRewriter().updateExifMetadataLossless(jpegImageBytes, os, outputSet);
-            }
-            else {
+
+                //jpegImageBytes
+                //new ExifRewriter().updateExifMetadataLossy(emptyJpeg.toByteArray(), os, outputSet);
+
+            } else {
                 IOUtils.write(jpegImageBytes, os);
             }
+        } catch (ExifRewriter.ExifOverflowException eOver) {
+            logger.warn("[saveJPEG] "+ eOver.getMessage());
+            throw eOver;
         } catch (IOException | ImageWriteException | ImageReadException e) {
-            throw new ExceptionImgProcess("[compileWithMeta] Cannot Write image");
+            throw new ExceptionImgProcess("[compileWithMeta] Cannot Write image",e);
         }
         finally {
             IOUtils.closeQuietly(os);
@@ -306,7 +366,7 @@ public class ImageData {
      * @return
      * @throws RuntimeException
      */
-    public synchronized  InputStream saveJPEG() throws RuntimeException {
+    public synchronized  InputStream saveJPEG() throws RuntimeException, ExifRewriter.ExifOverflowException {
         ByteArrayOutputStream jpegOut = new ByteArrayOutputStream();
         saveJPEG(jpegOut);
         ByteArrayInputStream is = new ByteArrayInputStream(jpegOut.toByteArray());
@@ -322,6 +382,8 @@ public class ImageData {
      * @throws RuntimeException
      */
     public synchronized void savePNG(OutputStream os) throws RuntimeException {
+
+        if ( isReadOnly() ) throw new ExceptionImgProcess("Image marked as readonly");
 
         byte[] jpegImageBytes = imageData;
 
@@ -451,6 +513,11 @@ public class ImageData {
 
             result = new ImageData(compileImage(newImage, srcFormat), tiffMetadata);
 
+            logger.debug("[resize] Generate resized image."
+                    +" Req_width=" + imgSize.getWidth()+", got_width="+result.getWidth()
+                    +", Req_height=" + imgSize.getHeight()+", got_height="+result.getHeight()
+            );
+
         } catch (IOException e) {
             throw new ExceptionImgProcess("[compileWithMeta] Image rotate error.",e);
         }
@@ -519,6 +586,27 @@ public class ImageData {
         }
         return null;
     }
+
+
+    /**
+     *
+     * @param source
+     * @param dest
+     * @throws IOException
+     */
+    public static void copyFileUsingChannel(File source, File dest) throws IOException {
+        FileChannel sourceChannel = null;
+        FileChannel destChannel = null;
+        try {
+            sourceChannel = new FileInputStream(source).getChannel();
+            destChannel = new FileOutputStream(dest).getChannel();
+            destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+        }finally{
+            sourceChannel.close();
+            destChannel.close();
+        }
+    }
+
 
 
 

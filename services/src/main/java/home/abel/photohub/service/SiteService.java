@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -217,10 +218,10 @@ public class SiteService {
 				createPropertyMap(theSite)
 				);		
 			
-			if (logger.isDebugEnabled()) {
+			if (logger.isTraceEnabled()) {
+				logger.trace("[getOrLoadConnector] Sites property.");
 				for (String key: connector.getProperties().keySet() ) {
-					logger.debug("[getOrLoadConnector] Sites property name=" + key 
-					 + ", value=" +connector.getProperties().get(key).getValue());
+					logger.trace("[getOrLoadConnector] property name=" + key  + ", value=" +connector.getProperties().get(key).getValue());
 				}
 			}
 			connector.setState(SiteStatusEnum.valueOf(theSite.getConnectorState()));
@@ -228,13 +229,12 @@ public class SiteService {
 		
 		
 		//  Check connector status!
-		logger.debug("[getOrLoadConnector] Site "+theSite+", connector loaded with STATE="+connector.getState().toString());
 		if (! connector.getState().toString().equalsIgnoreCase(theSite.getConnectorState()) ) {
 			theSite.setConnectorState(connector.getState().toString());
 			logger.trace("[getOrLoadConnector] Site "+theSite+", save new connectors STATE="+connector.getState().toString());
 			siteRepo.save(theSite);
 		}
-		
+		logger.debug("[getOrLoadConnector] Site "+theSite+", connector loaded with STATE="+connector.getState().toString());
 		return connector;
 	}
 	
@@ -280,7 +280,7 @@ public class SiteService {
 			String rootDir,
 			Map<String,SitePropertyInt> properties
 			) throws Exception {
-		logger.debug("Create site. " +  "name="+name+ ", type="+type+ ", rootDir="+rootDir );
+		logger.info("[createSite] Create site. " +  "name="+name+ ", type="+type+ ", rootDir="+rootDir );
 		
 		Site newSite = new Site();
 		newSite.setName(name);
@@ -298,14 +298,14 @@ public class SiteService {
 			for (String key: defaultProperties.keySet() ) {
 				SitePropertyInt theProperty = properties.get(key);
 				if ( theProperty != null ) {
-					logger.debug("Copy received property '" + key + "' to site, with value " + theProperty.getValue());
+					logger.trace("Copy received property '" + key + "' to site, with value " + theProperty.getValue());
 					newSite.addProperty(key,theProperty.getValue());
 				}
 				else {
-					logger.debug("Copy default property '" + key + "' to site.");
+					logger.trace("Copy default property '" + key + "' to site.");
 					newSite.addProperty(key,defaultProperties.get(key).getValue());
 				}
-				logger.debug("Set property for site '"+name+"': "+
+				logger.trace("Set property for site '"+name+"': "+
 						"name="+key+ ", value="+ newSite.getProperty(key)
 						);
 			}
@@ -313,7 +313,7 @@ public class SiteService {
 		//    Если при создании сайта проперти не указали, то просто копируем все дефолтные в сайт. 
 		else {
 			for (String key: defaultProperties.keySet() ) {
-				logger.debug("Copy default property '" + key + "' to site.");
+				logger.trace("Copy default property '" + key + "' to site.");
 				newSite.addProperty(key,defaultProperties.get(key).getValue());
 			}
 		}
@@ -331,6 +331,21 @@ public class SiteService {
 		newSite.setConnectorState(SiteStatusEnum.DISCONNECT.toString());
 		newSite = siteRepo.save(newSite);
 
+		logger.debug("[createSite] Create site. "
+				+ "site name="+name
+				+ ", input site type="+type
+				+ ", rootDir="+(rootDir==null?"null":rootDir)
+				+ ", connector type="+newSite.getConnectorType()
+				+ ", site user="+(newSite.getSiteUser()==null?"null":newSite.getSiteUser())
+		);
+		if (logger.isDebugEnabled() && (newSite.getProperties() != null)) {
+			for (SiteProperty prop: newSite.getProperties()) {
+				logger.trace("[createSite] Site property name=" + prop.getName()
+						+ ", value=" + (prop.getValue()==null?"null":prop.getValue())
+						+ ", descr=" + (prop.getDescription()==null?"null":prop.getDescription())
+				);
+			}
+		}
 		return newSite;
 	}
 	
@@ -354,7 +369,7 @@ public class SiteService {
 	 */
 	@Transactional
 	public SiteCredentialInt connectSite(Site theSite, URL caller) throws Exception{
-		logger.trace("[connectSite] Connect site." + theSite);
+		logger.info("[connectSite] Connect site." + theSite);
 		SiteConnectorInt connector =  getOrLoadConnector(theSite);
 		SiteCredentialInt  authCred = connector.doConnect(caller);
 		
@@ -365,7 +380,25 @@ public class SiteService {
 			//logger.debug("Change connection state to='"+connector.getState().toString()+"' For site "+theSite);
 			siteRepo.save(theSite);
 		}
-		logger.debug("[connectSite] Connector state='"+connector.getState().toString()+"' For site "+theSite);
+
+		logger.debug("[connectSite] "
+				+" Site = " + theSite
+				+", STATE='"+connector.getState().toString()
+				+", Cred AuthReceive="+(authCred.getAuthReceiveType()==null?"null":authCred.getAuthReceiveType().toString())
+				+", Cred token="+(authCred.getAccessToken()==null?"null":authCred.getAccessToken())
+				+", Cred message="+(authCred.getUserMessage()==null?"null":authCred.getUserMessage())
+				+", Cred user login="+(authCred.getUserLoginFormUrl()==null?"null":authCred.getUserLoginFormUrl())
+		);
+		if (logger.isDebugEnabled() && (authCred.getProperties() != null)) {
+			for (String pname: authCred.getProperties().keySet()) {
+				SitePropertyInt propObj = authCred.getProperties().get(pname);
+				logger.debug("[connectSite] Auth property "
+						+" name="+pname
+						+", value="+(propObj.getValue()==null?"null":propObj.getValue())
+				);
+			}
+		}
+
 		return authCred;
 	}
 	
@@ -399,7 +432,25 @@ public class SiteService {
 			theSite.setConnectorState(connector.getState().toString());
 			siteRepo.save(theSite);
 		}
-		logger.debug("Change connection state='"+connector.getState().toString()+"'. For site "+theSite);
+		logger.debug("[authSite] "
+				+" Site = " + theSite
+				+", STATE='"+connector.getState().toString()
+				+", Cred AuthReceive="+(auth.getAuthReceiveType()==null?"null":auth.getAuthReceiveType().toString())
+				+", Cred token="+(auth.getAccessToken()==null?"null":auth.getAccessToken())
+				+", Cred message="+(auth.getUserMessage()==null?"null":auth.getUserMessage())
+				+", Cred user login="+(auth.getUserLoginFormUrl()==null?"null":auth.getUserLoginFormUrl())
+		);
+		if (logger.isDebugEnabled() && (auth.getProperties() != null)) {
+			for (String pname: auth.getProperties().keySet()) {
+				SitePropertyInt propObj = auth.getProperties().get(pname);
+				logger.debug("[authSite] Auth property "
+						+" name="+pname
+						+", value="+(propObj.getValue()==null?"null":propObj.getValue())
+				);
+			}
+		}
+
+		//logger.debug("Change connection state='"+connector.getState().toString()+"'. For site "+theSite);
 		return auth;
 	}
 	
@@ -473,8 +524,26 @@ public class SiteService {
 				}
 			}
 		}
-		
-		siteRepo.save(origSite);
+
+		origSite = siteRepo.save(origSite);
+
+		logger.debug("[updateSite] Create site. "
+				+ "name="+origSite.getName()
+				+ ", rootDir="+(origSite.getRoot()==null?"null":origSite.getRoot())
+				+ ", connector type="+origSite.getConnectorType()
+				+ ", state="+origSite.getConnectorState()
+				+ ", site user="+origSite.getSiteUser()
+		);
+
+		if (logger.isDebugEnabled() && (origSite.getProperties() != null)) {
+			for (SiteProperty prop: origSite.getProperties()) {
+				logger.trace("[updateSite] Site property name=" + prop.getName()
+						+ ", value=" + (prop.getValue()==null?"null":prop.getValue())
+						+ ", descr=" + (prop.getDescription()==null?"null":prop.getDescription())
+				);
+			}
+		}
+
 		return origSite;
 	}
 	
@@ -505,6 +574,10 @@ public class SiteService {
 			connector.disconnectSite();
 		}
 
+		logger.debug("[disconnectSite] Site="+theSite
+				+",  STATE=" + theSite.getConnectorState()
+				+", connector type = " + theSite.getConnectorType()
+		);
 		return theSite;
 	}
 	
@@ -537,7 +610,7 @@ public class SiteService {
 			throw new ExceptionInternalError("Remove site. Parameter Site is null or has no id.");
 
 		//  Clean task records abs schedules
-		logger.trace("[SiteService.removeSite] Stop sheduled tasks.");
+		logger.info("[removeSite] Stop sheduled tasks.");
 
 		//  Stop abd remove all tasks for tis site
 		taskQService.stopTasksForSite(theSite);
@@ -552,8 +625,7 @@ public class SiteService {
 				logger.error("Found not removed object for site "+theSite+" : Object id=" + theNode + "/"+ theNode.getPhoto().getName() + ".");
 			}
 		}
-		logger.trace("[SiteService.removeSite] Remove site" + theSite);	
-		
+
 		//
 		//   При удалении сейта необходимо отсоединить коннектор и удалить авторизвационный токен. 
 		try {
@@ -562,10 +634,9 @@ public class SiteService {
 		} catch (Exception e) {
 			logger.error("Cannot disconnect site, id=" + theSite,e);
 		}
-		logger.trace("[SiteService.removeSite] Disconnect connector for site " + theSite + ", connector type ="+theSite.getConnectorType());	
-		
+
 		siteRepo.delete(theSite);
-			
+		logger.debug("[removeSite] Remove site = "+theSite+". Disconnect connector type = "+theSite.getConnectorType());
 	}
 	
 	/** 
@@ -650,12 +721,16 @@ public class SiteService {
 		long totalSize = 0;
 		JPAQuery<?> query = new JPAQuery<Void>(em);
 		QPhoto photo = QPhoto.photo;
-
-		totalSize = query.select(photo.allMediaSize.sum())
-				.from(photo)
-				.where(photo.siteBean.id.eq(theSite.getId())
-						.and(photo.type.eq(1))
-				).fetchOne();
+		try {
+			totalSize = query.select(photo.allMediaSize.sum())
+					.from(photo)
+					.where(photo.siteBean.id.eq(theSite.getId())
+							.and(photo.type.eq(1))
+					).fetchOne();
+		}
+		catch (Throwable th) {
+			logger.error("[calcSiteSize] query error : "+ th.getMessage());
+		}
 		return totalSize;
 	}
 

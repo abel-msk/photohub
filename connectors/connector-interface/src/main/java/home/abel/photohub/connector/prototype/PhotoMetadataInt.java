@@ -64,8 +64,15 @@ public interface PhotoMetadataInt {
 	public String getSoftware();
 	public void setSoftware(String software);
 
-	public double getResolution();
-	public void setResolution(double resolution);
+//	public double getResolution();
+//	public void setResolution(double resolution);
+
+	public double getxResolution();
+	public void setxResolution(double xRresolution);
+
+	public double getyResolution();
+	public void setyResolution(double xResolution);
+
 
 	public double getShutterSpeed();
 	public void setShutterSpeed(double shutterSpeed);

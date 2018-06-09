@@ -191,16 +191,16 @@ public class Photo implements Serializable {
 		String typeName = "UNK";
 		
 		if (this.type == ModelConstants.OBJ_SINGLE) {
-			typeName = "OBJ/" + this.getMediaType();
+			typeName = "OBJ|" + this.getMediaType();
 		}
 		else if (this.type == ModelConstants.OBJ_FOLDER ) {
-			typeName = "FLD";
+			typeName = "FLD|";
 		}
 		else if  (this.type == ModelConstants.OBJ_SERIES ) {
-			typeName = "SER";
+			typeName = "SER|";
 		}
 		
-		return typeName + "-" + this.name +"("+typeName+"/"+this.id+")";
+		return "<type="+typeName + ", name=" + this.name +", id="+this.id+">";
 	}
 	
 	public List<Media> getMediaObjects() {

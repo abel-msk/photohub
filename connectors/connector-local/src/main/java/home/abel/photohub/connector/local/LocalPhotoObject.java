@@ -7,8 +7,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import home.abel.photohub.connector.prototype.*;
+import home.abel.photohub.utils.image.ExceptionImgProcess;
 import home.abel.photohub.utils.image.ImageData;
 import home.abel.photohub.utils.image.Metadata;
+import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,17 +27,21 @@ public class LocalPhotoObject extends BasePhotoObj {
 	protected boolean isFolder = false;
 	protected ImageData imageData = null;
 
+
 	public LocalPhotoObject(SiteConnectorInt conn, File objectFile) throws Exception  {
 		super(conn);
 		photoObjectsFile = objectFile;
 		isFolder = photoObjectsFile.isDirectory();
 
+
 		if (! isFolder ) {
 			String fileExt = FilenameUtils.getExtension(photoObjectsFile.getName());
-			setMimeType(ImageData.getMimeTypeByExt(fileExt));
-			logger.debug("[LocalPhotoObject.init] Set mime type = " + getMimeType());
 
 			if (ImageData.isValidImage(photoObjectsFile)) {
+				setMimeType(ImageData.getMimeTypeByExt(fileExt));
+
+				logger.trace("[init] object mimetype=" + getMimeType()+ ", id "+objectFile.getAbsolutePath() );
+
 				setType("image");
 				imageData = new ImageData(new FileInputStream(photoObjectsFile));
 
@@ -44,27 +50,52 @@ public class LocalPhotoObject extends BasePhotoObj {
 				//
 				if ( imageData.getMetadata() != null ) {
 					if (imageData.getMetadata().getUnicId() == null) {
-						imageData.getMetadata().setUnicId(Metadata.generateUUID());
 						if (photoObjectsFile.canWrite()) {
-							imageData.saveJPEG(new FileOutputStream(photoObjectsFile));
+							Metadata md = imageData.getMetadata();
+							md.setUnicId(Metadata.generateUUID());
+							logger.trace("[init] object update UnicId =  "+md.getUnicId());
+							File tmpFile = null;
+							try {
+								tmpFile = File.createTempFile("image", "." + fileExt);
+								FileOutputStream fos = new FileOutputStream(tmpFile);
+								try {
+									imageData.saveJPEG(fos);
+								}
+								catch (ExifRewriter.ExifOverflowException e ) {
+									md.setOutputSet(md.copyOutputSet());
+									if (logger.isTraceEnabled()) {
+										md.dump();
+									}
+									imageData.saveJPEG(fos);
+								}
+								ImageData.copyFileUsingChannel(tmpFile, photoObjectsFile);
+							}
+							catch (IOException e) {
+								imageData.setReadOnly(true);
+								logger.warn("Open read only :" + photoObjectsFile.getAbsolutePath() +", Error:"+e.getMessage());
+								//throw  new ExceptionImgProcess("Cannot update metadata. ");
+							}
+							finally {
+								if (tmpFile != null) tmpFile.delete();
+							}
 						} else {
-							logger.error("Cannot change metadata for read only file " + photoObjectsFile.getAbsolutePath());
+							logger.warn("Cannot update metadata for read only file " + photoObjectsFile.getAbsolutePath());
 						}
 					}
 				}
 				setWidth(imageData.getWidth());
 				setHeight(imageData.getHeight());
-
+				setSize(photoObjectsFile.length());
 			}
-			else if (getMimeType().startsWith("video")) {
-				setType("video");
-			}
+//			else if (getMimeType().startsWith("video")) {
+//				setType("video");
+//				throw new ExceptionUnknownFormat(" Unknown media format for file "+fn );
+//			}
 			else {
 				String fn=photoObjectsFile.getAbsolutePath();
 				photoObjectsFile = null;
 				throw new ExceptionUnknownFormat(" Unknown media format for file "+fn );
 			}
-			setSize(photoObjectsFile.length());
 		}
 		this.setId(photoObjectsFile.getAbsolutePath());
 	}
@@ -162,7 +193,8 @@ public class LocalPhotoObject extends BasePhotoObj {
 		originalMD.setTzOffset(newMetaData.getTzOffset());
 		originalMD.setOrientation(newMetaData.getOrientation());
 		originalMD.setSoftware(newMetaData.getSoftware());
-		originalMD.setResolution(newMetaData.getResolution());
+		originalMD.setxResolution(newMetaData.getxResolution());
+		originalMD.setyResolution(newMetaData.getyResolution());
 		originalMD.setShutterSpeed(newMetaData.getShutterSpeed());
 		originalMD.setBrightness(newMetaData.getBrightness());
 		originalMD.setUserComment(newMetaData.getUserComment());
@@ -295,19 +327,18 @@ public class LocalPhotoObject extends BasePhotoObj {
 		
 		//logger.trace("Process thubnail image. Original image  width=" +getWidth()+", height="+getHeight());
 
-				
+
 		if ( getHeight() > getWidth() ) {
 			mediaFile.setHeight(dim.height);	
 			float aspect = (float)getWidth()/(float)getHeight();
 			mediaFile.setWidth((int)(dim.width*aspect));
-			logger.trace("Process thubnail. Normalize by height. Scale to width=" +mediaFile.getWidth()+", height="+mediaFile.getHeight());
+			logger.trace("[getThumbnail] Process thubnail. Normalize by height. Scale to width=" +mediaFile.getWidth()+", height="+mediaFile.getHeight());
 		}
 		else {
 			mediaFile.setWidth(dim.width) ;
 			float aspect = (float)getHeight()/(float)getWidth();
 			mediaFile.setHeight((int)(dim.height*aspect));
-			logger.trace("Process thubnail. Normalize by width. Scale to width=" +mediaFile.getWidth()+", height="+mediaFile.getHeight());
-
+			logger.trace("[getThumbnail] Process thubnail. Normalize by width. Scale to width=" +mediaFile.getWidth()+", height="+mediaFile.getHeight());
 		}
 
 		return mediaFile;

@@ -67,7 +67,8 @@ public class LocalMediaObject extends BaseMediaObject {
 				newImage =  imageDataOld.resize(new Dimension(getWidth(),getHeight()));
 				//  Redefine object size
 				setHeight(newImage.getHeight());
-				setWidth(newImage.getHeight());
+				setWidth(newImage.getWidth());
+				//logger.trace("[getContentStream] Size changed. width="+newImage.getWidth()+", height="+newImage.getHeight());
 			}
 			else {
 				newImage  = imageDataOld;

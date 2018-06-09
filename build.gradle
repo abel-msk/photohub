@@ -199,7 +199,8 @@ task install {
 
 task prepareDistribution {
     //dependsOn 'processResources'
-    //inputs.dir project.sourceSets.main.java.srcDirs
+    inputs.dir project.sourceSets.main.resources.srcDirs
+    //inputs.files fileTree(project.sourceSets.main.resources.srcDirs)
     outputs.dir localDistribRoot+"/bin"
     outputs.dir localDistribRoot+"/config"
 
@@ -277,7 +278,7 @@ def macosDefaultsDir = macosAppHomeDir +  "/etc/include"
 def macosInstalledRootDir = ""
 
 def macosDBHomeDir =  macosAppHomeDir + "/data"
-def macosDBDir = macosDBHomeDir + "/db"
+def macosDBDir = macosDBHomeDir + "/db/photohub"
 def macosThumbDir = macosDBHomeDir + "/thumbs"
 def macosPkgName  = "photohub.pkg"
 

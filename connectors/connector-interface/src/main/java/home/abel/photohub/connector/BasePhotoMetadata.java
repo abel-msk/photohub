@@ -25,7 +25,8 @@ public class BasePhotoMetadata implements PhotoMetadataInt {
 	private String cameraModel = null;
 	private int orientation = 0;
 	private String software = null;
-	private double resolution = 0;
+	private double xResolution = 0;
+	private double yResolution = 0;
 	private int iso = 0;
 	private double shutterSpeed = 0;
 	private double aperture = 0;
@@ -133,13 +134,21 @@ public class BasePhotoMetadata implements PhotoMetadataInt {
 	}
 
 	@Override
-	public double getResolution() {
-		return resolution;
+	public double getxResolution() {
+		return xResolution;
 	}
 
 	@Override
-	public void setResolution(double resolution) {
-		this.resolution = resolution;
+	public void setxResolution(double xResolution) { this.xResolution = xResolution; }
+
+	@Override
+	public double getyResolution() {
+		return yResolution;
+	}
+
+	@Override
+	public void setyResolution(double yResolution) {
+		this.yResolution = yResolution;
 	}
 
 	@Override

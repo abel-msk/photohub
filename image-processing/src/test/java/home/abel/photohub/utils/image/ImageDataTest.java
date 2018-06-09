@@ -1,5 +1,6 @@
 package home.abel.photohub.utils.image;
 
+import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -23,11 +24,16 @@ public class ImageDataTest {
 
 
     public  File imgFile = null;
+    public  File sample4 = null;
+    public  File sample5 = null;
 
     @Before
     public void loadImage() {
         ClassLoader classLoader = getClass().getClassLoader();
         imgFile = new File(classLoader.getResource("sample3.JPG").getFile());
+        sample4 = new File(classLoader.getResource("sample4.JPG").getFile());
+        sample5 = new File(classLoader.getResource("sample5.tif").getFile());
+
     }
 
     @Test
@@ -109,6 +115,54 @@ public class ImageDataTest {
 
     }
 
+    @Test
+    public void variousFormatsTest() throws Throwable {
+        ImageData imgObj = new ImageData(new FileInputStream(sample4));
+        Metadata md = imgObj.getMetadata();
+        md.setUnicId(Metadata.generateUUID());
+        logger.debug("Set UUID to "+md.getUnicId()+", len="+md.getUnicId().length());
+//        imgObj.setMetadata(md);
 
+        File outFile = new File("/tmp/sample4.jpeg");
+        outFile.createNewFile();
+        try {
+            imgObj.saveJPEG(new FileOutputStream(outFile));
+        }
+        catch (ExifRewriter.ExifOverflowException e) {
+            logger.warn("Cannot save jpeg.", e);
+            md.setOutputSet(md.copyOutputSet());
+            md.dump();
+            imgObj.saveJPEG(new FileOutputStream(outFile));
+        }
+    }
+
+
+    @Test
+    public void tiffTest() throws Throwable {
+        ImageData imgObj = new ImageData(new FileInputStream(sample5));
+        Metadata md = imgObj.getMetadata();
+        md.setUnicId(Metadata.generateUUID());
+        logger.debug("Set UUID to "+md.getUnicId()+", len="+md.getUnicId().length());
+
+        File outFile = new File("/tmp/sample5.jpeg");
+        outFile.createNewFile();
+
+        try {
+            md.dump();
+            imgObj.saveJPEG(new FileOutputStream(outFile));
+            logger.debug(" Save JPEG file.");
+        }
+        catch (ExifRewriter.ExifOverflowException e) {
+            logger.warn("Cannot save jpeg.", e);
+            md.setOutputSet(md.copyOutputSet());
+            md.dump();
+            imgObj.saveJPEG(new FileOutputStream(outFile));
+        }
+
+//        File outFile2 = new File("/tmp/sample5.png");
+//        outFile2.createNewFile();
+//        imgObj.savePNG(new FileOutputStream(outFile2));
+
+    }
 
 }

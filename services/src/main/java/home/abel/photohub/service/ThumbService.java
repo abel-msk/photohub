@@ -138,9 +138,17 @@ public class ThumbService {
 	public void uploadThumbnail(PhotoObjectInt sitesPhotoObject, Photo thePhoto) throws IOException,ExceptionPhotoProcess {
 		//   Save Thumbnail
 		if (sitesPhotoObject.hasThumbnailSource()) {
-			
+
 			PhotoMediaObjectInt mObject =  sitesPhotoObject.getThumbnail(thumbDimension);
-			
+//			logger.debug("[uploadThumbnail]  Site photo object = "+ sitesPhotoObject);
+//			logger.debug("[uploadThumbnail] Point 1 - Save thumb for Photo="+thePhoto+ ", Type="+mObject.getType()
+//					+", height="+ mObject.getHeight()
+//					+", width="+ mObject.getWidth()
+//					+", size="+mObject.getSize()
+//					+", path="+mObject.getPath()
+//			);
+
+
 			//   Save thumbnail to local file
 			String newThumbPath = getThumbPath(thePhoto.getId());
 			File outputFile = new File(newThumbPath);
@@ -148,6 +156,7 @@ public class ThumbService {
 				FileUtils.saveFile(mObject.getContentStream().getInputStream(), outputFile);
 			}
 			catch (Exception e) {
+				logger.warn("[uploadThumbnail] Cannot save file. " + e.getMessage());
 				throw new IOException(e);
 			}
 			
@@ -161,6 +170,13 @@ public class ThumbService {
 			dbMObject.setMimeType(mObject.getMimeType());
 			dbMObject.setPath(newThumbPath);
 			thePhoto.addMediaObject(dbMObject);
+
+			logger.debug("[uploadThumbnail] Save thumb for Photo="+thePhoto+ ", Type="+dbMObject.getType()
+					+", height="+ dbMObject.getHeight()
+					+", width="+ dbMObject.getWidth()
+					+", size="+dbMObject.getSize()
+					+", path="+dbMObject.getPath()
+			);
 		}
 		else {
 			setDefaultThumb(thePhoto);

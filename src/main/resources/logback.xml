@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <configuration debug="false" scan="true" scanPeriod="30 seconds">
+
     <!-- 
     <include resource="org/springframework/boot/logging/logback/base.xml"/>
-     -->
+	-->
 	<conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
 	<conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
 
@@ -15,22 +16,19 @@
 
 	<property name="CONSOLE_LOG_PATTERN" value="%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(-){faint} %clr([%10.10t]){faint} %clr(%-50.50logger{49}){cyan} %clr(:){faint} %m%n%wex"/>
 	<property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p : %10.10t : %-50.50logger{49} : %m%n%wex"/>
-  
-  
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-        	<charset>UTF-8</charset>
-        	<pattern>${CONSOLE_LOG_PATTERN}</pattern>
-        </encoder>
 
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<charset>UTF-8</charset>
+			<pattern>${CONSOLE_LOG_PATTERN}</pattern>
+		</encoder>
 
 		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-			<level>TRACE</level>
+			<level>WARN</level>
 		</filter>
-
-    </appender>
+	</appender>
     
-  	<appender name="FILE"
+	<appender name="FILE"
 		class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<encoder>
 			<pattern>${FILE_LOG_PATTERN}</pattern>
@@ -62,6 +60,23 @@
 		<!--</triggeringPolicy>-->
 
 	</appender>
+
+	<appender name="TASKS"
+			  class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<encoder>
+			<pattern>${FILE_LOG_PATTERN}</pattern>
+		</encoder>
+		<file>@app.log.path@/tasks.log</file>
+
+		<!-- daily rollover -->
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>@app.log.path@/tasks.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+			<maxHistory>10</maxHistory>
+			<totalSizeCap>1GB</totalSizeCap>
+		</rollingPolicy>
+
+	</appender>
+
 	 
 	<appender name="DEBUG_LEVEL_REMAPPER" class="org.springframework.boot.logging.logback.LevelRemappingAppender">
 		<destinationLogger>org.springframework.boot</destinationLogger>
@@ -103,8 +118,12 @@
  	<logger name="org.hsqldb" level="WARN"/>
 	<logger name="org.flywaydb" level="WARN"/>
 
-  	<logger name="home.abel.photohub" level="TRACE"/>
+	<logger name="home.abel.photohub.utils" level="WARN"/>
+  	<logger name="home.abel.photohub" level="DEBUG"/>
   	   
+	<logger name="taskslog" level="TRACE">
+		<appender-ref ref="TASKS" />
+	</logger>
 
 	<root level="WARN">
 		<appender-ref ref="CONSOLE" />

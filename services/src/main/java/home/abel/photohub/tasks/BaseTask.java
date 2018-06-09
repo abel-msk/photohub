@@ -24,6 +24,8 @@ import home.abel.photohub.model.TaskRecord;
 public class BaseTask implements Runnable, Serializable {
 	private static final long serialVersionUID = 1L;
 	final Logger logger = LoggerFactory.getLogger(BaseTask.class);
+	final Logger bgLog = LoggerFactory.getLogger("taskslog");
+
 
 	@JsonIgnore
 	private Future<?> thisTaskProcess;
@@ -81,6 +83,7 @@ public class BaseTask implements Runnable, Serializable {
 		setStatus(TaskStatusEnum.IDLE,"Wait for execution");
 		saveLog();
 		logger.debug("Create new task. Task=" + this);
+		bgLog.debug("Create new task. Task=" + this);
 		this.description = BaseTask.getStaticDescription();
 		this.displayName = BaseTask.getStaticDisplayName();
 	}
@@ -186,6 +189,8 @@ public class BaseTask implements Runnable, Serializable {
 
 
 		logger.debug("[BaseTask.run] Starting. Task="+this);
+		bgLog.debug("[BaseTask.run] Starting. Task="+this);
+
 
 		try {
 			exec();
@@ -196,12 +201,14 @@ public class BaseTask implements Runnable, Serializable {
 			setStatus(TaskStatusEnum.ERR,ex.getMessage());
 			String errStr = "Task "+this+". Execution aborted due to error="+ex.getMessage();
 			logger.error(errStr,ex);
+			bgLog.error(errStr,ex);
 			throw new ExceptionTaskAbort(errStr,ex);
 		}
 		finally {
 			//logger.debug("[BaseTask.run] Execution completed.");
 			saveLog();
 			logger.debug("[BaseTask.run] Execution completed. Save result record to DB. TaskRecord="+taskRecord);
+			bgLog.debug("[BaseTask.run] Execution completed. Save result record to DB. TaskRecord="+taskRecord);
 
 			if ( isSaveToDB()) {
 				try {
@@ -214,6 +221,7 @@ public class BaseTask implements Runnable, Serializable {
 					}
 				} catch (Exception e) {
 					logger.error("[BaseTask.run] Cannot update Site="+schedule.getSite()+" to DB.",e);
+					bgLog.error("[BaseTask.run] Cannot update Site="+schedule.getSite()+" to DB.",e);
 				}
 			}
 		}
