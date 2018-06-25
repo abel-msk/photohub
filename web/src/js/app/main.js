@@ -246,6 +246,7 @@ define(["jquery","login","modalDialog","api","menu","filter",
 
                 //
                 //  Если больше не осталось выделенных елементов закрываем меню
+                //
                 if ( itemSelection.length() <= 0 ) {
                     menu.closeMenu(MENU_SELECTION);
                 }
@@ -278,6 +279,12 @@ define(["jquery","login","modalDialog","api","menu","filter",
 
 
 
+        //------------------------------------------------------------------------
+        //
+        //    Перед отрисовкаой каждого элемента   проверяем  помечен ли он как выделенный
+        //    Если так, рендереим как выделенный
+        //
+        //------------------------------------------------------------------------
         function renderSelected(id,element) {
             //logger.debug("[main.renderSelected] Got event for object id="+id, element);
             if ( itemSelection.getItem(id) ) {
@@ -294,7 +301,7 @@ define(["jquery","login","modalDialog","api","menu","filter",
         function viewNext(offset) {
             if ( filter ) {
                 filter.loadSingle(offset, function(object) {
-                    var mediaObj = loadDefaultMetia(object);
+                    var mediaObj = loadDefaultMedia(object);
                     if (mediaObj) {
                         //viewImgLoader.append(object.id, offset, mediaObj.width, mediaObj.height);
                         viewImgLoader.append({
@@ -312,7 +319,7 @@ define(["jquery","login","modalDialog","api","menu","filter",
         function viewPrev(offset) {
             if ( filter ) {
                 filter.loadSingle(offset, function(object) {
-                    var mediaObj =loadDefaultMetia(object);
+                    var mediaObj =loadDefaultMedia(object);
                     if (mediaObj) {
                         //viewImgLoader.prepend(object.id, offset, mediaObj.width,mediaObj.height);
                         viewImgLoader.append({
@@ -332,7 +339,7 @@ define(["jquery","login","modalDialog","api","menu","filter",
         //
         //------------------------------------------------------------------------
 
-        function loadDefaultMetia (object) {
+        function loadDefaultMedia (object) {
             // var type = object.mediaType.substring(0,object.mediaType.index("/"));
             // var mt = MEDIA_IMAGE;
             // if ( type === "video") {

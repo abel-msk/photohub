@@ -545,6 +545,14 @@ public class PhotoServiceTest {
 		siteService.removeSite(theSite);
 
 		//dumpDB();
+
+
+//		scheduleRepository;
+//		taskRecordRepository;
+
+//		scheduleRepository.delete(scheduleRepository.findAll());
+
+
 	}
 	  
 	public final static String L2_FOLDER_NAME = "Folder_L2";

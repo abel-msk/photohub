@@ -483,16 +483,26 @@ public class Metadata implements PhotoMetadataInt  {
     }
 
 
+    public  TiffOutputSet saveOutputSet() throws ExceptionMetadataProcess {
+        TiffOutputSet out = null;
+        try {
+            out = saveOutputSet(this.getOutputSet());
+        }
+        catch (ImageWriteException ex) {
+            throw new ExceptionMetadataProcess("[saveOutputSet] Cannot prepare metadata for update.",ex);
+        }
+        return out;
+    }
+
+
     /**
      * Return updated exif directory in output format (ready for insert to the tiff/jpeg image)
      * @return
      */
-    public  TiffOutputSet saveOutputSet() {
-        TiffOutputSet out;
+    public  TiffOutputSet saveOutputSet(TiffOutputSet out) throws ExceptionMetadataProcess {
 
+        if ( out == null) return null;
         try {
-            out = this.getOutputSet();
-
             TiffOutputDirectory rootDirectory = out.getOrCreateRootDirectory();
             TiffOutputDirectory exifDirectory = out.getOrCreateExifDirectory();
             TiffOutputDirectory gpsDirectory = out.getOrCreateGPSDirectory();
@@ -914,7 +924,7 @@ public class Metadata implements PhotoMetadataInt  {
                 }
             }
         }
-        return out;
+        return saveOutputSet(out);
     }
 
     /**

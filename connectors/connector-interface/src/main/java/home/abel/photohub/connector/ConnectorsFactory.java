@@ -170,13 +170,16 @@ public class ConnectorsFactory {
 		}
 		return connector;
 	}
+
 	/**
-	 * 
-	 *   Create new site connector with given type and user name
-	 * 
+	 *
+	 *  Create new site connector with given type and user name
+	 *
 	 * @param siteType
 	 * @param siteUser
-	 * @param propertiesMap
+	 * @param connectorId
+	 * @param localStore
+	 * @param inputPropertiesMap
 	 * @return
 	 * @throws ConnectorLoadException
 	 */

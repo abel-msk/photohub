@@ -24,7 +24,8 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
 
         //------------------------------------------------------------------
         //
-        //   Set filtered data
+        //   Set filter and load  first page for filtered data list.
+        //   Начальная загрузка фоток
         //
         //------------------------------------------------------------------
         FilteredList.prototype.setFilter = function(filter) {
@@ -92,7 +93,7 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
 
         //------------------------------------------------------------------
         //
-        //   Загружаем данные от сервера
+        //   Загружаем данные с сервера
         //
         //------------------------------------------------------------------
         FilteredList.prototype._loadPage = function(direction,filter,el) {
@@ -255,22 +256,32 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
             var curPageItemsAR = [];
 
             for (var i = 0; i < sortedIndex.length; i++) {
-                var pgId = itemArray[sortedIndex[i]].pageId;
+                var pgId = itemArray[sortedIndex[i]].pageId;    // Get page id from current item
+
+                //   Page was changed& Batch delete items from page
+                //   Если мы перешли на новую страницу,  посылаем  на удаление список  картинос с предыдущей страницы
                 if (pgId !== curPage ) {
                     if (curPage >= 0  ) { //close array and start delete from one page.
+                        DEBUG && logger.debug("[FilteredList._removeItemfromView] Remove items for Page =" + curPage);
                         this.scroller.removePageItems(curPageItemsAR,curPage);
                         curPageItemsAR = [];
                     }
                     curPage = pgId;
+
+                    //   Add item  to array for new page
                     curPageItemsAR.push(itemArray[sortedIndex[i]].id);
                 }
                 else {
+                    //   Append item to curent pages array
                     curPageItemsAR.push(itemArray[sortedIndex[i]].id);
                 }
             }
 
-            // process last page
+            //
+            //   Rеmove objects from last page
+            //
             if ( curPageItemsAR.length > 0 ) {
+                DEBUG && logger.debug("[FilteredList._removeItemfromView] Remove items for Page =" + curPage);
                 this.scroller.removePageItems(curPageItemsAR,curPage);
             }
         };

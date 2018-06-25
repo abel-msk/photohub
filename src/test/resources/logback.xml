@@ -7,8 +7,10 @@
             <pattern>%-42(%d{HH:mm:ss.SSS} %-5level %logger{60}) - %message %n</pattern>
         </encoder>
     </appender>
- 
 
+    <logger name="ch.qos.logback">
+        <level value="WARN" />
+    </logger>
  
     <logger name="org.springframework">
         <level value="WARN" />
@@ -27,13 +29,15 @@
         <level value="WARN" />
     </logger>  
     <logger name="org.springframework.data">
-        <level value="DEBUG" />
+        <level value="WARN" />
     </logger>
      <logger name="org.springframework.jpa">
-        <level value="DEBUG" />
+        <level value="WARN" />
     </logger>
 
-    <logger name="org.flywaydb" level="WARN"/>
+    <logger name="org.flywaydb">
+        <level value="WARN"/>
+    </logger>
      
     <logger name="home.abel.photohub">
         <level value="TRACE" />
@@ -41,7 +45,7 @@
      
      
     <root>
-        <level value="INFO" />
+        <level value="WARN" />
         <appender-ref ref="CONSOLE" />
     </root>
 </configuration>

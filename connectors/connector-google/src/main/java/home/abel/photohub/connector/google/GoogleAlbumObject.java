@@ -174,20 +174,6 @@ public class GoogleAlbumObject extends BasePhotoObj {
 				logger.error("Cannot cast to PhotoEntry object ",e );
 			}
 
-//			if ( photoEntry.getMediaContents().get(0).getMedium().compareToIgnoreCase("image") == 0 ) {
-//				//TODO: Переделать.
-//				logger.trace("Got photo entry id="+ photoEntry.getGphotoId() + ", type="+ photoEntry.getMediaContents().get(0).getMedium());
-//
-//				try {
-//					GooglePhotoObject photoObject= new GooglePhotoObject( this.googleConnector, photoEntry);
-//					googlePhotoObjectsList.add(photoObject);
-//				} catch ( Exception e) {
-//					logger.error("Cannot cast to PhotoEntry object ",e );
-//				}
-//			}
-
-
-
 		}
 		return googlePhotoObjectsList;
 	}

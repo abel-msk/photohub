@@ -248,8 +248,11 @@ public class dbTest {
     	scheduleRepository.delete(sysSch);
     	schList = scheduleRepository.findBySiteIdAndTaskName(theSite.getId(),"backup");
     	assertThat(schList).hasSize(0);
-    	
-    }
+
+		scheduleRepository.delete(scheduleRepository.findAll());
+
+
+	}
 
 	@Test
 	@Transactional
@@ -267,6 +270,8 @@ public class dbTest {
 
 		schedule = scheduleRepository.findOne("1");
 		assertThat(schedule.getParams()).hasSize(1);
+
+		scheduleRepository.delete(scheduleRepository.findAll());
 
 	}
 

@@ -247,7 +247,7 @@ public class SiteTest   {
 
 	@BeforeClass
 	public static  void beforeClass() throws Exception {
-		//System.out.println("\n*** beforeClass is invoked");
+		System.out.println("\n*** beforeClass is invoked");
 
 	}
 

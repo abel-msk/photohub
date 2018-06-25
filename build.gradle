@@ -544,7 +544,7 @@ test {
 //    mustRunAfter(':connectors:connector-local:test')
 //    mustRunAfter(':services:test')
 
-    //testLogging.showStandardStreams = true
+    testLogging.showStandardStreams = true
 
     dependsOn cleanDB
     dependsOn ':data:test'
@@ -552,6 +552,7 @@ test {
     dependsOn ':connectors:connector-interface:test'
     dependsOn ':connectors:connector-local:test'
     dependsOn ':services:test'
+    //mustRunAfter(cleanDB)
 
     filter {
         includeTestsMatching "*SiteTest"

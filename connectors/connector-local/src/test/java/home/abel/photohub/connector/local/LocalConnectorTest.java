@@ -35,17 +35,15 @@ public class LocalConnectorTest {
 			
 			//   Load resources and get resources parent folder name
 			//URL resourceUrl = this.getClass().getClassLoader().getResource("/sample_image2.jpg");
-			URL resourceUrl = System.class.getResource("/sample_image2.jpg");
 
+			URL resourceUrl = System.class.getResource("/sample_image2.jpg");
 			String sampeImagePath = resourceUrl.getFile();
-			
 			System.out.println("Got sample image URL '"+sampeImagePath+"'");
 //			
 //			Path resourcePath = Paths.get(resourceUrl.toURI());
 //			String sampeImagePath = resourcePath.toAbsolutePath().toString();
 //			
 			File sampeImageFile = new File(sampeImagePath);
-			
 
 			factory.addConnectorClass("home.abel.photohub.connector.local.LocalSiteConnector");
 			String connectorId = "1";
@@ -119,9 +117,7 @@ public class LocalConnectorTest {
 			//System.out.println("Connector root path = " + connector.getRootObjects());
 			
 			doScann(connector, connector.getRootObjects());
-			
-				
-				
+
 			System.out.println("\n------------ Testing createObject with parent = null ------------");
 			// Add photo object to site
 			FileInputStream fis = new FileInputStream(sampeImageFile);
@@ -136,8 +132,6 @@ public class LocalConnectorTest {
 			System.out.println("Metadata. Date = " + metadata.getDateCreated());
 
 			PhotoMediaObjectInt media = photoObj.getMedia(EnumMediaType.IMAGE);
-
-
 
 			HeadersContainer headers = new HeadersContainer();
 			headers.addHeader("Range","bytes=500-");

@@ -144,7 +144,7 @@ public class ImageDataTest {
         md.setUnicId(Metadata.generateUUID());
         logger.debug("Set UUID to "+md.getUnicId()+", len="+md.getUnicId().length());
 
-        File outFile = new File("/tmp/sample5.jpeg");
+        File outFile = new File("/tmp/sample6.jpeg");
         outFile.createNewFile();
 
         try {
@@ -164,5 +164,23 @@ public class ImageDataTest {
 //        imgObj.savePNG(new FileOutputStream(outFile2));
 
     }
+
+
+//    @Test
+//    public void tiffSaveTest() throws Throwable {
+//
+//        ImageData imgObj = new ImageData(new FileInputStream(sample5));
+//        Metadata md = imgObj.getMetadata();
+//        md.setUnicId(Metadata.generateUUID());
+//        logger.debug("Set UUID to "+md.getUnicId()+", len="+md.getUnicId().length());
+//
+//        File outFile = new File("/tmp/sample5.tiff");
+//        outFile.createNewFile();
+//
+//
+//            imgObj.saveTIFF(new FileOutputStream(outFile));
+//            logger.debug(" Save TIFF file.");
+//
+//    }
 
 }

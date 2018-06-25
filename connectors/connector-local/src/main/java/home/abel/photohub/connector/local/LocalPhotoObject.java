@@ -1,6 +1,6 @@
 package home.abel.photohub.connector.local;
 
-import java.awt.Dimension;
+import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
@@ -10,6 +10,7 @@ import home.abel.photohub.connector.prototype.*;
 import home.abel.photohub.utils.image.ExceptionImgProcess;
 import home.abel.photohub.utils.image.ImageData;
 import home.abel.photohub.utils.image.Metadata;
+import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -26,6 +27,8 @@ public class LocalPhotoObject extends BasePhotoObj {
 	protected BasePhotoMetadata metaObj = null; 
 	protected boolean isFolder = false;
 	protected ImageData imageData = null;
+	public final static String defaultExt = "jpeg";
+
 
 
 	public LocalPhotoObject(SiteConnectorInt conn, File objectFile) throws Exception  {
@@ -37,37 +40,40 @@ public class LocalPhotoObject extends BasePhotoObj {
 		if (! isFolder ) {
 			String fileExt = FilenameUtils.getExtension(photoObjectsFile.getName());
 
-			if (ImageData.isValidImage(photoObjectsFile)) {
-				setMimeType(ImageData.getMimeTypeByExt(fileExt));
-
-				logger.trace("[init] object mimetype=" + getMimeType()+ ", id "+objectFile.getAbsolutePath() );
-
-				setType("image");
+			if (ImageData.isValidImage(photoObjectsFile) &&
+					(! fileExt.toUpperCase().startsWith("TIF")))
+			{
 				imageData = new ImageData(new FileInputStream(photoObjectsFile));
 
+				setMimeType(ImageData.getMimeTypeByExt(fileExt));
+				setType("image");
+
 				//
-				//     Check for UUID in the metadata   and generate new ine if absent
+				//     Check for UUID in the metadata   and generate new one if absent
 				//
 				if ( imageData.getMetadata() != null ) {
+
+					//
+					//     Check is image has unicID.   if not, generate one and update image
+					//
 					if (imageData.getMetadata().getUnicId() == null) {
 						if (photoObjectsFile.canWrite()) {
 							Metadata md = imageData.getMetadata();
 							md.setUnicId(Metadata.generateUUID());
 							logger.trace("[init] object update UnicId =  "+md.getUnicId());
 							File tmpFile = null;
+
 							try {
 								tmpFile = File.createTempFile("image", "." + fileExt);
-								FileOutputStream fos = new FileOutputStream(tmpFile);
 								try {
-									imageData.saveJPEG(fos);
+									imageData.saveJPEG(new FileOutputStream(tmpFile));
 								}
 								catch (ExifRewriter.ExifOverflowException e ) {
 									md.setOutputSet(md.copyOutputSet());
-									if (logger.isTraceEnabled()) {
-										md.dump();
-									}
-									imageData.saveJPEG(fos);
+									imageData.setMetadata(md);
+									imageData.saveJPEG(new FileOutputStream(tmpFile));
 								}
+								logger.debug("[init] Add uni ID to image file");
 								ImageData.copyFileUsingChannel(tmpFile, photoObjectsFile);
 							}
 							catch (IOException e) {
@@ -86,6 +92,7 @@ public class LocalPhotoObject extends BasePhotoObj {
 				setWidth(imageData.getWidth());
 				setHeight(imageData.getHeight());
 				setSize(photoObjectsFile.length());
+
 			}
 //			else if (getMimeType().startsWith("video")) {
 //				setType("video");
@@ -94,8 +101,12 @@ public class LocalPhotoObject extends BasePhotoObj {
 			else {
 				String fn=photoObjectsFile.getAbsolutePath();
 				photoObjectsFile = null;
-				throw new ExceptionUnknownFormat(" Unknown media format for file "+fn );
+				throw new ExceptionUnknownFormat(" Unknown/Unsupported media format for file "+fn );
 			}
+			logger.trace("[init] load object mimetype=" + getMimeType()+ ", id "+objectFile.getAbsolutePath());
+		}
+		else {
+			logger.trace("[init] load object folder, id "+objectFile.getAbsolutePath());
 		}
 		this.setId(photoObjectsFile.getAbsolutePath());
 	}
@@ -103,6 +114,8 @@ public class LocalPhotoObject extends BasePhotoObj {
 	public LocalPhotoObject(SiteConnectorInt conn, String pathToFile) throws Exception {
 		this(conn,new File(pathToFile));
 	}
+
+
 
 	
 	/**
@@ -245,8 +258,32 @@ public class LocalPhotoObject extends BasePhotoObj {
 							( ImageData.isValidImage(curFile) ||  curFile.isDirectory())
 							) {
 						if (ImageData.isValidImage(curFile) || (curFile.isDirectory())) {
-							//LocalPhotoObject item = new LocalPhotoObject(this.getConnector(), curFile.getAbsolutePath());
-							list.add(curFile.getAbsolutePath());
+							if (FilenameUtils.getExtension(curFile.getName()).toUpperCase().startsWith("TIF")) {
+								//
+								//   Substitute TIFF with JPEG
+								//
+								//   Check if there is same name jpeg image for this tiff file
+								//   if so  create jpeg image
+								//   Проверяем есть ли файл с таким именени но  JPEG  в этой директории
+								//
+								try {
+									String filePath = curFile.getAbsolutePath();
+									File defFile =  new File(FilenameUtils.getPath(filePath)
+											+ FilenameUtils.getBaseName(filePath)
+											+ "." + defaultExt);
+									if (! defFile.exists()) {
+										convertToJPEG(curFile, defFile);
+										list.add(defFile.getAbsolutePath());
+									}
+								} catch (IOException | ImageWriteException ex) {
+									logger.warn("[listSubObjects] Cannot convert TIFF to JPEG, cannot write result. Skip file. Reason : "+ ex.getMessage());
+								}
+							}
+							//
+							//   For ather valid image file just add name to list
+							else {
+								list.add(curFile.getAbsolutePath());
+							}
 						}
 						else {
 							logger.warn("[LocalPhotoObject.listSubObjects] invalid image file found "+curFile.getAbsolutePath()+". Ignored.");
@@ -257,6 +294,38 @@ public class LocalPhotoObject extends BasePhotoObj {
 		}
 		return list;
 	}
+
+
+	/**
+	 *    Convert image to JPEG format and place in same directory as source
+	 * @param inFile
+	 * @param outFile
+	 * @return
+	 * @throws IOException
+	 * @throws ImageWriteException
+	 */
+	protected File convertToJPEG(File inFile, File outFile) throws IOException, ImageWriteException {
+		ImageData tmpImage = new ImageData(new FileInputStream(inFile));
+
+		try {
+			tmpImage.saveJPEG(new FileOutputStream(outFile));
+		}
+		catch (ExifRewriter.ExifOverflowException e ) {
+			Metadata md = tmpImage.getMetadata();
+			md.setOutputSet(md.copyOutputSet());
+			logger.debug("[convertToJPEG] Save JPEG with metadata overwrite.");
+			imageData.saveJPEG(new FileOutputStream(outFile));
+		}
+		return outFile;
+	}
+
+
+
+
+
+
+
+
 
 	/**
 	 *  This object has accessible source

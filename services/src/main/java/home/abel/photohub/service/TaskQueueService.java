@@ -104,6 +104,9 @@ public class TaskQueueService {
 				logger.warn("[Init] Cannot run task: " + e.getMessage(),e);
 			}
 		}
+
+		logger.debug("[SceduleService.Init] Arm saved scheduled jobs finished.");
+
 	}
 
 

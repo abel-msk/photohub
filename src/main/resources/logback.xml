@@ -120,8 +120,8 @@
 
 	<logger name="home.abel.photohub.utils" level="WARN"/>
   	<logger name="home.abel.photohub" level="DEBUG"/>
-  	   
-	<logger name="taskslog" level="TRACE">
+
+	<logger name="home.abel.photohub.tasks" level="TRACE">
 		<appender-ref ref="TASKS" />
 	</logger>
 

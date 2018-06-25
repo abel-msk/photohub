@@ -1,9 +1,6 @@
 package home.abel.photohub.utils.image;
 
-import org.apache.commons.imaging.ImageReadException;
-import org.apache.commons.imaging.ImageWriteException;
-import org.apache.commons.imaging.Imaging;
-import org.apache.commons.imaging.ImagingConstants;
+import org.apache.commons.imaging.*;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegPhotoshopMetadata;
@@ -13,10 +10,9 @@ import org.apache.commons.imaging.formats.jpeg.iptc.IptcTypes;
 import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.constants.TiffConstants;
-import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
-import org.apache.commons.imaging.formats.tiff.write.TiffOutputField;
-import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
+import org.apache.commons.imaging.formats.tiff.write.*;
 import org.apache.commons.imaging.util.Debug;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.imgscalr.Scalr;
 import org.slf4j.Logger;
@@ -315,35 +311,7 @@ public class ImageData {
             //      Merge Image  with metadata if exist
             //
             if (outputSet != null) {
-//                logger.debug("\n\n=== Input metadata ===");
-//
-//
-//                List<TiffField> tfldList = tiffMetadata.getAllFields();
-//                for (TiffField tfld : tfldList ) {
-//                    logger.debug("Field ="+tfld.getTagName()+", length="+tfld.getCount());
-//
-//                }
-//
-//                logger.debug("\n\n=== Output metadata ===");
-//                List<TiffOutputDirectory> dirList = outputSet.getDirectories();
-//                for (TiffOutputDirectory dir : dirList ) {
-//                    logger.debug("Dir description="+dir.description()+", item="+dir.getItemDescription()+", item lenght"+dir.getItemLength());
-//                    List<TiffOutputField> outFields = dir.getFields();
-//                    for (TiffOutputField fld : outFields) {
-//                        logger.debug("Filed name="+fld.tagInfo.name+", len="+fld.fieldType.getSize());
-//                    }
-//                }
-
-                //outputSet.removeField(TiffConstants.);
-//                ByteArrayOutputStream emptyJpeg = new ByteArrayOutputStream();
-//                new ExifRewriter().removeExifMetadata(jpegImageBytes,emptyJpeg);
-//                emptyJpeg.close();
-
                 new ExifRewriter().updateExifMetadataLossless(jpegImageBytes, os, outputSet);
-
-                //jpegImageBytes
-                //new ExifRewriter().updateExifMetadataLossy(emptyJpeg.toByteArray(), os, outputSet);
-
             } else {
                 IOUtils.write(jpegImageBytes, os);
             }
@@ -371,6 +339,19 @@ public class ImageData {
         saveJPEG(jpegOut);
         ByteArrayInputStream is = new ByteArrayInputStream(jpegOut.toByteArray());
         return is;
+    }
+
+
+
+    public void saveOverJPEG(OutputStream os) throws ImageWriteException{
+        try {
+            saveJPEG(os);
+        }
+        catch (ExifRewriter.ExifOverflowException e ) {
+            Metadata md = getMetadata();
+            md.setOutputSet(md.copyOutputSet());
+            saveJPEG(os);
+        }
     }
 
 
@@ -423,6 +404,61 @@ public class ImageData {
         return is;
     }
 
+
+//    /**
+//     *     Send image as TIFF to output stream
+//     * @return
+//     * @throws RuntimeException
+//     */
+//
+//    public void saveTIFF(OutputStream os) {
+//
+//        TiffOutputSet outputSet = null;
+//        try {
+//            if ((theMetadataClass != null) && (theMetadataClass.isChanged())) {
+//                outputSet = theMetadataClass.saveOutputSet();
+//            } else if (tiffMetadata != null) {
+//                outputSet = tiffMetadata.getOutputSet();
+//            }
+//        } catch (ImageWriteException ex) {
+//            logger.warn("[saveTIFF]  Cannot create metadata." + ex.getMessage());
+//            throw new ExceptionImgProcess("[compileWithMeta] Cannot create metadata",ex);
+//        }
+//
+//        try {
+//
+//            logger.debug("[saveTIFF] generate buffered image.");
+//
+//            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
+//
+//            if ( outputSet != null ) {
+//                logger.debug("[saveTIFF] Generate image bytes.");
+//                byte[] imageBytes = Imaging.writeImageToBytes(image, ImageFormats.TIFF, new HashMap<>());
+//                logger.debug("[saveTIFF] Append metadata.");
+//                new TiffImageWriterLossless(imageBytes).write(os, outputSet);
+//            }
+//            else {
+//                ImageIO.write(image, "TIFF", os);
+//            }
+//
+//        } catch (Exception ex)  {
+//            logger.error("[saveTIFF] Cannot write tiff image.",ex.getMessage());
+//            throw new ExceptionImgProcess("[compileWithMeta] Cannot Write image",ex);
+//        }
+//    }
+//
+//
+//    /**
+//     *    Save image as PNG im memory and attach to input stream
+//     * @return
+//     * @throws RuntimeException
+//     */
+//    public synchronized  InputStream saveTIFF() throws RuntimeException {
+//        ByteArrayOutputStream pngOut = new ByteArrayOutputStream();
+//        saveTIFF(pngOut);
+//        ByteArrayInputStream is = new ByteArrayInputStream(pngOut.toByteArray());
+//        return is;
+//    }
 
     /*--------------------------------------------------------------------------------------------
 

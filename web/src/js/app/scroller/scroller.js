@@ -37,6 +37,17 @@
                 offset
             }
 
+
+
+    Информация по загруженным страницам предшествующим текущим видимым хранится в масиве this.loadedPages.
+    Для каждой страницы хранится объект
+
+    {
+        'limit':
+        'offset':
+    };
+
+
  -------------------------------------------------------------------------------------------------*/
 
 
@@ -318,7 +329,7 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
         //------------------------------------------------------------------------------------------------
         //
         //    _onScroll
-        //    Вычисляем позицию центар видимой области в терминах смещения скролируемого документа
+        //    Вычисляем позицию центара видимой области в терминах смещения скролируемого документа
         //    и ищейм фрейм в которую она попадает.
         //    ссылку на  объект для фрейма сохраняем для последующего возврата.
         //    Вызывается как callback для события onScrollBefore
@@ -373,29 +384,34 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
         //
         //
         //------------------------------------------------------------------------------------------------
-        Scroller.prototype.removeItem = function(itemId,pageId) {
-            try {
-                if (this._isBeforeViewed(pageId)) {
-                    this._shiftViewedPages(1);
-                    DEBUG && logger.debug("[Scroller.removeItem] Item=" + itemId + ", pageId=" + pageId + "  before all viewed page. Shift viewed.");
-                }
-                else if (!this._isAfterViewed(pageId)) {
-                    var page = this._getViewedPageById(pageId);
-                    var page = this._getViewedPageById(pageId);
-                    if (page) {
-                        page.removeItem(itemId);
-                        page.redraw();
-                    }
-                    else {
-                        DEBUG && logger.debug("[Scroller.removeItem] Cannot find page with ID=" + pageId, this.viewSlots);
-                        throw new Error("[Scroller.removeItem] Problems with pages counting. Page with ID=" + pageId);
-                    }
-                }
-            }
-            catch (e) {
-                    logger.trace("[Scroller.removeItem] Error:",e);
-            }
-        };
+        // Scroller.prototype.removeItem = function(itemId,pageId) {
+        //
+        //
+        //
+        //
+        //
+        //     try {
+        //         if (this._isBeforeViewed(pageId)) {
+        //             this._shiftViewedPages(1,pageId);
+        //             DEBUG && logger.debug("[Scroller.removeItem] Remove single Item=" + itemId + ", pageId=" + pageId + "  before all viewed page. Shift viewed.");
+        //         }
+        //         else if (!this._isAfterViewed(pageId)) {
+        //             var page = this._getViewedPageById(pageId);
+        //             //var page = this._getViewedPageById(pageId);
+        //             if (page) {
+        //                 page.removeItem(itemId);
+        //                 page.redraw();
+        //             }
+        //             else {
+        //                 DEBUG && logger.debug("[Scroller.removeItem] Cannot find page with ID=" + pageId, this.viewSlots);
+        //                 throw new Error("[Scroller.removeItem] Problems with pages counting. Page with ID=" + pageId);
+        //             }
+        //         }
+        //     }
+        //     catch (e) {
+        //             logger.trace("[Scroller.removeItem] Error:",e);
+        //     }
+        // };
 
         //------------------------------------------------------------------------------------------------
         //
@@ -415,18 +431,33 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
         //------------------------------------------------------------------------------------------------
         Scroller.prototype.removePageItems = function(itemsAr,pageId) {
             try {
-                if (this._isBeforeViewed(pageId)) {
-                    this._shiftViewedPages(itemsAr.length);
-                    DEBUG && logger.debug("[Scroller.removePageItems] Shift by " + itemsAr.length + " items from non viewed page =" + pageId);
-                }
-                else if (!this._isAfterViewed(pageId)) {
-                    var page = this._getViewedPageById(pageId);
-                    if (page) {
-                        for (var item in itemsAr) {
-                            page.removeItem(itemsAr[item]);
+                if (itemsAr.length > 0) {
+                    var delta = itemsAr.length;
+
+                    //   Decrease page size(limit) loadedPages[newPageId]
+                    this.loadedPages[pageId].limit -= delta;
+
+                    //   Shift offset up by delta in loadedPages ar  for pages after pageId
+                    for (var i = pageId + 1; i < this.loadedPages.length; i++) {
+                        if (this.loadedPages[i]) {
+                            this.loadedPages[i].offset -= delta;
                         }
-                        DEBUG && logger.debug("[Scroller.removePageItems] Remove " + itemsAr.length + " items from viewed page =" + pageId);
-                        page.redraw();
+                    }
+
+                    DEBUG && logger.debug("[Scroller.removePageItems] Decrease page "+ pageId +" limit by" + delta +
+                        ", shift pages from "+ (pageId + 1) + " to "+ (this.loadedPages.length -1));
+
+                    //   Shift offset up by delta on in page object for pages after pageId
+                    this._shiftViewedPages(delta,pageId);
+
+                    if (!this._isAfterViewed(pageId)) {
+                        var page = this._getViewedPageById(pageId);
+                        if (page) {
+                            for (var item in itemsAr) {
+                                page.removeItem(itemsAr[item]);
+                            }
+                            page.redraw();
+                        }
                     }
                 }
             }
@@ -434,6 +465,24 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                 logger.trace("[Scroller.removePageItems] Error:",e.stack);
             }
         };
+
+
+        //------------------------------------------------------------------------------------------------
+        //
+        //    Decrease page size  by amount from parameter 'delta'
+        //    Return offset for nest page
+        //
+        //------------------------------------------------------------------------------------------------
+        Scroller.prototype._shiftViewedPages = function(delta,pageId) {
+            var ar = this.viewSlots.getArray();
+            for (var i = 0; i < ar.length; i++) {
+                if (( ar[i])  && (ar[i].data.getId() > pageId)) {   // lust pages after pageId
+                    ar[i].data.shiftPage(delta);
+                    DEBUG && logger.debug("[Scroller._shiftViewedPages] Shift by " + delta + " in view slot page " + ar[i].data.getId());
+                }
+            }
+        };
+
 
         //------------------------------------------------------------------------------------------------
         //
@@ -457,14 +506,8 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
            return  parseInt(pageId) > parseInt(this.getLastViewed().data.getId());
         };
 
-        Scroller.prototype._shiftViewedPages = function(delta) {
-            var ar = this.viewSlots.getArray();
-            for (var i = 0; i < ar.length; i++) {
-                if ( ar[i]) {
-                    ar[i].data.shiftPage(delta);
-                }
-            }
-        };
+
+
 
         Scroller.prototype._getViewedPageById = function(pageId) {
             var ar = this.viewSlots.getArray();

@@ -3,6 +3,7 @@ package home.abel.photohub.tasks;
 import java.util.*;
 
 import home.abel.photohub.connector.prototype.ExceptionUnknownFormat;
+import home.abel.photohub.model.*;
 import home.abel.photohub.utils.image.ExceptionIncorrectImgFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,17 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
-import home.abel.photohub.model.Node;
-import home.abel.photohub.model.Site;
-import home.abel.photohub.model.Schedule;
-import home.abel.photohub.model.SiteRepository;
 import home.abel.photohub.service.PhotoService;
 import home.abel.photohub.service.SiteService;
 
 public class ScanTask extends BaseTask {
 	private static final long serialVersionUID = 1L;
 	final Logger logger = LoggerFactory.getLogger(ScanTask.class);
-	final Logger bgLog = LoggerFactory.getLogger("taskslog");
 
 
 	private SiteConnectorInt connector;
@@ -32,7 +28,6 @@ public class ScanTask extends BaseTask {
 		super(theSite,TaskNamesEnum.TNAME_SCAN,schedule,scheduleSvc, true);
 		siteSvc = siteService;
 		logger.trace("[Init] Site id is " + theSite.getId());
-		bgLog.trace("[ScanTask.Init] Site id is " + theSite.getId());
 
 		try {
 			this.connector = siteSvc.getOrLoadConnector(theSite);
@@ -42,7 +37,6 @@ public class ScanTask extends BaseTask {
 			saveLog();
 			//siteSvc.updateSite(theSite);
 			logger.error("[Init] Site connection error.",e);
-			bgLog.error("[ScanTask.Init] Site connection error.",e);
 			throw e;
 		}
 		this.photoService = photoService;
@@ -85,8 +79,7 @@ public class ScanTask extends BaseTask {
 		finally {
 			checkDeleted(startDate);
 			totalSize = siteSvc.updateSiteSize(getSite());
-			logger.debug("[exec] Finished. Sites total size = " + totalSize );
-			bgLog.trace("[ScanTask.exec] Finished. Sites total size = " + totalSize );
+			logger.trace("[exec] Finished. Sites total size = " + totalSize );
 		}
 	}
 	
@@ -97,46 +90,75 @@ public class ScanTask extends BaseTask {
 		if ( objKeyList != null ) {
 			for (String itemKey : objKeyList) {
 				try {
+					int objType = ModelConstants.OBJ_SINGLE;
+					PhotoObjectInt photoObj = null;
+
+					this.printMsg("Process object: " + itemKey);
+
 					//   Проверяем существует ли такой объект в базе.  Ищем по его ID
 					Node theNode = photoService.isPhotoExist(itemKey);
-					PhotoObjectInt photoObj = connector.loadObject(itemKey);
-					this.printMsg("Process object " + photoObj.getName() + "(" + photoObj.getId() + ")");
+
+					if ( theNode != null) {
+						objType = theNode.getPhoto().getType();
+					}
+					else {
+						photoObj = connector.loadObject(itemKey);
+						if ( photoObj.isFolder() ) {
+							objType = ModelConstants.OBJ_FOLDER;
+						}
+					}
 
 					//
 					//  Process folder
 					//
-					if ((photoObj != null) && (photoObj.isFolder())) {
+					if (objType == ModelConstants.OBJ_FOLDER) {
+
+						//   Для фолдера грузим объект для сайта влюбом случае  т.к. внутри папки тоже надо сканировать
+						if ( photoObj == null) {
+							photoObj = connector.loadObject(itemKey);
+						}
+
+						//   Этого объекта нет в базе - сохраняем
 						if (theNode == null) {
-							logger.info("[doScann] Add folder to db with id=" + photoObj.getId() + ", name=" + photoObj.getName());
-							bgLog.trace("[ScanTask.doScann] Add folder to db with id=" + photoObj.getId() + ", name=" + photoObj.getName());
+							logger.trace("[doScann] Add folder to db with id=" + photoObj.getId() + ", name=" + photoObj.getName());
 
 							theNode = photoService.addObjectFromSite(
 									photoObj,
 									parentNode != null ? parentNode.getId() : null,
 									getSite().getId());
 						}
+
+						//   Идем сканировать внутрь
+						logger.trace("[doScann] Scab sub folder. ID=" + photoObj.getId() + ", name=" + photoObj.getName());
+
 						doScann(connector, photoObj.listSubObjects(), theNode);
 					}
 					//
 					//  Process Object
 					//
-					else if (photoObj != null) {
+					else {
 
-						// TODO: Надо проверять существует ли фотка с таким  UUID
-						//Node existObjNode = photoService.isPhotoExistByUUID(Item.getMeta().getUnicId());
-
+						//   Объекта нет в бвзе, загружаем и сохраняем
+						//
 						if (theNode == null) {
-							logger.trace("[doScann] Add " + photoObj.getMimeType() + " object to db with id=" + photoObj.getId() + ", name=" + photoObj.getName());
-							bgLog.trace("[ScanTask.doScann] Add " + photoObj.getMimeType() + " object to db with id=" + photoObj.getId() + ", name=" + photoObj.getName());
 
+							//   Загружаем
+							photoObj = connector.loadObject(itemKey);
+
+							//   Проверяем на наличие еакой фитки в другом объекте
+							// TODO: Надо проверять существует ли фотка с таким  UUID
+							//Node existObjNode = photoService.isPhotoExistByUUID(Item.getMeta().getUnicId());
+
+							logger.trace("[doScann] Add " + photoObj.getMimeType() + " object to db with id=" + photoObj.getId() + ", name=" + photoObj.getName());
+
+							//   Загружаем
 							theNode = photoService.addObjectFromSite(
 									photoObj,
 									parentNode != null ? parentNode.getId() : null,
 									getSite().getId());
 						}
 						else {
-							logger.trace("[doScann] Object Exist. Skipping. ID=" + photoObj.getId() + ", name=" + photoObj.getName());
-							bgLog.trace("[ScanTask.doScann] Object Exist. Skipping. ID=" + photoObj.getId() + ", name=" + photoObj.getName());
+							logger.trace("[doScann] Object Exist. Skipping. ID=" + theNode.getPhoto().getOnSiteId() + ", name=" + theNode.getPhoto().getName());
 						}
 					}
 
@@ -147,15 +169,12 @@ public class ScanTask extends BaseTask {
 				}
 				catch (ExceptionUnknownFormat | ExceptionIncorrectImgFormat e) {
 					logger.warn("[doScan] Skip object. " + e.getMessage());
-					bgLog.warn("[ScanTask.doScann] Skip object. " + e.getMessage());
 				}
 				catch (RuntimeException e) {
 					logger.warn("[doScan] Skip object. " + e.getMessage(), e);
-					bgLog.warn("[ScanTask.doScann] Skip object. " + e.getMessage(), e);
 				}
 				catch (Exception ex) {
 					logger.error("[doScan] Error " + ex.getMessage(), ex);
-					bgLog.error("[ScanTask.doScann] Error " + ex.getMessage(), ex);
 					throw new ExceptionTaskAbort(ex.getMessage(), ex);
 				}
 			}
@@ -170,7 +189,6 @@ public class ScanTask extends BaseTask {
 		nodes.forEach(node -> {
 			photoService.deleteObject(node,false,false);
 			logger.trace("[checkDeleted] Found and delete not scanned object = " + node.getPhoto());
-			bgLog.trace("[ScanTask.checkDeleted] Found and delete not scanned object = " + node.getPhoto());
 		});
 
 	}
