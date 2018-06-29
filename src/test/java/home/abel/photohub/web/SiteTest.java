@@ -164,6 +164,7 @@ public class SiteTest   {
 	public final static String TEST_FOLDER_NAME = "foldertest";
 	public static final String RESOURCE_IMAGE_FN = "photo1.JPG";
 	public static final String TMP_IMAGE_FILE = "/tmp/photo1.JPG";
+	public static final String TMP_IMAGE_ID = "3";
 	public final static String TMP_ROOT_PATH = "/tmp/photohub_test_2";
 
 	public final static String TMP_IMAGE_FULLPATH = TMP_ROOT_PATH + File.separator + TEST_FOLDER_NAME + File.separator + RESOURCE_IMAGE_FN;
@@ -237,17 +238,62 @@ public class SiteTest   {
 		}
 
 
-		//  Prepare  folder for  for LocalSite
-		File rootPath = new File(SITE_ROOT_PATH);
-		if ( ! rootPath.exists() ) {
-			rootPath.mkdirs();
-		}
-		System.out.println("Create Local site root path: " + rootPath.getAbsolutePath());
+//		//  Prepare  folder for  for LocalSite
+//		File rootPath = new File(SITE_ROOT_PATH);
+//		if ( ! rootPath.exists() ) {
+//			rootPath.mkdirs();
+//		}
+//		System.out.println("Create Local site root path: " + rootPath.getAbsolutePath());
 	}
 
 	@BeforeClass
 	public static  void beforeClass() throws Exception {
 		System.out.println("\n*** beforeClass is invoked");
+
+
+
+
+
+
+
+		File rootFolder = new File(SITE_ROOT_PATH);
+		if (rootFolder.exists()) {
+			FileUtils.deleteDirectory(rootFolder);
+		}
+		rootFolder.mkdirs();
+		rootFolder.deleteOnExit();
+
+		File folder = new File(SITE_ROOT_PATH + File.separator + TEST_FOLDER_NAME);
+		folder.mkdirs();
+		folder.deleteOnExit();
+
+		URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(RESOURCE_IMAGE_FN);
+		String sampeImagePath =  resourceUrl.toURI().getPath();
+		File sampeImageFile = new File(sampeImagePath);
+
+		//   Copy image file to site root folder
+		FileUtils.copyFileToDirectory(sampeImageFile,folder);
+
+		File testImageFile = new File(
+				SITE_ROOT_PATH + File.separator +
+						TEST_FOLDER_NAME + File.separator +
+						RESOURCE_IMAGE_FN);
+		testImageFile.deleteOnExit();
+
+		System.out.println("Create local site structure: ");
+		System.out.println("\t" + rootFolder.getAbsolutePath());
+		System.out.println("\t" + folder.getAbsolutePath());
+		System.out.println("\t" + testImageFile.getAbsolutePath());
+
+		//   Copy image file to /tmp
+		FileUtils.copyFile(sampeImageFile,new File(TMP_IMAGE_FILE));
+
+		//	Remove appended file
+		new File(TMP_IMAGE_FILE).deleteOnExit();
+
+
+
+
 
 	}
 
@@ -408,6 +454,45 @@ public class SiteTest   {
 	boolean isTaskRun(TaskRecord taskRecord) {
 		return ((taskRecord != null) && ((taskRecord.getStatus().equals("RUN")) || (taskRecord.getStatus().equals("IDLE"))));
 	}
+
+
+	@Test
+	public void testRotate() throws Throwable {
+		System.out.println("\n------ Test: rotate ------\n");
+
+		ObjectMapper mapper = new ObjectMapper();
+		MvcResult result = null;
+
+		try {
+			cookies = httpAuth("admin", "admin");
+		}
+		catch (ExceptionAccessDeny e) {
+			Assert.isTrue(true, "Authentication for user Admin failed. " +  e.getMessage());
+		}
+
+		//
+		//	Get and check site description
+		//
+		result = apiGetRequest(cookies,"/api/photo/"+TMP_IMAGE_ID,true);
+		DefaultObjectResponse<Photo> ObjectResponse = mapper.readValue(
+				result.getResponse().getContentAsString(),
+				new TypeReference<DefaultObjectResponse<Photo>>() { });
+
+		Photo srcPhoto = ObjectResponse.getObject();
+
+		int srcPhotoWidth = photoService.getBaseMedia(srcPhoto).getWidth();
+
+		result = apiGetRequest(cookies,"/api/photo/"+TMP_IMAGE_ID+"/rotate",true);
+		DefaultObjectResponse<Photo> ObjectResponse1 = mapper.readValue(
+				result.getResponse().getContentAsString(),
+				new TypeReference<DefaultObjectResponse<Photo>>() { });
+
+		Photo rotatePhoto = ObjectResponse1.getObject();
+		assertThat(photoService.getBaseMedia(rotatePhoto).getHeight()).isEqualTo(srcPhotoWidth);
+	}
+
+
+
 
 
 	/**
@@ -673,12 +758,12 @@ public class SiteTest   {
 
 
 
-		/**
-         * Add site
-         * @param siteObject
-         * @return
-         * @throws Throwable
-         */
+	/**
+	 * Add site
+	 * @param siteObject
+	 * @return
+	 * @throws Throwable
+	 */
 	public Site siteAdd(Site siteObject) throws Throwable  {
 
 		System.out.println("\n------  Create site="+siteObject+"\n");
@@ -720,7 +805,7 @@ public class SiteTest   {
 	}
 	
 	/**
-	 * Perfor site scann request
+	 * Perform site scann request
 	 * @param  schedule Новый объект рассписания который надо ставить в очередь
 	 * @return вставленный объект
 	 * @throws Throwable

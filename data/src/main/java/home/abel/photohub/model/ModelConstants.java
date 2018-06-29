@@ -8,4 +8,7 @@ public class ModelConstants {
 
 //	public static int ACCESS_NET = 21;
 //	public static int ACCESS_LOCAL = 22;
+
+
+
 }

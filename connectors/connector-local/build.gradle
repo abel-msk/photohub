@@ -72,6 +72,11 @@ dependencies {
 
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: "${props.jacksonVersion}"
 
+    //   Utils
+    compile group: 'commons-io', name: 'commons-io', version: '2.5'
+
+
+
     //  Image processing lib
     compile group: 'org.imgscalr',  name: 'imgscalr-lib', version: '4.2'
     compile group: 'com.twelvemonkeys.imageio',  name: 'imageio-core', version: '3.2.1'
@@ -88,5 +93,6 @@ dependencies {
     testCompile group: 'org.springframework', name: 'spring-test', version: "${props.springFrameworkVersion}"
     testCompile group: 'junit', name: 'junit', version: "${props.junitVersion}"
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.6.2'
+
 
 }

@@ -5,10 +5,7 @@ import com.querydsl.jpa.JPAExpressions;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -466,6 +463,36 @@ public class dbTest {
 		logger.debug("Site "+ theSite + ", has totale size =" + totalSize) ;
 	}
 
+
+
+	@Test
+	public void testDeleteMedia() throws Exception {
+
+    	//get photo object with id  3
+		Photo thePhoto = photoRepo.findOne(new String("3"));
+
+		List<Media> mList = new ArrayList<>();
+		for (Media mItem : thePhoto.getMediaObjects() ) {
+			mList.add(mItem);
+			logger.debug("[testDeleteMedia]  Copy item " + mItem.getId());
+		}
+
+		for (Media mItem : mList ) {
+			thePhoto.removeMediaObject(mItem);
+			logger.debug("[testDeleteMedia]  Remove item " + mItem.getId());
+		}
+
+		//thePhoto.setMediaObjects(null);
+		thePhoto = photoRepo.save(thePhoto);
+
+		assertThat(thePhoto.getMediaObjects()).hasSize(0);
+
+		thePhoto = photoRepo.findOne(new String("3"));
+
+		assertThat(thePhoto.getMediaObjects()).hasSize(0);
+
+
+	}
 
 	private void dumpDB() throws Exception {
 

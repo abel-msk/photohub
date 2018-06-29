@@ -51,7 +51,7 @@ public class Photo implements Serializable {
 	private String descr;
 	private int type;
 	private URL realUrl;
-	private String  mediaType;
+	private String  mediaType;     //  has format as MimeType
 	private boolean hidden = false;
 	private long allMediaSize = 0;
 	private String backupSrc = null;
@@ -204,7 +204,7 @@ public class Photo implements Serializable {
 	}
 	
 	public List<Media> getMediaObjects() {
-		return mediaObjects;
+		return this.mediaObjects;
 	}
 
 	public void setMediaObjects(List<Media> mediaObjects) {
@@ -221,11 +221,13 @@ public class Photo implements Serializable {
 	}
 	
 	public Media removeMediaObject(Media mediaObject) {
-		getMediaObjects().remove(mediaObject);
+		this.mediaObjects.remove(mediaObject);
+		//getMediaObjects().remove(mediaObject);
 		mediaObject.setPhoto(null);
 		return mediaObject;
 	}
 
+	@JsonIgnore
 	public Media getBaseMedia() {
 		int mediaType = Media.MEDIA_IMAGE;
 		if ( getMediaType().startsWith("video")) {

@@ -194,4 +194,9 @@ public class BasePhotoObj implements PhotoObjectInt {
 	}
 
 
+	@Override
+	public PhotoObjectInt rotate90(rotateEnum direction) throws Exception {
+		return null;
+	}
+
 }

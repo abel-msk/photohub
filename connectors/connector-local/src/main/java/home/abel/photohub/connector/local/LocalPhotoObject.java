@@ -12,7 +12,9 @@ import home.abel.photohub.utils.image.ImageData;
 import home.abel.photohub.utils.image.Metadata;
 import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
+import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -320,13 +322,6 @@ public class LocalPhotoObject extends BasePhotoObj {
 	}
 
 
-
-
-
-
-
-
-
 	/**
 	 *  This object has accessible source
 	 */
@@ -418,11 +413,39 @@ public class LocalPhotoObject extends BasePhotoObj {
 	
 	public void delete() throws Exception{
 		if ( photoObjectsFile.delete()) {
-			 photoObjectsFile = null;
+			logger.debug("[delete]  File "+photoObjectsFile.getAbsolutePath()+" deleted.");
+			photoObjectsFile = null;
 		}
 		else throw new RuntimeException("Cannot delete file '"+getId() +"'");
 	}
 
-	
-	
+
+	public PhotoObjectInt rotate90(rotateEnum direction) throws Exception {
+		File tmpFile = null;
+		ImageData newImage = null;
+		if (isFolder) {
+			return null;
+		}
+
+		if (direction == rotateEnum.CLOCKWISE  ) {
+			newImage = imageData.rotateCW();
+		}
+		else {
+			newImage = imageData.rotateCCW();
+		}
+
+		try {
+			tmpFile = File.createTempFile("lpo", "jpg");
+			tmpFile.createNewFile();
+			newImage.saveJPEG(new FileOutputStream(tmpFile));
+			org.apache.commons.io.FileUtils.copyFile(tmpFile, photoObjectsFile);
+
+		}
+		finally {
+			tmpFile.delete();
+		}
+
+		return new LocalPhotoObject(getConnector(),photoObjectsFile);
+	}
+
 }

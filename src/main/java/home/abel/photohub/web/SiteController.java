@@ -94,7 +94,7 @@ public class SiteController {
 	}
 
 	@RequestMapping(value = "/site/{id}", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE) 
-	ResponseEntity<DefaultObjectResponse<Site>> getSite(
+	ResponseEntity<DefaultObjectResponse<Site>> getSite (
 	        final HttpServletRequest HTTPrequest,
 	        final HttpServletResponse HTTPresponse,
 	        @PathVariable("id") String objectID

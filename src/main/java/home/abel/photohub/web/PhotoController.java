@@ -1,5 +1,6 @@
 package home.abel.photohub.web;
 
+import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.model.Node;
 import home.abel.photohub.model.Photo;
 import home.abel.photohub.service.PhotoListFilter;
@@ -450,10 +451,10 @@ public class PhotoController {
 	}
 
 
-	@RequestMapping(value = "/object/{id}", method = RequestMethod.OPTIONS)
-	ResponseEntity<String> acceptDelet(HttpServletRequest request) throws IOException, ServletException {
-		return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
-	}
+//	@RequestMapping(value = "/photo/{id}", method = RequestMethod.OPTIONS)
+//	ResponseEntity<String> acceptDelet(HttpServletRequest request) throws IOException, ServletException {
+//		return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+//	}
 
 	/**
 	 * Delete object by ID
@@ -463,7 +464,7 @@ public class PhotoController {
 	 * @return
 	 * @throws Throwable
 	 */
-	@RequestMapping(value = "/object/{id}", method = RequestMethod.DELETE, produces="application/json")
+	@RequestMapping(value = "/photo/{id}", method = RequestMethod.DELETE, produces="application/json")
 	ResponseEntity<DefaultResponse> deleteObject(
 			final HttpServletRequest HTTPrequest,
 			final HttpServletResponse HTTPresponse,
@@ -617,4 +618,32 @@ public class PhotoController {
 //		return new ResponseEntity<ResponsePhotoAttr>(response,headerBuild.getHttpHeader(HTTPrequest),HttpStatus.OK);
 //	}
 //
+
+	@RequestMapping(value = "/photo/{id}/rotate", method = RequestMethod.OPTIONS)
+	ResponseEntity<String>  acceptRotate(HttpServletRequest request) throws IOException, ServletException {
+		return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
+	}
+
+	@RequestMapping(value = "/photo/{id}/rotate", method = RequestMethod.GET, produces="application/json")
+	ResponseEntity<DefaultObjectResponse<Photo>> rotateObject(
+			final HttpServletRequest HTTPrequest,
+			final HttpServletResponse HTTPresponse,
+			@PathVariable("id") String objectId,
+			@RequestParam(value ="clockwise", required = false, defaultValue = "true") boolean directionCW
+	) throws Throwable
+	{
+		Photo thePhoto = photoService.getPhotoById(objectId);
+		if (directionCW)
+			thePhoto = photoService.rotate90(thePhoto, PhotoObjectInt.rotateEnum.CLOCKWISE);
+		else
+			thePhoto = photoService.rotate90(thePhoto, PhotoObjectInt.rotateEnum.COUNTER_CLOCKWISE);
+
+		DefaultObjectResponse<Photo> resp = new DefaultObjectResponse<Photo>("OK",0,thePhoto);
+		logger.debug("[rotateObject] Object rotate Finished. OK. ");
+
+		return new ResponseEntity<DefaultObjectResponse<Photo>>(resp,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
+	}
+
+
+
 }

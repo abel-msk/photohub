@@ -212,7 +212,7 @@ public class SiteService {
 		if ( connector == null) {
 			connector =  connectorsFactory.getConnector(
 				theSite.getConnectorType(),
-				theSite.getSiteUser(), //TODO Это алиас для ключа хранения сертификатов
+				theSite.getSiteUser(), //Это ключ  хранения сертификатов
 				theSite.getId(),
 				theSite.getRoot(),
 				createPropertyMap(theSite)

@@ -14,6 +14,7 @@ import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 import com.github.springtestdbunit.TransactionDbUnitTestExecutionListener;
+import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.connector.prototype.SiteCredentialInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
@@ -696,6 +697,18 @@ public class PhotoServiceTest {
 			//	Wait for task complete
 			taskProcess.get();
 		}
+	}
+
+	@Test
+	public void testRotation() throws Exception {
+		Node theNode =  nodeRepo.findOne(new String("3"));
+		logger.debug("[testRotation] Photo object "+theNode.getPhoto());
+		Media srcMedia = photoService.getBaseMedia(theNode.getPhoto());
+		assertThat(srcMedia).isNotNull();
+		logger.debug("[testRotation]  media object id="+srcMedia.getId());
+		int srcMediaWidth = srcMedia.getWidth();
+		photoService.rotate90(theNode.getPhoto(), PhotoObjectInt.rotateEnum.CLOCKWISE);
+		assertThat(srcMediaWidth).isEqualTo(photoService.getBaseMedia(theNode.getPhoto()).getHeight());
 	}
 
 

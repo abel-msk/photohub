@@ -163,9 +163,9 @@ public class Schedule implements Serializable {
 	public TaskParam deleteParam(String paramName) {
 
 		if (this.params != null) {
-			for (TaskParam param : params) {
+			for (TaskParam param : this.params) {
 				if (param.getName().equalsIgnoreCase(paramName)) {
-					params.remove(param);
+					this.params.remove(param);
 					return param;
 				}
 			}

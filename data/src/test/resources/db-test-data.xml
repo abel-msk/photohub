@@ -129,6 +129,7 @@
 			NAME="foldertest"
 			ONSITEID="/tmp/photohub_test/foldertest"
 			TYPE="2"
+			MEDIATYPE="image/jpeg"
 			UPDATETIME="2017-03-25 21:12:40.989"
 			SITE="2"/>
 
@@ -140,13 +141,14 @@
 			HIDDEN="false"
 			NAME="photo1.JPG"
 			ONSITEID="/tmp/photohub_test/foldertest/photo1.JPG"
+			MEDIATYPE="image/jpeg"
 			TYPE="1"
 			UPDATETIME="2017-03-25 21:12:41.074"
 			SITE="2"/>
 
-	<PHOTOS ALLMEDIASIZE="1000" ID="4" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="photo1.JPG" ONSITEID="/tmp/photohub_test/photo1.JPG" TYPE="1" UPDATETIME="2017-03-25 21:12:41.43" SITE="2"/>
-	<PHOTOS ALLMEDIASIZE="0" ID="5" DESCR="Next test folder" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="testFolder" ONSITEID="/tmp/photohub_test/foldertest/testFolder" TYPE="2" UPDATETIME="2017-03-25 21:12:42.802" SITE="2"/>
-	<PHOTOS ALLMEDIASIZE="1000" ID="6" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="photo1.JPG" ONSITEID="/tmp/photohub_test/photo1.JPG" TYPE="1" UPDATETIME="2017-03-25 21:12:41.43" SITE="2"/>
+	<PHOTOS ID="4" MEDIATYPE="image/jpeg" ALLMEDIASIZE="1000" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="photo1.JPG" ONSITEID="/tmp/photohub_test/photo1.JPG" TYPE="1" UPDATETIME="2017-03-25 21:12:41.43" SITE="2"/>
+	<PHOTOS ID="5" MEDIATYPE="image/jpeg" ALLMEDIASIZE="0"  DESCR="Next test folder" GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="testFolder" ONSITEID="/tmp/photohub_test/foldertest/testFolder" TYPE="2" UPDATETIME="2017-03-25 21:12:42.802" SITE="2"/>
+	<PHOTOS ID="6" MEDIATYPE="image/jpeg" ALLMEDIASIZE="1000"  GPSDIR="0.0" GPSLAT="0.0" GPSLON="0.0" HIDDEN="false" NAME="photo1.JPG" ONSITEID="/tmp/photohub_test/photo1.JPG" TYPE="1" UPDATETIME="2017-03-25 21:12:41.43" SITE="2"/>
 
 
 	<MEDIAS ID="2" ACCESSTYPE="22" HEIGHT="509" MIMETYPE="image/jpeg" SIZE="146024" TYPE="12" WIDTH="681" PHOTOID="3"/>

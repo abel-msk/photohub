@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -723,16 +724,152 @@ public class PhotoService {
 	 * @throws Exception when cannot find connector
 	 */
 	public PhotoObjectInt getOnSiteObject(Node theNode) throws ExceptionInternalError, Exception {
-		Photo thePhoto = theNode.getPhoto();
-		if ( thePhoto.getOnSiteId() == null) 
-			throw new ExceptionInternalError("Empty pathOnSite property for object " + thePhoto ); 
+		return getOnSiteObject(theNode.getPhoto());
+	}
+
+
+	public PhotoObjectInt getOnSiteObject(Photo thePhoto) throws ExceptionInternalError, Exception {
+		if ( thePhoto.getOnSiteId() == null)
+			throw new ExceptionInternalError("Empty pathOnSite property for object " + thePhoto );
 		SiteConnectorInt connector = siteService.getOrLoadConnector(thePhoto.getSiteBean());
-		logger.trace("[getOnSiteObject] Load sites object "+thePhoto+", ID="+thePhoto.getOnSiteId());
+		//logger.trace("[getOnSiteObject] Load sites object "+thePhoto+", ID="+thePhoto.getOnSiteId());
 		PhotoObjectInt onSiteObject = connector.loadObject(thePhoto.getOnSiteId());
 		return onSiteObject;
 	}
-	
-	
+
+	/*=============================================================================================
+	 *
+	 *    PROCESS MEDIA
+	 *
+	 =============================================================================================*/
+
+	/**
+	 *    Return media with specified type for object thePhoto.
+	 *    Types are:
+	 *       Media.MEDIA_THUMB=11
+	 *       Media.MEDIA_IMAGE=12
+	 *       Media.MEDIA_VIDEO=13
+	 *
+	 * @param thePhoto  the photo object
+	 * @param type      search media type
+	 * @return
+	 */
+	public Media getMediaByType(Photo thePhoto, int type) {
+
+		Media mediaObject = null;
+		for(Media media: thePhoto.getMediaObjects()) {
+			if (media.getType() == type) {
+				mediaObject = media;
+				break;
+			}
+		}
+		return mediaObject;
+	}
+
+	/**
+	 *     Return media object with type as whole object type.
+	 *     if here is more media with base type, return local one.
+	 *
+	 * @param thePhoto the photo object
+	 * @return
+	 */
+	public Media getBaseMedia(Photo thePhoto) {
+		int mediaType = 0;
+		Media result = null;
+
+		if (thePhoto.getMediaType().startsWith("video")) {
+			mediaType = Media.MEDIA_VIDEO;
+		}
+		else if (thePhoto.getMediaType().startsWith("image")) {
+			mediaType = Media.MEDIA_IMAGE;
+		}
+		List<Media> foundMedia = new ArrayList<>();
+		Media mediaObject = null;
+
+		for(Media media: thePhoto.getMediaObjects()) {
+			if (media.getType() == mediaType) {
+				foundMedia.add(media);
+			}
+		}
+
+		if ( foundMedia.size() == 1 ) {
+			result =  foundMedia.get(0);
+		}
+		else  if (foundMedia.size() > 1) {
+			for (Media media: foundMedia) {
+				if (media.getAccessType() == Media.ACCESS_LOCAL)
+					result =  media;
+			}
+			if ( result == null) {
+				result =  foundMedia.get(0);
+			}
+		} else {
+			throw new ExceptionInternalError("[getMediaByType] Cannot find base media type = "+thePhoto.getMediaType()
+					+", for object = "+thePhoto );
+		}
+
+		logger.debug("[getBaseMedia] Found base media "+ (result==null?"NULL":result));
+		return result;
+	}
+
+
+	/*=============================================================================================
+	 *
+	 *    TRANSFORM photo object
+	 *
+	 =============================================================================================*/
+	public Photo rotate90(Photo thePhoto, PhotoObjectInt.rotateEnum rotateDirection) throws ExceptionInternalError, Exception{
+		PhotoObjectInt onSiteObj = getOnSiteObject(thePhoto);
+
+		// TODO: UPDATE LOCALY
+		if ( ! onSiteObj.getConnector().isCanUpdate() ) {
+			return null;
+		}
+
+		PhotoObjectInt newObject = onSiteObj.rotate90(rotateDirection);
+
+		//
+		//   Remove all media objects from DB
+		//
+
+		//TODO:  Удаляем только базовый медиа  и иконку
+
+		List<Media> mList = new ArrayList<>();
+		for (Media mItem : thePhoto.getMediaObjects() ) {
+			mList.add(mItem);
+			logger.debug("[testDeleteMedia]  Copy item " + mItem.getId());
+		}
+		for (Media mItem : mList ) {
+			thePhoto.removeMediaObject(mItem);
+			logger.debug("[testDeleteMedia]  Remove item " + mItem.getId());
+		}
+
+		thePhoto = photoRepo.save(thePhoto);
+		thePhoto = convertToPhoto(newObject,thePhoto, null );
+
+		//
+		//   Create thumbnail
+		//
+
+		String thumbPath = thumbService.getThumbPath(thePhoto.getId());
+		//---  Delete old Thumbnail file
+		try {
+			FileUtils.fileDelete(thumbPath, false);
+		}
+		catch (ExceptionFileIO e) {
+			logger.warn("[rotate90] Cannot delete thumbnail "+thumbPath+ ", for photo obj " + thePhoto + ".  File delete report:"+e.getLocalizedMessage(),e);
+		}
+
+		//---  Load New Thumbnail file
+		thumbService.uploadThumbnail(newObject,thePhoto);
+		photoRepo.save(thePhoto);
+		logger.debug("[rotate90] Rotate object "+ thePhoto + ", Direction " + (rotateDirection==PhotoObjectInt.rotateEnum.CLOCKWISE?"CLOCKWISE":"COUNTER_CLOCKWISE"));
+
+		return thePhoto;
+	}
+
+
+
 	/*=============================================================================================
 	 * 
 	 *    DELETE  photoObject and folder
@@ -857,6 +994,7 @@ public class PhotoService {
 				}
 				//  if not all deleted on site or we can delete this photo, just hide it and exit.
 				if (! wasRemoved)  {
+					logger.trace("[deleteObject] Object '" + theNode.getPhoto() + "' was not removed from site.  So mark object hidden. ");
 					thePhoto.setHidden(true);
 					photoRepo.save(thePhoto);
 					return false;
@@ -916,6 +1054,7 @@ public class PhotoService {
 				//   If site read-only  just hide object in db
 				//
 				else {
+					logger.debug("[deleteObjectFromSite] Cannot delete "+ theNode.getPhoto()+". Site: "+theNode.getPhoto().getSiteBean()+" readonly.");
 					return false;
 				}
 			} catch (ExceptionInternalError eie) {

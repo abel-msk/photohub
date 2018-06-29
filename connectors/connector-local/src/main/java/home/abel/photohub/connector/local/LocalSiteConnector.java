@@ -69,18 +69,22 @@ public class LocalSiteConnector extends SiteBaseConnector {
 	}
 	
 	/**
-	 * 	Возвращает значение проперти ROOT_PATH_PNAME, если такого проперти не установлено,
+	 * 	Устанавливает значение проперти ROOT_PATH_PNAME, если такого проперти не установлено,
 	 *  то возвращает из переменной localStore базового класса
 	 * @param localStore
 	 */
 	@Override
 	public void setLocalStore(String localStore) {
+
+		//TODO: Переделать нахрен
+
 		if ((sitePropertiesMap == null) 
 				|| (sitePropertiesMap.get(ROOT_PATH_PNAME) == null) 
 				// || (sitePropertiesMap.get(ROOT_PATH_PNAME).getValue() == null) 
 				) 
 		{
 			this.localStore  = localStore;
+
 		}
 		else {
 			sitePropertiesMap.get(ROOT_PATH_PNAME).setValue(localStore);

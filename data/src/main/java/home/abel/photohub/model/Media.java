@@ -37,6 +37,32 @@ public class Media implements Serializable{
 	public static final int ACCESS_NET = 21;
 	public static final int ACCESS_LOCAL = 22;
 
+	@JsonIgnore
+	public static String getMediaTypeName(int mediaType) {
+		switch (mediaType) {
+			case MEDIA_THUMB:
+				return "MEDIA_THUMB";
+			case MEDIA_IMAGE:
+				return "MEDIA_IMAGE";
+			case MEDIA_VIDEO:
+				return "MEDIA_VIDEO";
+			default:
+				return "MEDIA_UNKNOWN";
+		}
+	}
+
+	@JsonIgnore
+	public static String getAccessTypeName (int assessType) {
+		switch (assessType) {
+			case ACCESS_NET:
+				return "ACCESS_NET";
+			case ACCESS_LOCAL:
+				return "ACCESS_LOCAL";
+			default:
+				return "ACCESS_UNKNOWN";
+		}
+	}
+
 	@Id
 	@Column(columnDefinition = "BIGINT") 
     //@TableGenerator(name="node_gen", allocationSize=1)
@@ -130,5 +156,9 @@ public class Media implements Serializable{
 
 	public void setAccessType(int accessType) {
 		this.accessType = accessType;
+	}
+
+	public String toString() {
+		return "(id="+getId()+", type="+getMediaTypeName(getType())+", access="+getAccessTypeName(getAccessType()) + ")";
 	}
 }
