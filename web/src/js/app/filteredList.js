@@ -161,17 +161,29 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
         }
 
 
-
-        //--------------------------------------------------------------------------
-        //
-        //   Call API for remove items list from DB
-        //   For each successfully removed items  generate validated array and send to remove from view.
-        //
-        //--------------------------------------------------------------------------
-
+        /**
+         *
+         *    Удаляет объекты из базы.
+         *    Call API for remove items list from DB
+         *    For each successfully removed items  generate validated array and send to remove from view.
+         *
+         * @param itemsHash
+         *   [ ..
+         *      {
+         *         pageOffset -   порядковы номер первой фотки на странице относительно общего начала списка при текущем фильтре
+         *         pageLimit  -   к-во фотографий на странице
+         *         pageId     -   id  страницы  (назначается во время отрисовки)
+         *         id         -   id  фотографии в  DB
+         *         pos        -   порядковый номер фотографии на странице
+         *      },
+         *   ..]
+         * @private
+         */
         FilteredList.prototype._removeItemsFromDB = function(itemsHash) {
             var caller =  this;
             var idList = [];
+
+            //   get id of each arrays item and create list of photos id
             for ( var obj in itemsHash) {
                 idList.push(obj)
             }
@@ -230,22 +242,23 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
         };
 
 
-        //--------------------------------------------------------------------------
-        //
-        //   Delete photo items from the currently loaded items
-        //
-        //     itemObject = {
-        //         pageOffset -   порядковы номер первой фотки на странице относительно общего начала списка при текущем фильтре
-        //         pageLimit  -   к-во фотографий на странице
-        //         pageId     -   id  страницы  (назначается во время отрисовки)
-        //         id         -   id  фотографии в  DB
-        //         pos        -   порядковый номер фотографии на странице
-        //     }
-        //
-        //   Params:
-        //       itemArray - is an object where each method return of itemObject where method name  id the ID of itemObject
-        //--------------------------------------------------------------------------
-
+        /**----------------------------------------------------------------------------------------------
+         *
+         *    Delete photo items from the currently loaded items
+         *
+         * @param itemArray
+         *   [ ..
+         *      {
+         *         pageOffset -   порядковы номер первой фотки на странице относительно общего начала списка при текущем фильтре
+         *         pageLimit  -   к-во фотографий на странице
+         *         pageId     -   id  страницы  (назначается во время отрисовки)
+         *         id         -   id  фотографии в  DB
+         *         pos        -   порядковый номер фотографии на странице
+         *      },
+         *   ..]
+         *
+         * @private
+         */
         FilteredList.prototype._removeItemfromView = function(itemArray) {
 
             var sortedIndex = Object.keys(itemArray).sort(

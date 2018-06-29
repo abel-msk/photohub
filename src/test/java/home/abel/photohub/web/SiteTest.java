@@ -657,7 +657,7 @@ public class SiteTest   {
 		}
 
 		MvcResult result = apiDeleteRequest(cookies,
-				"/api/objects",
+				"/api/photos",
 				mapper.writeValueAsString(objList),
 				true
 		);
@@ -678,9 +678,6 @@ public class SiteTest   {
 				}
 		);
 	}
-
-
-
 
 	public MvcResult apiGetRequest(Cookie[] cookies, String path, boolean isPrint) throws Throwable {
 		ObjectMapper mapper = new ObjectMapper();

@@ -417,7 +417,7 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
         //
         //   removePageItems
         //
-        //   Удяляет список обектов из указанной страницы
+        //   Удяляет список обектов из списка объектов указанной страницы
         //   Параметры:
         //       itemsAr
         //       [

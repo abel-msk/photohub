@@ -96,8 +96,8 @@ define( ["jquery","const"], function($, Const) {
             "photoList":["GET","","/list"],
             "getPhoto":["GET","","/photo/"],
             "siteUpload":["POST","json","/site/"],
-
-            "batchDeletePhotos":["DELETE","json","/objects"]
+            "batchDeletePhotos":["DELETE","json","/photos"],
+            "rotateCW":["GET",,"/photo"]
 
         };
 
@@ -507,15 +507,21 @@ define( ["jquery","const"], function($, Const) {
             },
 
             getPhoto: function (photoId, callbackResult, callbackError) {
-                API_DEBUG && debug_("[addSite] start ");
+                API_DEBUG && debug_("[getPhoto] start ");
                 call("getPhoto", { 'url':getActionUrl('getPhoto')+photoId },{}, callbackResult, callbackError);
             },
 
             //  DELETE /site/{id}/task/{tid}
             batchDeletePhotos: function(objectList, callbackResult, callbackError) {
-                API_DEBUG && debug_("[deleteTask] start ");
+                API_DEBUG && debug_("[batchDeletePhotos] start ");
                 call("batchDeletePhotos", { 'url':getActionUrl('batchDeletePhotos')},objectList, callbackResult, callbackError);
+            },
+
+            rotateCW: function (photoId, isClockwise ,callbackResult, callbackError) {
+                API_DEBUG && debug_("[rotateCW] start ");
+                call("rotateCW", { 'url':getActionUrl('rotateCW')+photoId+"/rotate" },{'clockwise':isClockwise}, callbackResult, callbackError);
             }
+
 
         };
 

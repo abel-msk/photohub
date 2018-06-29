@@ -63,7 +63,7 @@ public class PhotoController {
 	 =============================================================================================*/
 	@RequestMapping(value = "/list", method = RequestMethod.OPTIONS)
 	ResponseEntity<String> acceptGetPhotos(HttpServletRequest request) throws IOException, ServletException {
-    	logger.debug("Request OPTION  for /object");
+    	logger.debug("Request OPTION  for /list");
 	    return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
 	}
 	@RequestMapping(value = "/list", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE) 
@@ -399,22 +399,22 @@ public class PhotoController {
 	 * 
 	 =============================================================================================*/
 
-	@RequestMapping(value = "/objects", method = RequestMethod.OPTIONS)
+	@RequestMapping(value = "/photos", method = RequestMethod.OPTIONS)
 	ResponseEntity<String> acceptDeletBatch(HttpServletRequest request) throws IOException, ServletException {
 		return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
 	}
 
-
 	/**
 	 * 		Multiple objects delete
+	 *
 	 * @param HTTPrequest
 	 * @param HTTPresponse
 	 * @param forseDelete Recursively delete if object if object is folder
-	 * @param objList  list photo ids need to delete
+	 * @param objList  list photo ids (as string) we need to delete
 	 * @return  List ob processed objects with their id and processing result status
 	 * @throws Throwable
 	 */
-	@RequestMapping(value = "/objects", method = RequestMethod.DELETE, produces="application/json")
+	@RequestMapping(value = "/photos", method = RequestMethod.DELETE, produces="application/json")
 	ResponseEntity<DefaultObjectResponse<List<BatchResult>>> deleteObjectsBatch(
 	        final HttpServletRequest HTTPrequest,
 	        final HttpServletResponse HTTPresponse,
@@ -451,13 +451,13 @@ public class PhotoController {
 	}
 
 
-//	@RequestMapping(value = "/photo/{id}", method = RequestMethod.OPTIONS)
+//	@RequestMapping(value = "/node/{id}", method = RequestMethod.OPTIONS)
 //	ResponseEntity<String> acceptDelet(HttpServletRequest request) throws IOException, ServletException {
 //		return new ResponseEntity<String>(null,headerBuild.getHttpHeader(request), HttpStatus.OK);
 //	}
 
 	/**
-	 * Delete object by ID
+	 *    Delete object by its photoID
 	 * @param objectId  object node id for requested object
 	 * @param forseDelete
 	 * @param withFile
@@ -465,7 +465,7 @@ public class PhotoController {
 	 * @throws Throwable
 	 */
 	@RequestMapping(value = "/photo/{id}", method = RequestMethod.DELETE, produces="application/json")
-	ResponseEntity<DefaultResponse> deleteObject(
+	ResponseEntity<DefaultObjectResponse<Photo>> deleteObject(
 			final HttpServletRequest HTTPrequest,
 			final HttpServletResponse HTTPresponse,
 			@PathVariable("id") String objectId,
@@ -473,11 +473,26 @@ public class PhotoController {
 			@RequestParam(value ="withFile", required = false, defaultValue = "false") boolean withFile
 	) throws Throwable
 	{
-		photoService.deleteObject(objectId,forseDelete);
-		DefaultResponse response = new DefaultResponse("Object deleted",0);
-		return new ResponseEntity<DefaultResponse>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
-	}
 
+		boolean isDeleted = false;
+
+		//   Get all nodes for this photo and delete them all.
+		Photo thePhoto = photoService.getPhotoById(objectId);
+		DefaultObjectResponse<Photo> response = new DefaultObjectResponse<>("Object deleted",0,thePhoto);
+
+
+		for (Node objNode  : thePhoto.getNodes() ) {
+			if (photoService.deleteObject(objNode, forseDelete) ) {
+				isDeleted = true;
+			}
+		}
+
+		if ( ! isDeleted) {
+			response.setRc(1);
+			response.setMessage("Object was not deleted on site. Site readonly.");
+		}
+		return new ResponseEntity<>(response,headerBuild.getHttpHeader(HTTPrequest), HttpStatus.OK);
+	}
 
 
 	/*=============================================================================================

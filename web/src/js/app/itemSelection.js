@@ -13,7 +13,6 @@
  *
  */
 
-
 define(["jquery","modalDialog","logger","utils"],
     function($,Dialog,logger, Utils) {
         "use strict";
@@ -22,26 +21,26 @@ define(["jquery","modalDialog","logger","utils"],
             this.items = {};
         }
 
-        //-----------------------------------------------------------------------------------------------------
-        //
-        //   Создаем новый элемент масива. в качестве параметра получаем DOM элемент описывающий фотку.
-        //   Параметры элемента определяется из дополнительных тагов элементов
-        //
-        //   Expected image element tag. Example:
-        //
-        //   <div id="img-frame-9747" data-id="1875" data-count="5" class="img-frame"
-        //      data-id="1875" - DB element id
-        //      data-count     -  position in page object
-        //
-        //   Expected element tag describing page and placed as one of parent:
-        //
-        //   <div id="page-230" data-id="0" data-offset="0" class="content-page" data-limit="23"
-        //      data-id="0"      - page object ID (usaly page count from beginning)
-        //      data-offset="0"  - filters DB requests offset value
-        //      data-limit="23"  - filters DB requests limit value^ calculated due to rendering process
-        //
-        //-----------------------------------------------------------------------------------------------------
-
+        /**
+         *
+         *  Создаем новый элемент масива. в качестве параметра получаем DOM элемент описывающий фотку.
+         *   Параметры элемента определяется из дополнительных тагов элементов
+         *
+         *  Expected image element tag. Example:
+         *
+         *  <div id="img-frame-9747" data-id="1875" data-count="5" class="img-frame"
+         *     data-id="1875" - DB element id
+         *     data-count     -  position in page object
+         *
+         *  Expected element tag describing page and placed as one of parent:
+         *
+         *  <div id="page-230" data-id="0" data-offset="0" class="content-page" data-limit="23"
+         *     data-id="0"      - page object ID (usaly page count from beginning)
+         *     data-offset="0"  - filters DB requests offset value
+         *     data-limit="23"  - filters DB requests limit value^ calculated due to rendering process
+         *
+         * @param element
+         */
         Selection.prototype.putItem = function(element) {
             var itemObject = {};
 
@@ -82,6 +81,11 @@ define(["jquery","modalDialog","logger","utils"],
         //     return Object.keys(this.items).sort(function(a,b){return caller.items[a].pageId - caller.items[b].pageId;})
         // };
 
+
+        /**
+         *  Retrun js Array of selected item objects
+         *  @returns {Array|*}
+         */
         Selection.prototype.getHash = function() {
             return this.items;
         };
