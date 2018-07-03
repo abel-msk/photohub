@@ -21,6 +21,9 @@ props.load(new FileInputStream(propFile))
 
 ext {
     projectVersion   = "1.0.0"
+
+    rootDir          = "/Users/abel/Developing/photohub-root"
+
     //distsDirStr    = distsDir.getAbsolutePath()
     distribDirStr    = distsDir.getAbsolutePath()
     //projectRootStr =   project.rootDir.getAbsolutePath(); //new File(projectRootStr + '/install')
@@ -163,10 +166,10 @@ jar {
 //   LOCAL INSTALL
 //
 //----------------------------------------------------------
-def appHome          = userHome.toString() + "/Developing/photohub-root/app"
-def dbName           = userHome.toString() + "/Developing/photohub-root/db/hsqldb/photohub"
+def appHome          = rootDir.toString() + "/app"
+def dbName           = rootDir.toString() + "/db/hsqldb/photohub"
 //def localDBDir = userHome + "/Developing/photohub-root/db/photo-root"
-def localThumbDir    = userHome.toString() + "/Developing/photohub-root/db/photo-thumbnail"
+def localThumbDir    = rootDir.toString() + "/db/photo-thumbnail"
 def localConfigPath  = appHome.toString() + "/config"
 def localDefaultsDir = appHome.toString() + "/config/defaults"
 def localLogDir     = appHome.toString() + "/log"
