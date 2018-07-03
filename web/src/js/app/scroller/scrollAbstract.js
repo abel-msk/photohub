@@ -182,8 +182,9 @@ define(["scroller/domUtils","scroller/slotsArray","logger"],
         };
 
         ScrollerAbstract.prototype.getData = function(id) {
-            if (! id) throw new Error("[ScrollerAbstract.getData] ID parameter required.");
-            return this.viewSlots.getByPos(id).data;
+            if ((id < 0) || (id >= this.viewSlots.length())) throw new Error("[ScrollerAbstract.getData] ID out of range.");
+            if (this.viewSlots.getByPos(id))  return this.viewSlots.getByPos(id).data;
+            return null;
         };
 
         ScrollerAbstract.prototype.getElement = function(id) {

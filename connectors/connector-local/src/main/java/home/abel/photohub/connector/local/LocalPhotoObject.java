@@ -2,10 +2,10 @@ package home.abel.photohub.connector.local;
 
 import java.awt.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Date;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.List;
-import java.util.UUID;
+
 import home.abel.photohub.connector.prototype.*;
 import home.abel.photohub.utils.image.ExceptionImgProcess;
 import home.abel.photohub.utils.image.ImageData;
@@ -175,7 +175,17 @@ public class LocalPhotoObject extends BasePhotoObj {
 	public PhotoMetadataInt getMeta() throws Exception {
 
 		if ( imageData != null) {
-			return imageData.getMetadata();
+			PhotoMetadataInt md = imageData.getMetadata();
+			if (md != null) {
+				md.setDateUpdate(new Date(photoObjectsFile.lastModified()));
+			}
+			else {
+				md = new BasePhotoMetadata();
+				md.setDateUpdate(new Date(photoObjectsFile.lastModified()));
+
+				//TODO: Посмотреть что  еще мы можем добавить в метаданные
+			}
+			return md;
 		}
 		else return null;
 	}
@@ -423,29 +433,54 @@ public class LocalPhotoObject extends BasePhotoObj {
 	public PhotoObjectInt rotate90(rotateEnum direction) throws Exception {
 		File tmpFile = null;
 		ImageData newImage = null;
+
 		if (isFolder) {
 			return null;
 		}
 
+		Timestamp ts1 = new Timestamp(System.currentTimeMillis());
+
+		logger.trace("");
+
 		if (direction == rotateEnum.CLOCKWISE  ) {
-			newImage = imageData.rotateCW();
+			newImage = imageData.rotate(true);
 		}
 		else {
-			newImage = imageData.rotateCCW();
+			newImage = imageData.rotate(false);
+		}
+		//
+		//   Update change time in metadata
+		//
+		if ( newImage.getMetadata() != null ) {
+			newImage.getMetadata().setDateUpdate(new Date());
 		}
 
-		try {
-			tmpFile = File.createTempFile("lpo", "jpg");
-			tmpFile.createNewFile();
-			newImage.saveJPEG(new FileOutputStream(tmpFile));
-			org.apache.commons.io.FileUtils.copyFile(tmpFile, photoObjectsFile);
+		Timestamp ts2 = new Timestamp(System.currentTimeMillis());
+		logger.debug("[rotate90] Rotate duration " + (new Float(ts2.getTime() -  ts1.getTime()) / 1000) );
 
+		try {
+
+			tmpFile =  new File(photoObjectsFile.getParentFile() + "/" + System.currentTimeMillis());
+			org.apache.commons.io.FileUtils.moveFile(photoObjectsFile, tmpFile);
+			photoObjectsFile.createNewFile();
+			newImage.saveJPEG(new FileOutputStream(photoObjectsFile));
+		} catch (Throwable th) {
+			logger.error("[rotate90] rotate error:"+th.getMessage(),th);
+			if  (tmpFile.exists()) {
+				photoObjectsFile.delete();
+				org.apache.commons.io.FileUtils.moveFile(tmpFile, photoObjectsFile);
+			}
+			throw th;
 		}
 		finally {
 			tmpFile.delete();
+			Timestamp ts3 = new Timestamp(System.currentTimeMillis());
+			logger.debug("[rotate90] Create new source file duration " + ( new Float(ts3.getTime() -  ts2.getTime()) / 1000) );
 		}
 
-		return new LocalPhotoObject(getConnector(),photoObjectsFile);
+		PhotoObjectInt newObj = new LocalPhotoObject(getConnector(),photoObjectsFile);
+		logger.debug("[rotate90] Create new rotated image object " + newObj);
+		return newObj;
 	}
 
 }

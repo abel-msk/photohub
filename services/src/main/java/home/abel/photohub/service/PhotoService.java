@@ -508,6 +508,8 @@ public class PhotoService {
 		
 		try {
 			thePhoto.setOnSiteId(sitesPhotoObject.getId());
+
+			//TODO:  Delte from here
 			thePhoto.setUpdateTime(new Date());
 			thePhoto.setMediaType(sitesPhotoObject.getMimeType());
 			logger.trace("[convertToPhoto] MimeType = "+sitesPhotoObject.getMimeType());
@@ -607,6 +609,10 @@ public class PhotoService {
 				thePhoto.setCamModel(metadata.getCameraModel());
 				thePhoto.setAperture(metadata.getAperture());
 				thePhoto.setCreateTime(metadata.getDateCreated());
+				thePhoto.setUpdateTime(metadata.getDateUpdate());
+				if ( thePhoto.getUpdateTime() == null ) {
+					thePhoto.setUpdateTime(new Date());
+				}
 				thePhoto.setExpTime(metadata.getExposureTime());
 				//thePhoto.setExpMode("");
 				thePhoto.setFocalLen(metadata.getFocalLength());
@@ -619,6 +625,9 @@ public class PhotoService {
 				if ( metadata.getLatitude() != 0 )
 					thePhoto.setGpsLat(metadata.getLatitude());
 				thePhoto.setIso(metadata.getIso());
+			}
+			else {
+				thePhoto.setUpdateTime(new Date());
 			}
 		}
 		logger.debug("[convertToPhoto] Convert sites object to DB. On site=" + sitesPhotoObject + ", DB entry=" +thePhoto);
@@ -823,28 +832,30 @@ public class PhotoService {
 
 		// TODO: UPDATE LOCALY
 		if ( ! onSiteObj.getConnector().isCanUpdate() ) {
+			logger.debug("[rotate90]  Item cannot be modified. Site "+thePhoto.getSiteBean() +" - Readonly.");
 			return null;
 		}
 
 		PhotoObjectInt newObject = onSiteObj.rotate90(rotateDirection);
 
 		//
-		//   Remove all media objects from DB
+		//   Remove media object from DB
 		//
-
 		//TODO:  Удаляем только базовый медиа  и иконку
-
 		List<Media> mList = new ArrayList<>();
 		for (Media mItem : thePhoto.getMediaObjects() ) {
 			mList.add(mItem);
-			logger.debug("[testDeleteMedia]  Copy item " + mItem.getId());
 		}
 		for (Media mItem : mList ) {
 			thePhoto.removeMediaObject(mItem);
-			logger.debug("[testDeleteMedia]  Remove item " + mItem.getId());
 		}
+		logger.trace("[rotate90]  Clean media objects. Load info for newly created media.");
 
-		thePhoto = photoRepo.save(thePhoto);
+		//
+		//   Update media and metadata
+		//
+
+		//thePhoto = photoRepo.save(thePhoto);
 		thePhoto = convertToPhoto(newObject,thePhoto, null );
 
 		//
@@ -859,9 +870,9 @@ public class PhotoService {
 		catch (ExceptionFileIO e) {
 			logger.warn("[rotate90] Cannot delete thumbnail "+thumbPath+ ", for photo obj " + thePhoto + ".  File delete report:"+e.getLocalizedMessage(),e);
 		}
-
 		//---  Load New Thumbnail file
 		thumbService.uploadThumbnail(newObject,thePhoto);
+
 		photoRepo.save(thePhoto);
 		logger.debug("[rotate90] Rotate object "+ thePhoto + ", Direction " + (rotateDirection==PhotoObjectInt.rotateEnum.CLOCKWISE?"CLOCKWISE":"COUNTER_CLOCKWISE"));
 

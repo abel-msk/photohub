@@ -68,11 +68,15 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
             this.filter = filter;
         };
 
-        //--------------------------------------------------------------------------
-        //
-        //   Load single object at their position number, according to current filter set.
-        //   Received object are sent to second parameters function ( onSuccess )
-        //
+        /**--------------------------------------------------------------------------
+         *
+         *   Load single object at their position number (offset), according to current filter set.
+         *   Received object are sent to second parameters function ( onSuccess )
+         *
+         * @param offset  object offset in objects list with current filter
+         * @param onSuccess - called with loaded object
+         *
+         --------------------------------------------------------------------------*/
         FilterClass.prototype.loadSingle = function(offset, onSuccess) {
 
             Api.photoList({
@@ -91,26 +95,83 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
                         }
                     }
                     else {
-                        logger.debug("[FilteredList.loadPage] Error. Api success return w/o task object");
+                        logger.debug("[FilteredList.loadSingle] Error. No response object.");
                     }
                 },
 
                 //  on Error
-                function(response){
-                    Dialog.open({
-                        'error': true,
-                        'title': "Server error",
-                        'text': response.message,
-                        'buttons': {OK: function(){}}
-                    });
-                }
+                this._loadError
+                // function(response){
+                //     Dialog.open({
+                //         'error': true,
+                //         'title': "Server error",
+                //         'text': response.message,
+                //         'buttons': {OK: function(){}}
+                //     });
+                // }
             );
         };
 
-        //--------------------------------------------------------------------------
-        //
-        //   Return current catalog object
-        //
+
+        /**--------------------------------------------------------------------------
+         *
+         *   Perform on backent object action and return newly created photo object
+         *
+         * @param photoId
+         * @param cmd
+         * @param onSuccess
+         --------------------------------------------------------------------------*/
+        FilterClass.prototype.transform = function(photoId,cmd, onSuccess) {
+
+            logger.debug("[FilteredList.transform] Called.");
+
+
+            Api.rotateCW(
+                photoId,
+                (cmd==="rotateCW"),
+
+                //  on Success
+                function(response) {
+                    if (response.object) {
+                        if (typeof onSuccess === "function") {
+                            onSuccess(response.object);
+                        }
+
+                        //TODO: call filteredList for replace object
+
+
+                    }
+                    else {
+                        logger.debug("[FilteredList.transform] Error. No response object.");
+                    }
+                },
+                //  on Error
+                this._loadError
+            );
+        };
+
+
+        /**--------------------------------------------------------------------------
+         *   Loading error process
+         * @param response backend response
+         * @private
+         --------------------------------------------------------------------------*/
+        FilterClass.prototype._loadError = function(response) {
+            Dialog.open({
+                'error': true,
+                'title': "Server error",
+                'text': response.message,
+                'buttons': {OK: function(){}}
+            });
+        };
+
+
+        /**--------------------------------------------------------------------------
+         *
+         * Return photos list created with current filter
+         *
+         * @returns {module:filteredList|*}
+         --------------------------------------------------------------------------*/
         FilterClass.prototype.getFilteredList = function() {
             return this.filteredList;
         };

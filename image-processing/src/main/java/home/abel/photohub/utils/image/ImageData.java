@@ -36,14 +36,14 @@ public class ImageData {
     private static String[] VALID_IMAGE_EXT_ARRAY = {"gif", "tiff", "tif", "jpg", "jpeg", "png"};
     private static String[] VALID_META_EXT_AR = {"tiff", "tif", "jpg", "jpeg"};
 
-    byte[] imageData = null;
-    TiffImageMetadata tiffMetadata = null;
-    long size = 0;
-    String  srcFormat = "unknown";
-    int height = 0;
-    int width = 0;
-    Metadata theMetadataClass = null;
-    boolean readOnly = false;
+    private byte[] imageData = null;
+    private TiffImageMetadata tiffMetadata = null;
+    private long size = 0;
+    private String  srcFormat = "unknown";
+    private int height = 0;
+    private int width = 0;
+    private Metadata theMetadataClass = null;
+    private boolean readOnly = false;
 
      /*--------------------------------------------------------------------------------------------
 
@@ -466,65 +466,68 @@ public class ImageData {
 
      --------------------------------------------------------------------------------------------*/
 
+//    /**
+//     *
+//     *  Rotate image clockwise  90 degree
+//     *
+//     * @return  new ImageData with result image, metadata is copied
+//     * @throws RuntimeException
+//     */
+//    public ImageData rotateCCW() throws RuntimeException  {
+//
+//        //
+//        // Old rotate method do not return new ImageData object
+//        //
+//        ImageData result = null;
+//        try {
+//            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
+//            int w = image.getWidth();
+//            int h = image.getHeight();
+//            BufferedImage newImage = new BufferedImage(h, w, image.getType());
+//
+//            for (int y = 0; y < h; y++)
+//                for (int x = 0; x < w; x++) {
+//                    newImage.setRGB(y, w - 1 - x, image.getRGB(x, y));
+//                }
+//
+//            result = new ImageData(compileImage(newImage,srcFormat),tiffMetadata);
+//        } catch (IOException e) {
+//            logger.error("[rotateCCW] Image rotate error. ",e);
+//            throw new ExceptionImgProcess("[rotateCCW] Image rotate error. ",e);
+//        }
+//        return result;
+//    }
+
+
     /**
      *
-     *  Rotate image clockwise  90 degree
+     *      Rotate image counter clockwise  or counter clockwise
      *
-     * @return  new ImageData with result image, metadata is copied
-     * @throws RuntimeException
-     */
-    public ImageData rotateCCW() throws RuntimeException  {
-
-        //
-        // Old rotate method do not return new ImageData object
-        //
-
-
-        ImageData result = null;
-        try {
-            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
-
-            int w = image.getWidth();
-            int h = image.getHeight();
-            BufferedImage newImage = new BufferedImage(h, w, image.getType());
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                    newImage.setRGB(y, x, image.getRGB(x, y));
-
-            result = new ImageData(compileImage(newImage,srcFormat),tiffMetadata);
-
-        } catch (IOException e) {
-            throw new ExceptionImgProcess("[compileWithMeta] Image rotate error& ",e);
-        }
-        return result;
-    }
-
-
-    /**
-     *
-     *      Rotate image counter clockwise -90 degree
-     *
+     * @param isClockwise - cloclwise rotation if true, counter clockwise else
      * @return new ImageData with result image, metadata is copied
      * @throws RuntimeException
      */
-    public ImageData rotateCW()  throws RuntimeException {
+    public ImageData rotate(boolean isClockwise)  throws RuntimeException {
         ImageData result = null;
         try {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
-
             int width  = image.getWidth();
             int height = image.getHeight();
-            BufferedImage   newImage = new BufferedImage( height, width, image.getType() );
+            BufferedImage newImage = new BufferedImage( height, width, image.getType() );
 
             for( int i=0 ; i < width ; i++ )
                 for( int j=0 ; j < height ; j++ )
-                    newImage.setRGB( height-1-j, i, image.getRGB(i,j) );
+                    if (isClockwise )
+                        newImage.setRGB(height-1-j, i, image.getRGB(i, j));
+                    else
+                        newImage.setRGB(j, width-1-i, image.getRGB(i, j));
+
+
 
             result = new ImageData(compileImage(newImage,srcFormat),tiffMetadata);
-
-
         } catch (IOException e) {
-            throw new ExceptionImgProcess("[compileWithMeta] Image rotate error& ",e);
+            logger.error("[rotateCW] Image rotate error. ",e);
+            throw new ExceptionImgProcess("[rotateCW] Image rotate error. ",e);
         }
         return result;
     }

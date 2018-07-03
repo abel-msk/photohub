@@ -7,7 +7,8 @@ define(["jquery","api","viewImg","logger","const"], function($, Api, View, logge
 
     var defaultOptions = {
         'loadNext': null,
-        'loadPrev': null };
+        'loadPrev': null
+    };
 
 
 
@@ -40,6 +41,7 @@ define(["jquery","api","viewImg","logger","const"], function($, Api, View, logge
         this.view = new View( {
                 'loadNext': function() { caller._loadNext.call(caller) },
                 'loadPrev': function() { caller._loadPrev.call(caller) }
+                //'reload': function() { caller._reload.call(caller,cmd) }
             });
         this.prev = null;
         this.cur = null;
@@ -71,13 +73,9 @@ define(["jquery","api","viewImg","logger","const"], function($, Api, View, logge
             this.view.hideBtn("next");
             this.view.hideBtn("prev");
 
-            var theUrl = this.urlPreffix + item.id;
-
-
-
             this.cur = item;
             this.cur.isVert = this.isVert(item.width,item.height);
-            this.cur.url = theUrl;
+            this.cur.url = this.urlPreffix + item.id + "?" + item.updateTime;
 
             //theUrl, this.isVert(item.width,item.height)
             this.view.openPhoto(this.cur);
@@ -111,11 +109,16 @@ define(["jquery","api","viewImg","logger","const"], function($, Api, View, logge
 
     ViewImgLoader.prototype.isVert = function (w,h) {
         //  Get display aspect.
-        var dH = $(window).innerHeight();
-        var dW = $(window).innerWidth();
-        var displayAspect = parseFloat(dW) / parseFloat(dH);
+        // var dH = $(window).innerHeight();
+        // var dW = $(window).innerWidth();
+        //var displayAspect = parseFloat(dW) / parseFloat(dH);
         var imgAspect = parseFloat(w)/parseFloat(h);
-        return (displayAspect>imgAspect?true:false);
+        // logger.debug("[ViewImgLoader.isVert] isvert="+(parseFloat(displayAspect)>parseFloat(imgAspect)?"true":"false"));
+        // return (parseFloat(displayAspect)>parseFloat(imgAspect)?true:false);
+
+        //logger.debug("[ViewImgLoader.isVert] isvert="+(imgAspect<0));
+        return (imgAspect<0);
+
     };
 
     //-----------------------------------------------------------------------
@@ -188,6 +191,8 @@ define(["jquery","api","viewImg","logger","const"], function($, Api, View, logge
         }
     };
 
+
+
     //-----------------------------------------------------------------------
     //
     //   Вызывается для добавлния фотографии в качестве новой следующей.
@@ -208,7 +213,7 @@ define(["jquery","api","viewImg","logger","const"], function($, Api, View, logge
 
         this.next = item;
         this.next.isVert =this.isVert(item.width,item.height);
-        this.next.url = this.urlPreffix + item.id;
+        this.next.url = this.urlPreffix + item.id + "?" + item.updateTime;
 
         var img = new Image();
         img.src =  this.next.url;
@@ -216,6 +221,8 @@ define(["jquery","api","viewImg","logger","const"], function($, Api, View, logge
             +", pos="+this.next.pos+", src="+this.next.url);
 
     };
+
+
 
     //-----------------------------------------------------------------------
     //
@@ -238,17 +245,50 @@ define(["jquery","api","viewImg","logger","const"], function($, Api, View, logge
 
         this.prev = item;
         this.prev.isVert =this.isVert(item.width,item.height);
-        this.prev.url = this.urlPreffix + item.id;
+        this.prev.url = this.urlPreffix + item.id + "?" + item.updateTime;
 
         //this.prev = { 'pos':pos, 'isVert':this.isVert(w,h), 'id':id , 'url': img.src};
 
         var img = new Image();
         img.src = this.prev.url;
-        DEBUG && logger.debug("[ViewImgLoader.append] Prev "+ item.mimeType+" id="+this.next.id
-            +", pos="+this.next.pos+", src="+this.next.url);
+        DEBUG && logger.debug("[ViewImgLoader.prepend] Prev "+ item.mimeType+" id="+this.prev.id
+            +", pos="+this.prev.pos+", src="+this.prev.url);
 
 
     };
+
+
+
+    /**-----------------------------------------------------------------------
+     *
+     *  Open image in current view
+     *
+     *  @param item - object item
+     *     {
+     *         id : id объекта фотографии от бекэнда
+     *         pos : позиция фотографии в текущем выводе каталога.
+     *         width: ширина фотографии в пикселах
+     *         height: высота фотографии в пикселах
+     *         mimetype:
+     *     }
+     -----------------------------------------------------------------------*/
+    ViewImgLoader.prototype.replace = function(item) {
+
+
+        this.cur = item;
+        this.cur.isVert = this.isVert(item.width,item.height);
+
+        DEBUG && logger.debug("[ViewImgLoader.replace] Img id="+item.id+" orientation vertical="+this.cur.isVert+". w="+item.width+", h="+item.height);
+
+        this.cur.url = this.urlPreffix + item.id + "?" + item.updateTime;
+        this.view.openPhoto(this.cur);
+
+        DEBUG && logger.debug("[ViewImgLoader.replace] With media "+ item.mimeType+" id="+this.next.id
+            +", pos="+this.next.pos+", src="+this.next.url);
+
+    };
+
+
 
     //-----------------------------------------------------------------------
     //    Return first part (base type) of media mime type&

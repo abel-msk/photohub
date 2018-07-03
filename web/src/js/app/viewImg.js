@@ -6,11 +6,13 @@ define(["jquery","logger","const"],function($, logger, Const) {
     "use strict";
 
 
-    var IMAGE_FRAME = "img-view-frame";
+    //var IMAGE_FRAME = "img-view-frame";
     var MAIN_FRAME = "view-panel";
     var BACK_BTN = "close-view-pane";
     var PREV_BTN = "viewPrev";
     var NEXT_BTN = "viewNext";
+    var ROTATE_CW = "rotateCW";
+    var ROTATE_CCW = "rotateCCW";
 
     var CONTAINER = "media-container";
     var IMAGE_FRAME = "img-view-frame";
@@ -33,6 +35,7 @@ define(["jquery","logger","const"],function($, logger, Const) {
     function _getMimeTypeBase (mimetype) {
         return mimetype.substring(0,mimetype.indexOf("/"));
     };
+
 
     //-----------------------------------------------------------------------
     //
@@ -67,6 +70,14 @@ define(["jquery","logger","const"],function($, logger, Const) {
             event.data.caller.zoomOut();
         });
 
+        $("#" + ROTATE_CW).on("click", {'caller': this}, function (event) {
+            event.data.caller.rotate("rotateCW");
+        });
+        $("#" + ROTATE_CCW).on("click", {'caller': this}, function (event) {
+            event.data.caller.rotate("rotateCCW");
+        });
+
+
         $("#viewPrev").on("click", {'caller': this}, function (event) {
             event.data.caller.loadPrev();
         });
@@ -100,7 +111,6 @@ define(["jquery","logger","const"],function($, logger, Const) {
     //                    что-бы полностью влезьть по вертикаои в текущую зону просмотра.
     //                    false фотография масштабирется что-бы влезть по ширине.
     //
-    //      //TODO:  Добавить MimeType в параметры
     //     {
     //         id : id объекта фотографии от бекэнда
     //         pos : позиция фотографии в текущем выводе каталога.
@@ -126,7 +136,7 @@ define(["jquery","logger","const"],function($, logger, Const) {
                 $("#"+VIDEO_FRAME).show();
 
                 this.img = document.getElementById(VIDEO_FRAME);
-                this.img.src = item.url + "?type="+Const.MEDIA_VIDEO;
+                this.img.src = item.url;
                 this.img.load();
                 this.img.poster = item.url;
                 this.img.classList.add("full-height");
@@ -144,15 +154,19 @@ define(["jquery","logger","const"],function($, logger, Const) {
                 this.img.src = item.url;
 
                 if (item.isVert) {
-                    this.img.classList.add("full-height");
-                    this.img.classList.remove("full-width");
-                    this.img.style.height = "100%";
-                    this.zoomBy = "height";
-                } else {
-                    this.img.classList.add("full-width");
                     this.img.classList.remove("full-height");
-                    this.img.style.width = "100%";
+                    this.img.classList.add("full-width");
+                    //this.img.style.height = "100%";
+                    this.zoomBy = "height";
+                    logger.debug("[viewImg.openPhoto] Open as vertical.");
+
+                } else {
+                    this.img.classList.remove("full-width");
+                    this.img.classList.add("full-height");
+                    //this.img.style.width = "100%";
                     this.zoomBy = "width";
+                    logger.debug("[viewImg.openPhoto] Open as horizontal.");
+
                 }
             }
 
@@ -163,8 +177,7 @@ define(["jquery","logger","const"],function($, logger, Const) {
             logger.debug("[View.viewPhoto] Incorrect object parameter.", e);
         }
     };
-
-
+    
     //-----------------------------------------------------------------------
     //
     //     Открывает зону просмотра. Зона просмотра открывается во все окно браузера.
@@ -235,6 +248,22 @@ define(["jquery","logger","const"],function($, logger, Const) {
         }
     };
 
+
+    //-----------------------------------------------------------------------
+    //
+    //    Обработка нажатий  на кнопки Rotate CW и CCW
+    //
+    //-----------------------------------------------------------------------
+    View.prototype.rotate = function(cmd) {
+        var event = new CustomEvent("phototransform", {
+            bubbles: true,
+            cancelable: true,
+            detail: { 'id': this.item.id, 'offset':this.item.pos, 'cmd': cmd }
+        });
+        document.body.dispatchEvent(event);
+    };
+
+
     //-----------------------------------------------------------------------
     //
     //    Обработка нажатий  на кнопки Next и Prev
@@ -278,8 +307,6 @@ define(["jquery","logger","const"],function($, logger, Const) {
         }
     };
 
-
-
     View.prototype.playToggle = function() {
       if ( this.img.paused || this.img.ended ) {
           this.img.play()
@@ -288,8 +315,6 @@ define(["jquery","logger","const"],function($, logger, Const) {
           this.img.pause()
       }
     };
-
-
 
 
     //-----------------------------------------------------------------------
@@ -309,6 +334,7 @@ define(["jquery","logger","const"],function($, logger, Const) {
                 document.mozFullscreenElement ||
                 document.webkitFullscreenElement;
 
+
             //
             //   Переключаем в полноэкранный режим
             //
@@ -322,13 +348,16 @@ define(["jquery","logger","const"],function($, logger, Const) {
                     this.frame.webkitRequestFullScreen();
                 }
                 btnTag.innerHTML = '<i class="fa fa-compress big-size" aria-hidden="true"></i>';
+
+                logger.debug("[View.screenToggle] Open full screen mode.");
+
             }
 
             //
             //   Переключаем в обычный режим
             //
-            else {
-                logger.debug("[View.screenToggle] Element", fullscreenElement);
+            else if (fullscreenElement) {
+
                 //   Fullscreen OFF
                 if (document.cancelFullScreen) {
                     document.cancelFullScreen();
@@ -338,6 +367,8 @@ define(["jquery","logger","const"],function($, logger, Const) {
                     document.webkitCancelFullScreen();
                 }
                 btnTag.innerHTML = '<i class="fa fa-arrows-alt big-size" aria-hidden="true"></i>';
+
+                logger.debug("[View.screenToggle] Close full screen mode.");
             }
         }
     };

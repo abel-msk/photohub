@@ -295,7 +295,7 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
         //        }
         //------------------------------------------------------------------------------------------
         Page.prototype.redraw = function () {
-
+            var newObjectsList = [];
             try {
                 //
                 //    Удаляем все ряды из страницы
@@ -311,20 +311,28 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
                 //    Проходимся по всем подготовленным  элементам
                 //
                 for (var itemIndex = 0; itemIndex < this.objectsList.length; itemIndex++) {
+
+                    //var item = this.toObject(this.objectsList[itemIndex]);
                     var item = this.objectsList[itemIndex];
+
                     //item.count = itemIndex + this.pageOptions.offset;
                     item.count = itemIndex;
                     //   Добавляем объект в текущую строку
                     var isAppended = curRow.append(item);
 
-                    //   Проверяем добавили или нет.
+                    //   Check if does not added, so row is full. Close current and add this item to new one.
+                    //   Если не смогли добавить значит места в ряду бльше нет. Закрываемю
                     if (!isAppended) {
                         this._addRow(curRow);
+                        //newObjectsList = newObjectsList.concat(curRow.getRowObjects());
+
+                        //  Create new row object and add current item as first
                         curRow = new Row({'id':rowId++, 'areaWidth':this.areaWidth});
                         curRow.append(item);
                     }
                 }
                 this._addRow(curRow);
+                //newObjectsList = newObjectsList.concat(curRow.getRowObjects());
 
                 //  Сохраняем в теге колчество объектов, которе мы реально отобразили в HTML
                 //  И выставляем просумированную по рядам высоту страницы
@@ -333,6 +341,10 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
                 this.pageFrame.setAttribute('data-offset', this.pageOptions.offset);
                 this.pageFrame.style.height = this.pageHeight + "px";
 
+
+                //   Replace objects list with newly created
+                //this.objectsList = newObjectsList;
+                logger.debug("[Page.redraw]  Page redrawed. Page options=", this.pageOptions);
                 return this.pageFrame;
             }
             catch (e) {
@@ -522,7 +534,21 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
             this.pageFrame.setAttribute('data-offset', (this.pageOptions.offset -= delta));
         };
 
-        //------------------------------------------------------------------------------------------
+
+        /**------------------------------------------------------------------------------------------
+         * Replace item in the object list on this page
+         * @param index
+         * @param photoObject
+         * @returns {{id,count,min,max,name,view,type,mimeType,url,height,width,aspect}|*}
+         ------------------------------------------------------------------------------------------*/
+        Page.prototype.replaceItem = function(index,photoObject) {
+            var obj = this.objectsList[index] = this.toObject(photoObject);
+            logger.debug("[Page.replaceItem]  insert item at position " + index +", on page "+this.getId()+", Item=",photoObject);
+            this.redraw();
+            return obj;
+        };
+
+            //------------------------------------------------------------------------------------------
         //
         //  toObject
         //
@@ -567,6 +593,7 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
                 object.siteName = photoObject.siteBean.name;
                 object.realUrl = photoObject.realUrl;
                 object.mimeType = photoObject.mediaType;
+                object.updateTime = photoObject.updateTime;
                 object.startNewSession = false;
                 object.createTime = photoObject.createTime;
 
@@ -580,7 +607,12 @@ define(["jquery","scroller/domUtils","scroller/dataRow","logger","utils","api"],
 
                         //object.thumbMimeType = photoObject.mediaObjects[i].mimeType;
                         var imgFolder = photoObject.id.substring(parseInt(photoObject.id.length) - 2);
-                        object.url = Api.getActionUrl("thumbUrl") + '/' + imgFolder + "/" + photoObject.id + "." + thumbFlExt;
+                        object.url = Api.getActionUrl("thumbUrl")
+                            + '/' + imgFolder
+                            + "/"  + photoObject.id
+                            + "."  + thumbFlExt
+                            +"?" + object.updateTime ;
+
                         object.height = parseInt(photoObject.mediaObjects[i].height);
                         object.width = parseInt(photoObject.mediaObjects[i].width);
                         object.aspect = parseFloat(parseFloat(object['width']) / parseFloat(object['height']));

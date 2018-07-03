@@ -3,7 +3,7 @@
  */
 
 
-/*-------------------------------------------------------------------------------------------------
+/**-------------------------------------------------------------------------------------------------
 
     Scroller class
 
@@ -517,6 +517,43 @@ define(["jquery","scroller/domUtils","scroller/dataPage","scroller/scrollAbstrac
                 }
             }
             return null;
+        };
+
+
+        /**-------------------------------------------------------------------------
+         *
+         *   Looking for item in list of viewed pages
+         *   if fount substitute with new one and redraw
+         *
+         *  @param currentObjId    photo obkect id we are looking for
+         *  @param newPhotoObject  the new object to substitute
+         *
+         --------------------------------------------------------------------------*/
+        Scroller.prototype.replaceItem = function(currentObjId,newPhotoObject) {
+            var foundPage = null;
+
+            for (var i = 0; i < this.viewSlots.length(); i++) {
+                var page = this.getData(i);
+                if  (page) {
+                    var objectsList = page.getList();
+
+                    for (var i = 0; i < objectsList.length; i++) {
+                        if (objectsList[i].id == currentObjId) {  //  Item found
+                            page.replaceItem(i, newPhotoObject);
+                            foundPage = page;
+                            break;
+                        }
+                    }
+                    if (foundPage) {
+                        break;
+                    }
+                }
+            }
+
+            //   We found page, substitute item so redraw
+            // if (foundPage) {
+            //     foundPage.redraw();
+            // }
         };
 
 

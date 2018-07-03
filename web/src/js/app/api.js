@@ -97,7 +97,7 @@ define( ["jquery","const"], function($, Const) {
             "getPhoto":["GET","","/photo/"],
             "siteUpload":["POST","json","/site/"],
             "batchDeletePhotos":["DELETE","json","/photos"],
-            "rotateCW":["GET",,"/photo"]
+            "rotateCW":["GET",,"/photo/"]
 
         };
 

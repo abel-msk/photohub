@@ -15,12 +15,10 @@ public interface PhotoObjectInt {
 
 //	public static final int ROTATE_CLOCKWISE = 1;
 //	public static final int ROTATE_COUNTER_CLOCKWISE = 2;
-
 	public enum rotateEnum {
 		CLOCKWISE,
 		COUNTER_CLOCKWISE
 	}
-
 	public String getName();
 	public void setName(String name);
 	

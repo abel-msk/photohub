@@ -140,11 +140,14 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
         };
 
 
-        //--------------------------------------------------------------------------
-        //      Open warn dialog for prevent accidental deletion
-        //      And do remove if user answer OK.
-        //--------------------------------------------------------------------------
 
+
+        /**
+         *    Open warn dialog for prevent accidental deletion
+         *    And do remove if user answer OK.
+         *
+         * @param itemsHash selection list array
+         */
         FilteredList.prototype.removeItems = function(itemsHash) {
             var caller = this;
             Dialog.open({
@@ -167,7 +170,7 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
          *    Call API for remove items list from DB
          *    For each successfully removed items  generate validated array and send to remove from view.
          *
-         * @param itemsHash
+         * @param itemsHash  selection list array
          *   [ ..
          *      {
          *         pageOffset -   порядковы номер первой фотки на странице относительно общего начала списка при текущем фильтре
@@ -177,6 +180,7 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
          *         pos        -   порядковый номер фотографии на странице
          *      },
          *   ..]
+         *
          * @private
          */
         FilteredList.prototype._removeItemsFromDB = function(itemsHash) {
@@ -246,7 +250,8 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
          *
          *    Delete photo items from the currently loaded items
          *
-         * @param itemArray
+         * @param itemArray -
+         *
          *   [ ..
          *      {
          *         pageOffset -   порядковы номер первой фотки на странице относительно общего начала списка при текущем фильтре
@@ -271,7 +276,7 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
             for (var i = 0; i < sortedIndex.length; i++) {
                 var pgId = itemArray[sortedIndex[i]].pageId;    // Get page id from current item
 
-                //   Page was changed& Batch delete items from page
+                //   Page was changed. Batch delete items from page
                 //   Если мы перешли на новую страницу,  посылаем  на удаление список  картинос с предыдущей страницы
                 if (pgId !== curPage ) {
                     if (curPage >= 0  ) { //close array and start delete from one page.
@@ -300,8 +305,20 @@ define(["jquery","scroller/scroller","api","modalDialog","logger"],
         };
 
 
+        /**------------------------------------------------------------------
+         *
+         *   Reload object from backend
+         *
+         * @param objectId
+         ------------------------------------------------------------------*/
+        FilteredList.prototype.replaceItem = function(currentObjId,newPhotoObject) {
+           this.scroller.replaceItem(currentObjId,newPhotoObject)
+        };
 
-        //------------------------------------------------------------------
+
+
+
+            //------------------------------------------------------------------
         //
         //   destroy
         //

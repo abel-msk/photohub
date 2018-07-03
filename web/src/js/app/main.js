@@ -113,13 +113,24 @@ define(["jquery","login","modalDialog","api","menu","filter",
 
                 renderSelected(event.detail.id,event.detail.element);
             })
+            .off("phototransform")
+            .on("phototransform",function(event) {
+                if ( event.detail && event.detail.id && (event.detail.offset >= 0) && event.detail.cmd) {
+                    transform(event.detail.id, event.detail.offset, event.detail.cmd);
+                    logger.debug("[main.photoredraw] Got event for object for id=" + event.detail.id
+                        + ", offset=" + event.detail.offset
+                        + ",cmd=" + event.detail.cmd);
+                }
+                else {
+                    logger.debug("[main.photoredraw] Error. Got event for object transform w/o detail.");
+                }
+            })
+
             .off("click","#del-selected")
             .on("click","#del-selected", function(event){
                 //logger.debug("[main.del-selected] Got event delete selected");
                 removeSelected();
             });
-
-        ;
 
 
         var uploader = new Upload({
@@ -132,6 +143,7 @@ define(["jquery","login","modalDialog","api","menu","filter",
         var viewImgLoader = new ViewImgLoader({
             'loadNext': viewNext,
             'loadPrev': viewPrev
+            //'reload': loadCurrent   //TODO:  Delete
         });
 
 
@@ -195,12 +207,15 @@ define(["jquery","login","modalDialog","api","menu","filter",
                 var imgFrame = _getParent(this,"img-frame");
                 var pageFrame = _getParent(this,"content-page");
 
+                //TODO:   add   'updateTime':object.updateTime
+
                 viewImgLoader.open({
                     'id'      : imgFrame.getAttribute('data-id'),
                     'pos'     : parseInt(imgFrame.getAttribute('data-count')) + parseInt(pageFrame.getAttribute("data-offset")),
                     'width'   : parseInt(cs.width),
                     'height'  : parseInt(cs.height),
-                    'mimeType': imgFrame.getAttribute('data-mimetype')
+                    'mimeType': imgFrame.getAttribute('data-mimetype'),
+                    'updateTime':imgFrame.getAttribute('data-updtime')
                 });
 
             })
@@ -278,19 +293,22 @@ define(["jquery","login","modalDialog","api","menu","filter",
         }
 
 
-
-        //------------------------------------------------------------------------
-        //
-        //    Перед отрисовкаой каждого элемента   проверяем  помечен ли он как выделенный
-        //    Если так, рендереим как выделенный
-        //
-        //------------------------------------------------------------------------
+        /**------------------------------------------------------------------------
+         *
+         *   Check if item are selected, if so change item view to selected state.
+         *   Actually used imm after element has drown during load and scroll
+         *
+         *   Перед отрисовкаой каждого элемента   проверяем  помечен ли он как выделенный
+         *   Если так, рендереим как выделенный
+         *
+         * @param id  photo object id
+         * @param element  DOM object cover the object
+         ------------------------------------------------------------------------*/
         function renderSelected(id,element) {
             //logger.debug("[main.renderSelected] Got event for object id="+id, element);
             if ( itemSelection.getItem(id) ) {
                 element.classList.add("selected");
             }
-
         }
 
         //------------------------------------------------------------------------
@@ -309,7 +327,8 @@ define(["jquery","login","modalDialog","api","menu","filter",
                             'pos': offset,
                             'width': mediaObj.width,
                             'height': mediaObj.height,
-                            'mimeType': mediaObj.mimeType
+                            'mimeType': mediaObj.mimeType,
+                            'updateTime':object.updateTime
                         });
                     }
                 });
@@ -322,23 +341,64 @@ define(["jquery","login","modalDialog","api","menu","filter",
                     var mediaObj =loadDefaultMedia(object);
                     if (mediaObj) {
                         //viewImgLoader.prepend(object.id, offset, mediaObj.width,mediaObj.height);
-                        viewImgLoader.append({
+                        viewImgLoader.prepend({
                             'id': object.id,
                             'pos': offset,
                             'width': mediaObj.width,
                             'height': mediaObj.height,
-                            'mimeType': mediaObj.mimeType
+                            'mimeType': mediaObj.mimeType,
+                            'updateTime':object.updateTime
                         });
                     }
                 });
             }
         }
 
-        //------------------------------------------------------------------------
-        //
-        //
-        //------------------------------------------------------------------------
 
+        /**-----------------------------------------------------------------------
+         *
+         *   Perform transform function and load result photo object
+         *
+         * @param photoId  id of photo for transformation
+         * @param offset - offset in current filter list
+         * @param cmd - transformation command
+         -----------------------------------------------------------------------*/
+        function transform(photoId,offset,cmd) {
+            if ( filter ) {
+                // Call API
+                filter.transform(photoId, cmd, function (object) {
+
+                    //
+                    //    Replace image in imageView panel
+                    //
+                    var mediaObj = loadDefaultMedia(object);
+                    if (mediaObj) {
+                        viewImgLoader.replace({
+                            'id': object.id,
+                            'pos': offset,
+                            'width': mediaObj.width,
+                            'height': mediaObj.height,
+                            'mimeType': mediaObj.mimeType,
+                            'updateTime':object.updateTime
+                        });
+                    }
+
+                    //
+                    //   Replace image in current  filtered list
+                    //
+                    filter.getFilteredList().replaceItem(object.id,object);
+                });
+            }
+        }
+
+
+        /**-----------------------------------------------------------------------
+         *
+         * Extract base media object from loaded photo object
+         *
+         * @param object Photo object
+         * @returns {*}  media object
+         -----------------------------------------------------------------------*/
         function loadDefaultMedia (object) {
             // var type = object.mediaType.substring(0,object.mediaType.index("/"));
             // var mt = MEDIA_IMAGE;
@@ -353,13 +413,11 @@ define(["jquery","login","modalDialog","api","menu","filter",
             return null;
         }
 
-        //------------------------------------------------------------------------
-        //
-        //  Check login and loaded catalog
-        //
-        //  Берет масив объектов описывающий выделенный элемент и передает его в Scroller
 
-        //------------------------------------------------------------------------
+        /**------------------------------------------------------------------------
+         *   Check login and loaded catalog
+         *   Берет масив объектов описывающий выделенный элемент и передает его в Scroller
+         ------------------------------------------------------------------------*/
         function removeSelected() {
 
             if (filter && (! itemSelection.isEmpty())) {
@@ -375,20 +433,22 @@ define(["jquery","login","modalDialog","api","menu","filter",
             }
         }
 
+        // /**------------------------------------------------------------------------
+        //  *  Call reload and redraw photo object
+        //  * @param objectId ID of photo object
+        //  ------------------------------------------------------------------------*/
+        // function redrawObject(objectId) {
+        //     //filter.loadSingle
+        //     filter.getFilteredList().reloadItem(objectId);
+        // }
 
-        //------------------------------------------------------------------------
+        // //------------------------------------------------------------------------
+        // //
+        // //      Lad single object photo by their ID
+        // //
+        // function loadObjectbyId(objectId, callback) {
         //
-        //      Lad single object photo by their ID
-        //
-        function loadObjectbyId(objectId, callback) {
-
-        }
-
-
-
-
-
-
+        // }
 
     }); // on document ready
 

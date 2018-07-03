@@ -40,13 +40,13 @@ public class ImageDataTest {
     public void  RotateTest() throws Throwable {
 
         ImageData imgObj = new ImageData(new FileInputStream(imgFile));
-
-        imgObj.rotateCCW();
+        imgObj = imgObj.rotate(false);
         File outFile = new File("/tmp/imgCCW.jpg");
         outFile.createNewFile();
         imgObj.saveJPEG(new FileOutputStream(outFile));
 
-        imgObj.rotateCW();
+        imgObj = new ImageData(new FileInputStream(imgFile));
+        imgObj = imgObj.rotate(true);
         outFile = new File("/tmp/imgCW.jpg");
         outFile.createNewFile();
         imgObj.saveJPEG(new FileOutputStream(outFile));

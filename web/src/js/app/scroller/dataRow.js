@@ -397,6 +397,7 @@ define(["scroller/domUtils","logger","utils"],function(DomUtils, logger, utils) 
         imgElement.setAttribute("data-id", o.item.id);
         imgElement.setAttribute("data-count", o.item.count);
         imgElement.setAttribute("data-mimetype", o.item.mimeType);
+        imgElement.setAttribute("data-updtime", o.item.updateTime);
         imgElement.setAttribute("data-name", o.item.name);
         imgElement.setAttribute("data-type", o.item.type);  // folder or object
         imgElement.classList.add("img-frame");
