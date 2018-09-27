@@ -2,7 +2,6 @@ package home.abel.photohub.connector.prototype;
 
 import home.abel.photohub.connector.HeadersContainer;
 import home.abel.photohub.connector.SiteMediaPipe;
-import org.springframework.core.io.AbstractResource;
 
 import java.io.File;
 import java.io.InputStream;
@@ -28,13 +27,19 @@ public interface SiteConnectorInt {
 	public String getId();
 	public void setLocalStore(String store);
 	public String getLocalStore();
+	public void setKeyStore(KeyStoreInt ks);
 
 	/*
 	 * 
 	 *     SITE PROPERTIES
 	 * 
 	 */
-	
+
+	/**
+	 * Return list of oll object splaced in sites root
+	 * @return
+	 * @throws Exception
+	 */
 	public List<String> getRootObjects() throws Exception;
 
 	
@@ -61,12 +66,31 @@ public interface SiteConnectorInt {
 	 * @return
 	 */
 	public boolean isCanDelete();
-	
+
+	/**
+	 * Return sites properties map
+	 * @return
+	 */
 	public Map<String,SitePropertyInt> getProperties();
 	public SitePropertyInt getPropertyObj(String name);
+
+	/**
+	 * Return exact property string by name
+	 * @param name property name
+	 * @return
+	 */
 	public String getProperty(String name);
-	
-	public void setProperties(Map<String,SitePropertyInt> propMap);	
+
+	/**
+	 * Set sites property map
+	 * @param propMap new property map
+	 */
+	public void setProperties(Map<String,SitePropertyInt> propMap);
+
+	/**
+	 * Add or replace property string by its name
+	 * @param propertyObj
+	 */
 	public void setProperty(SitePropertyInt propertyObj);	
 	public void setProperty(String name, String value);
 	
@@ -80,6 +104,11 @@ public interface SiteConnectorInt {
 	 * @return
 	 */
 	public SiteStatusEnum getState();
+
+	/**
+	 * Set new connection state for site
+	 * @param state
+	 */
 	public void setState(SiteStatusEnum state);
 	
 	/**
@@ -99,13 +128,23 @@ public interface SiteConnectorInt {
 	public SiteCredentialInt doAuth(SiteCredentialInt cred) throws Exception;
 
 
-
+	/**
+	 * Disconnect site. Clear auth token and set State to DISCONNECT
+	 * @throws Exception
+	 */
 	public void disconnectSite() throws Exception;
 	
 	//public void  doScan(ConnectorCallbackInt cb) throws Exception;
-	
+
+	/**
+	 * Load object from site and return its description as {@link PhotoObjectInt}
+	 * @param ObjectId On site object id
+	 * @return
+	 * @throws Exception
+	 */
 	public PhotoObjectInt loadObject(String ObjectId) throws Exception;	
-	
+
+
 	public PhotoObjectInt createObject(String name, PhotoObjectInt parent, InputStream is) throws Exception;
 	public PhotoObjectInt createObject(String name, PhotoObjectInt parent, File file) throws Exception;
 	

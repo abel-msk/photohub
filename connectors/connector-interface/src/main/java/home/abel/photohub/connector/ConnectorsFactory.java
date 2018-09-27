@@ -1,21 +1,13 @@
 package home.abel.photohub.connector;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
 
-import home.abel.photohub.connector.prototype.ConnectorLoadException;
-import home.abel.photohub.connector.prototype.SiteConnectorInt;
-import home.abel.photohub.connector.prototype.SitePropertyInt;
-import home.abel.photohub.connector.prototype.SiteStatusEnum;
+import home.abel.photohub.connector.prototype.*;
 
 /**
  *  Collect available  classes for generate class connector.
@@ -51,12 +43,14 @@ import home.abel.photohub.connector.prototype.SiteStatusEnum;
  *
  */
 public class ConnectorsFactory {
-	
-	private  ClassLoader currentClassLoader = null;
-	private final Map<String,Class<?>> connectorsClassesMap  =  new ConcurrentHashMap<String,Class<?>>();
-	private final Map<String,SiteConnectorInt> activeConectors  =  new ConcurrentHashMap<String,SiteConnectorInt>();
-	private final Map<String,SiteConnectorInt> sampleConectors  =  new ConcurrentHashMap<String,SiteConnectorInt>();
-	
+
+	protected  ClassLoader currentClassLoader = null;
+	protected final Map<String,Class<?>> connectorsClassesMap  =  new ConcurrentHashMap<String,Class<?>>();
+	protected final Map<String,SiteConnectorInt> activeConectors  =  new ConcurrentHashMap<String,SiteConnectorInt>();
+	protected final Map<String,SiteConnectorInt> sampleConectors  =  new ConcurrentHashMap<String,SiteConnectorInt>();
+	protected DataSource dataSource = null;
+	protected KeyStoreFactory keyStoreFactory = null;
+
 	public ConnectorsFactory() {
 		currentClassLoader = this.getClass().getClassLoader();
 	}
@@ -96,7 +90,25 @@ public class ConnectorsFactory {
 		 else 
 			 throw new ClassNotFoundException("Class '" + className + "'should implament '" + SiteConnectorInt.class.getCanonicalName()+"'");
 	}
-	
+
+	/**
+	 * Add data source for access O2Auth key store.
+	 * If set, method will generate new {@link KeyStoreInt} object and pass it to connector
+	 * @param ds
+	 */
+	public void setDataSource(DataSource ds) {
+		keyStoreFactory = new KeyStoreFactory(ds);
+		dataSource = ds;
+	}
+
+	/**
+	 * Add access class for obtain  O2Auth key from DB. Passed to connector when created.
+	 * @param ksf factory for generate {@link KeyStoreInt} class for exact site
+	 */
+	public void setKeyStoreFactory(KeyStoreFactory ksf) {
+		keyStoreFactory = ksf;
+	}
+
 	/**
 	 *    Return available connectors types
 	 * @return
@@ -204,6 +216,9 @@ public class ConnectorsFactory {
 			connector.setId(connectorId);
 			connector.setLocalStore(localStore);
 			connector.setProperties(inputPropertiesMap);
+			if (keyStoreFactory != null) {
+				connector.setKeyStore(keyStoreFactory.getKeyStore(connectorId));
+			}
 			activeConectors.put(connectorId,connector);
 			
 		} catch (InstantiationException e) {
@@ -220,7 +235,7 @@ public class ConnectorsFactory {
 		} catch (Throwable e) {
 			connector.setState(SiteStatusEnum.DISCONNECT);
 		}
-		
+
 		return connector;
 	}
 	

@@ -1,4 +1,7 @@
-package home.abel.photohub2.connector.test;
+package home.abel.photohub.connector.test;
+
+import home.abel.photohub.connector.BasePhotoObj;
+import home.abel.photohub.connector.SiteBaseConnector;
 
 import java.io.File;
 import java.io.InputStream;

@@ -2,7 +2,7 @@ package home.abel.photohub.connector;
 
 import home.abel.photohub.connector.prototype.EnumMediaType;
 import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
-import org.springframework.core.io.AbstractResource;
+//import org.springframework.core.io.AbstractResource;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -1,12 +1,6 @@
 package home.abel.photohub.connector;
 
-import home.abel.photohub.connector.prototype.AccessException;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
-import home.abel.photohub.connector.prototype.SiteConnectorInt;
-import home.abel.photohub.connector.prototype.SiteCredentialInt;
-import home.abel.photohub.connector.prototype.SitePropertyInt;
-import home.abel.photohub.connector.prototype.SiteStatusEnum;
-import org.springframework.core.io.AbstractResource;
+import home.abel.photohub.connector.prototype.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +19,12 @@ public class SiteBaseConnector implements SiteConnectorInt{
 	protected Map<String, SitePropertyInt>sitePropertiesMap = new HashMap<String, SitePropertyInt>();
 	protected String localStore = null;
 	protected URL callback = null;
+	protected KeyStoreInt keyStore = null;
+
+
+	public void setKeyStore(KeyStoreInt ks) {
+		keyStore = ks;
+	};
 	
 	@Override
 	public String getSiteType() {
@@ -107,7 +107,7 @@ public class SiteBaseConnector implements SiteConnectorInt{
 
 	/**
 	 * Indicate that exiten object or theirs metadata can bee changed.
-	 * @see home.abel.photohub.connector.prototype.SiteConnectorInt#isWritable()
+	 * @see home.abel.photohub.connector.prototype.SiteConnectorInt#isCanWrite()
 	 */
 	@Override
 	public boolean isCanWrite() {

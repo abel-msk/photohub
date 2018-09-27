@@ -2,8 +2,8 @@ package home.abel.photohub.connector.prototype;
 
 import home.abel.photohub.connector.BaseMediaObject;
 import home.abel.photohub.connector.SiteMediaPipe;
-import org.springframework.core.io.AbstractResource;
-import org.springframework.core.io.UrlResource;
+//import org.springframework.core.io.AbstractResource;
+//import org.springframework.core.io.UrlResource;
 
 import java.awt.Dimension;
 import java.io.IOException;

@@ -2,7 +2,7 @@ package home.abel.photohub.connector.prototype;
 
 import home.abel.photohub.connector.HeadersContainer;
 import home.abel.photohub.connector.SiteMediaPipe;
-import org.springframework.core.io.AbstractResource;
+//import org.springframework.core.io.AbstractResource;
 
 import java.io.IOException;
 import java.io.InputStream;

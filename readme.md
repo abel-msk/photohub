@@ -1,4 +1,3 @@
-#PhotoHub
 
 PhotoHub is a client/server application based on web.
 

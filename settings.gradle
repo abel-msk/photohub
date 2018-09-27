@@ -18,4 +18,6 @@ include 'services:webservice'
 rootProject.name = 'photohub'
 include 'data', 'connectors:connector-interface', 'connectors:connector-local', 'connectors:connector-google', 'services'
 include 'image-processing'
+include 'connectors:connector-yadisk'
+findProject(':connectors:connector-yadisk')?.name = 'connector-yadisk'
 

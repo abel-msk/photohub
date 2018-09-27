@@ -11,6 +11,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import javax.sql.DataSource;
+
 @Configuration
 @ComponentScan(basePackages={"home.abel.photohub.service","home.abel.photohub.utils","home.abel.photohub.tasks"})
 @EnableTransactionManagement
@@ -18,12 +20,16 @@ public class SpringConfig {
 	@Autowired
 	Environment env;
 
+
+	@Autowired
+	DataSource dataSource;
+
 	@Bean
 	public ConnectorsFactory connectorsFactory() throws Throwable {
 		ConnectorsFactory factory = new ConnectorsFactory();
 		factory.addConnectorClass("home.abel.photohub.connector.local.LocalSiteConnector");
 		factory.addConnectorClass("home.abel.photohub.connector.google.GoogleSiteConnector");
-
+		factory.setDataSource(dataSource);
 	    return factory;
 	}
 	

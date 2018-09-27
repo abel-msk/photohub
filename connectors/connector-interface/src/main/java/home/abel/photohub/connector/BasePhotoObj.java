@@ -11,8 +11,8 @@ import home.abel.photohub.connector.prototype.PhotoMediaObjectInt;
 import home.abel.photohub.connector.prototype.PhotoMetadataInt;
 import home.abel.photohub.connector.prototype.PhotoObjectInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
-import org.springframework.core.io.AbstractResource;
-import org.springframework.core.io.UrlResource;
+//import org.springframework.core.io.AbstractResource;
+//import org.springframework.core.io.UrlResource;
 
 public class BasePhotoObj implements PhotoObjectInt {
 
