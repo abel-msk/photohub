@@ -849,13 +849,13 @@ public class PhotoService {
 		for (Media mItem : mList ) {
 			thePhoto.removeMediaObject(mItem);
 		}
+		thePhoto = photoRepo.save(thePhoto);
 		logger.trace("[rotate90]  Clean media objects. Load info for newly created media.");
 
 		//
 		//   Update media and metadata
 		//
 
-		//thePhoto = photoRepo.save(thePhoto);
 		thePhoto = convertToPhoto(newObject,thePhoto, null );
 
 		//
