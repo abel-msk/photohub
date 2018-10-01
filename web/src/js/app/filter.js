@@ -4,8 +4,8 @@
  */
 
 
-define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker","filteredList"],
-    function($,Api,Dialog,logger,Utils,moment,dateRangePicker,FilteredList) {
+define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker","filteredList","spinner"],
+    function($,Api,Dialog,logger,Utils,moment,dateRangePicker,FilteredList,Spinner) {
 
         "use strict";
 
@@ -123,8 +123,9 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
          --------------------------------------------------------------------------*/
         FilterClass.prototype.transform = function(photoId,cmd, onSuccess) {
 
-            logger.debug("[FilteredList.transform] Called.");
+            logger.debug("[filter.transform] Called.");
 
+            var spin = new Spinner();
 
             Api.rotateCW(
                 photoId,
@@ -136,10 +137,7 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
                         if (typeof onSuccess === "function") {
                             onSuccess(response.object);
                         }
-
-                        //TODO: call filteredList for replace object
-
-
+                        spin.close();
                     }
                     else {
                         logger.debug("[FilteredList.transform] Error. No response object.");
@@ -157,12 +155,18 @@ define(["jquery","api","modalDialog","logger","utils","moment","dateRangePicker"
          * @private
          --------------------------------------------------------------------------*/
         FilterClass.prototype._loadError = function(response) {
-            Dialog.open({
-                'error': true,
-                'title': "Server error",
-                'text': response.message,
-                'buttons': {OK: function(){}}
-            });
+            if ( response && response.rc !== "600" ) {
+                Dialog.open({
+                    'error': true,
+                    'title': "Server error",
+                    'text': response.message,
+                    'buttons': {
+                        OK: function () {
+                        }
+                    }
+                });
+                logger.debug("[Filter._loadError] Error:", response);
+            }
         };
 
 

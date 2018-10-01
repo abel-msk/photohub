@@ -117,13 +117,12 @@ define(["jquery","login","modalDialog","api","menu","filter",
             .on("phototransform",function(event) {
                 if ( event.detail && event.detail.id && (event.detail.offset >= 0) && event.detail.cmd) {
                     transform(event.detail.id, event.detail.offset, event.detail.cmd);
-                    logger.debug("[main.photoredraw] Got event for object for id=" + event.detail.id
+                    logger.debug("[main.photoredraw] Got event for object with id=" + event.detail.id
                         + ", offset=" + event.detail.offset
                         + ",cmd=" + event.detail.cmd);
                 }
                 else {
-                    logger.debug("[main.photoredraw] Error. Got event for object transform w/o detail.");
-                }
+tra                }
             })
 
             .off("click","#del-selected")

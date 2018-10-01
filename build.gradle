@@ -124,6 +124,7 @@ bootRepackage {
 
 //
 //  Сборка всех необходимых файлов которые нужно включить в конечнй JAR
+//  Add js aap to jar
 //
 jar {
     doFirst {
@@ -318,6 +319,7 @@ task macospkg {
             args distsDir.getAbsolutePath().toString() + "/" + macosPkgName, 'abel@192.168.1.200:'
         }
 
+        //println " !!! Package source  " + macosxPkgBuild + " !!!"
         println " !!! Create package file in " + distsDir.getAbsolutePath() + "/" +   macosPkgName + " !!!"
     }
 }

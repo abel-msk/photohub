@@ -27,7 +27,7 @@ define(["jquery"],function($){
             }
 
             var htmlStr =
-            '<div id="'+options.modalId+'" class="modal fade '+  frameSize +'" role="dialog" tabindex="-1" style="padding-top: 80px;">'+
+            '<div id="'+options.modalId+'" class="modal fade '+  frameSize +'" role="dialog" tabindex="-1" style="padding-top: 80px;z-index:3000">'+
             '    <div class="modal-dialog" role="document">'+
             '        <div class="modal-content">'+
             '            <div class="modal-header '+options.type+'">'+
