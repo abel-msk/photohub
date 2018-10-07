@@ -1,7 +1,22 @@
 package home.abel.photohub.connector.google;
 
 
-import java.awt.*;
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.auth.oauth2.TokenResponseException;
+import com.google.api.services.plus.Plus;
+import com.google.api.services.plus.model.Person;
+import com.google.gdata.client.Service;
+import com.google.gdata.client.photos.PicasawebService;
+import com.google.gdata.data.PlainTextConstruct;
+import com.google.gdata.data.media.MediaFileSource;
+import com.google.gdata.data.photos.AlbumEntry;
+import com.google.gdata.data.photos.PhotoEntry;
+import com.google.gdata.util.ServiceException;
+import home.abel.photohub.connector.*;
+import home.abel.photohub.connector.prototype.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -14,27 +29,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import com.google.gdata.client.Service;
-import com.google.gdata.data.photos.UserFeed;
-import com.google.gdata.util.ServiceException;
-import home.abel.photohub.connector.*;
-import home.abel.photohub.connector.prototype.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.auth.oauth2.TokenResponseException;
-import com.google.api.services.plus.Plus;
-import com.google.api.services.plus.model.Person;
-import com.google.gdata.client.photos.PicasawebService;
-import com.google.gdata.data.PlainTextConstruct;
-import com.google.gdata.data.media.MediaFileSource;
-import com.google.gdata.data.photos.AlbumEntry;
-import com.google.gdata.data.photos.PhotoEntry;
-
-import org.springframework.core.io.AbstractResource;
-import org.springframework.core.io.InputStreamResource;
 
 /**
  * 
@@ -178,52 +172,66 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 	public SiteCredentialInt doConnect(URL callback) throws Exception {
 		this.callback = callback;
 		SiteBaseCredential excahgeCread = new SiteBaseCredential(this);
-		logger.trace("[Google.doConnect] callback="+callback);
 
-		if ((googleCred == null)  ||  ( !refreshAuth()) ) {
+		logger.trace("[Google.doConnect] Start. "
+				+ " googleCred=" + (googleCred == null ? "NULL" : "NOT NULL") + ","
+				+ " state=" + getState() + ","
+				+ " callback = " + callback);
+
+		// TODO: Authflow not ini yet
+		//   Auth inite. Try refresh token
+//		if (googleCred != null) {
+//			boolean refreshed = googleCred.refreshToken();
+//		}
+//		else {
+			//   Callback was passed.
 			if (callback != null) {
 
 				//   Save callback url
-				//apiKeys.setListenerUri(callback == null?GoogleAPIKeys.getDefaultUri():callback.toURI());
 				apiKeys.setListenerUri(callback.toURI());
+
 				if (apiKeys.isCanUseCallback()) {
 					excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_NET);
 				} else {
 					excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_DIRECT);
 				}
-				logger.trace("Listener url = " + apiKeys.getListenerUri().toString() + ", Auth receive type =" + excahgeCread.getAuthReceiveType().toString());
-
+				logger.trace("[Google.doConnect] Callback url was passed. URL=" + callback + ", set useCallback to " + apiKeys.isCanUseCallback() + ", set auth type to " + excahgeCread.getAuthReceiveType());
 
 			} else {
+				apiKeys.setCanUseCallback(false);
 				apiKeys.setListenerUri(GoogleAPIKeys.getDefaultUri());
 				excahgeCread.setAuthReceiveType(SiteCredentialInt.AuthReceiveType.AUTH_TYPE_DIRECT);
+				logger.trace("[Google.doConnect] Callback url was Not passed. Use default=" + GoogleAPIKeys.getDefaultUri() + " and set auth type to " + excahgeCread.getAuthReceiveType());
 			}
 
+			logger.trace("[Google.doConnect] Set Listener uri to " + apiKeys.getListenerUri().toString() + ", Auth receive type =" + excahgeCread.getAuthReceiveType().toString());
 			googleCred = googleAuthLib.initAuthFlow(apiKeys);
-			logger.trace("[Google.doConnect] googleCred = " + (googleCred == null ? "null" : "not null") + ",  STATE=" + getState());
-		}
+//		}
+
+
+		logger.trace("[Google.doConnect] INIT Auth Flow. Got Credential = "+ (googleCred==null?"NULL":"NOT NULL") +  ",  STATE="+ getState());
+
 		//
-		//   У нас уже есть авторизационный токен и сайт не помечен как Disconnect
-		//   Восстанавливаем соединение		
+		//    IF connector not in DISCONNECT (possible AUTH_WAIT or CONNECT) state and last auth flow return normal credential
+		//
 		if ((googleCred != null) && (getState() != SiteStatusEnum.DISCONNECT)) {
 			try { 
-				getProfile(); //  Проверяем  соединение если соединения нет то вылетаем по Exception и уст. DISCONECT
+				getProfile(); //  Проверяем  соединение если соединения нет то вылетаем по Exception и уст. DISCONNECT
 				setState(SiteStatusEnum.CONNECT);
 				picasaService = new PicasawebService(GoogleSiteConnector.APPLICATION_NAME);
 				picasaService.setOAuth2Credentials(googleCred);
-				logger.debug("[Google.doConnect] Check connection (getProfile) OK");
+				logger.trace("[Google.doConnect] Check connection (getProfile) OK");
 
 			} 
 			catch (Exception e){
-				logger.debug("[Google.doConnect] Соединениея нет. (проверка по getProfile)");
+				logger.debug("[Google.doConnect] Connection not establish. Reset to disconnect state.",e);
 				setState(SiteStatusEnum.DISCONNECT);
 			}
 		}
-		logger.trace("[Google.doConnect] googleCred = "+ (googleCred==null?"null":"not null") +  ",  STATE="+ getState());
-		
+
 		//
-		//   Не удалось восстановить соединение или его еще нет.  Идем на ааторизацию.
-		//   
+		//    Connector in DISCONNECT state so we need create answer with redirect to auth page
+		//
 		if ((googleCred == null) || (getState() == SiteStatusEnum.DISCONNECT)) {
 			// Prepage exchange creadential for state = AUTH_WAIT
 			// And full up ExcahgeCread ro show to user for obtain auth token from google.
@@ -232,34 +240,96 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			excahgeCread.setUserMessage("Use this URL for access to Google authentication page. Check access permition for this application and receive auth code token.");
 			excahgeCread.setUserLoginFormUrl(googleAuthLib.getAuthUrl());	
 			logger.trace("[Google.doConnect] Do Reconnect. User login Form URL="+googleAuthLib.getAuthUrl() + ",  STATE="+ getState());
+			googleCred = null;
 		}
 		
 		excahgeCread.setState(getState());
 		return (SiteCredentialInt)excahgeCread;
 	}
 
+	/**-------------------------------------------------------------------------
+	 *
+	 *    Perform automatic reconnect to site. Generate  new credential and refresh token
+	 *
+	 * @throws RuntimeException
+	 *
+	-------------------------------------------------------------------------*/
+	public void doReconnect() throws RuntimeException {
+
+		if  (getState() == SiteStatusEnum.CONNECT ) {
+			try {
+				apiKeys.setCanUseCallback(false);
+				apiKeys.setListenerUri(GoogleAPIKeys.getDefaultUri());
+				googleCred = googleAuthLib.initAuthFlow(apiKeys);
+
+				getProfile(); //  Проверяем  соединение если соединения нет то вылетаем по Exception и уст. DISCONNECT
+				setState(SiteStatusEnum.CONNECT);
+				picasaService = new PicasawebService(GoogleSiteConnector.APPLICATION_NAME);
+				picasaService.setOAuth2Credentials(googleCred);
+				logger.debug("[Google.doReconnect] Restore connection (getProfile) OK");
+
+				//} catch (URISyntaxException e) (Exception e) {
+			} catch (Exception e) {
+				setState(SiteStatusEnum.DISCONNECT);
+				logger.warn("[google.doReconnect] Cannot reconnect site. " + e.getMessage());
+			}
+		}
+		else {
+			logger.debug("[Google.doReconnect] Cannot reconnect for site status " + getState());
+		}
+	}
 
 	/**-------------------------------------------------------------------------
 	 *
-	 *    Try to refresh auth token
+	 *    Refresh auth token with site
 	 *
 	 * @return
-	 *
-	 --------------------------------------------------------------------------*/
-	public boolean refreshAuth() {
-		boolean ret = false;
-		try {
-			if (googleCred != null) {
-				logger.trace("[Google.refreshAuth] Refresh Credential.");
-				ret = googleCred.refreshToken();
+	 * @throws RuntimeException
+	-------------------------------------------------------------------------*/
+	public boolean doRefresh() throws RuntimeException {
+		boolean refreshed = false;
+		setState(SiteStatusEnum.DISCONNECT);
+
+		if (googleCred != null) {
+			try {
+				if ( googleCred.refreshToken() ) {
+					setState(SiteStatusEnum.CONNECT);
+				}
+			} catch (IOException ioe) {
+				logger.warn("[Google.doRefresh] Refresh Credential Error.", ioe.getMessage());
 			}
 		}
-		catch (IOException ioe) {
-			logger.warn("[Google.refreshAuth] Refresh Credential Error.",ioe.getMessage());
-			return false;
-		}
-		return ret;
+		return refreshed;
 	}
+
+
+//
+//			/**-------------------------------------------------------------------------
+//	 *
+//	 *    Try to refresh auth token
+//	 *
+//	 * @return
+//	 *
+//	 --------------------------------------------------------------------------*/
+//	public boolean refreshAuth()  throws Exception{
+//		boolean refreshed = false;
+//		try {
+//			if (googleCred != null && ) {
+//				logger.trace("[Google.refreshAuth] Refresh Credential.");
+//				refreshed = googleCred.refreshToken();
+//			}
+//		}
+//		catch (IOException ioe) {
+//			logger.warn("[Google.refreshAuth] Refresh Credential Error.",ioe.getMessage());
+//			return false;
+//		}
+//
+//		if (!refreshed) {
+//			SiteCredentialInt cred  = doConnect(null);
+//		}
+//
+//		return refreshed;
+//	}
 
 
 	/**-------------------------------------------------------------------------
@@ -324,25 +394,7 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 		return profile;
 	}
 	
-	/**-------------------------------------------------------------------------
-	 * 
-	 *    Возвращает google plus person profile ID на основе существующей авторизвции.
-	 *    
-	 * @return
-	 ------------------------------------------------------------------------- */
-//	@Override
-//	public String getUser() {
-//		String userId = this.user;
-//		if (userId == null) {
-//			try {
-//				userId = this.getProfile().getId();
-//			} catch (Exception e) {
-//				logger.error("[GoogleConnector.getPersonProfile] load profile error : "+ e.getMessage(),e);
-//			}
-//		}
-//		return userId;
-//	}
-	
+
 	
 	/**-------------------------------------------------------------------------
 	 * 
@@ -358,28 +410,7 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 		return this.picasaService;
 	}
 	
-	
-//	/*-------------------------------------------------------------------------
-//	 *  Scan google picasa site
-//	 * @see home.abel.photohub.connector.SiteBaseConnector#doScan(home.abel.photohub.connector.prototype.ConnectorCallbackInt)
-//	 */
-//	@Override
-//	public void doScan(ConnectorCallbackInt cb) throws Exception {
-//		
-//		GoogleRootObject root = new GoogleRootObject(this);
-//		for (  PhotoObjectInt albumItem: root.listSubObjects()) {
-//			String nodeId = cb.loadPhotoObj(null, null, albumItem);
-//			
-//			for (PhotoObjectInt photoItem: albumItem.listSubObjects()) {
-//				
-//				cb.loadPhotoObj(nodeId, albumItem, photoItem);
-//			}
-//		}
-//		
-//		GooglePicasaScanner scanner = new GooglePicasaScanner(this,cb);
-//		scanner.scannRoot();
-//	}
-	
+
 	
 	@Override
 	/**
@@ -390,6 +421,8 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 	public void disconnectSite() throws Exception {
 		googleAuthLib.resetAuth(); 
 		setState(SiteStatusEnum.DISCONNECT);
+		googleCred = null;
+
 	}
 
 	@Override
@@ -653,7 +686,7 @@ public class GoogleSiteConnector extends SiteBaseConnector {
 			catch (ServiceException se) {
 				logger.trace("[loadMediaByPath] Response UNKNOWN. " + se.getMessage());
 				request.end();
-				this.doConnect(null);
+				this.doRefresh();
 			}
 			counter++;
 		}

@@ -11,9 +11,20 @@ package home.abel.photohub.connector.google;
  *
  */
 
-import java.awt.Dimension;
+import com.google.gdata.client.photos.PicasawebService;
+import com.google.gdata.data.geo.Point;
+import com.google.gdata.data.media.mediarss.MediaContent;
+import com.google.gdata.data.photos.ExifTags;
+import com.google.gdata.data.photos.PhotoEntry;
+import com.google.gdata.util.ServiceException;
+import home.abel.photohub.connector.BasePhotoMetadata;
+import home.abel.photohub.connector.BasePhotoObj;
+import home.abel.photohub.connector.SiteMediaPipe;
+import home.abel.photohub.connector.prototype.*;
+import org.slf4j.LoggerFactory;
+
+import java.awt.*;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
@@ -24,24 +35,6 @@ import java.util.logging.Logger;
 
 //import org.apache.log4j.Level;
 //import org.slf4j.Logger;
-import home.abel.photohub.connector.SiteMediaPipe;
-import home.abel.photohub.connector.prototype.*;
-import org.slf4j.LoggerFactory;
-
-import com.google.gdata.client.photos.PicasawebService;
-import com.google.gdata.data.geo.Point;
-import com.google.gdata.data.media.mediarss.MediaContent;
-import com.google.gdata.data.photos.ExifTags;
-import com.google.gdata.data.photos.PhotoEntry;
-import com.google.gdata.data.photos.impl.ExifTag;
-import com.google.gdata.util.ServiceException;
-import com.google.gdata.util.ServiceForbiddenException;
-
-import home.abel.photohub.connector.BasePhotoMetadata;
-import home.abel.photohub.connector.BasePhotoObj;
-import org.springframework.core.io.AbstractResource;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.UrlResource;
 
 
 public class GooglePhotoObject extends BasePhotoObj {
@@ -155,7 +148,8 @@ public class GooglePhotoObject extends BasePhotoObj {
 			logger.warn("[Google.loadObject] Get entry error. "+ fe.getMessage());
 			try { //   Try to reconnect
 				//this.connector.doConnect(null);
-				this.googleConnector.doConnect(null);
+				//this.googleConnector.doConnect(null);
+				this.googleConnector.doRefresh();
 				service = this.googleConnector.getPicasaService();
 				gPhoto = service.getEntry(entryUrl, PhotoEntry.class);
 			} catch (Exception e) {
@@ -374,22 +368,32 @@ public class GooglePhotoObject extends BasePhotoObj {
 		ExifTags  metas = getPhotoEntry().getExifTags();
 		BasePhotoMetadata metaDataObject = new BasePhotoMetadata();
 
-		metaDataObject.setCameraMake(metas.getCameraMake());
-		metaDataObject.setCameraModel(metas.getCameraModel());
-		metaDataObject.setIso(metas.getIsoEquivalent());
-		metaDataObject.setExposureTime(metas.getExposureTime());
-		metaDataObject.setAperture(metas.getApetureFNumber());
-		//metas.getDistance()
-		metaDataObject.setDateOriginal(metas.getTime());
-		metaDataObject.setDateCreated(metas.getTime());
-		metaDataObject.setFocalLength(metas.getFocalLength());
-		metaDataObject.setUnicId(metas.getImageUniqueID());
+		if ( metas != null ) {
 
-		if (metas.getFlashUsed()) {
-			metaDataObject.setFlash(1);
-		}
-		else {
-			metaDataObject.setFlash(0x10);
+			metaDataObject.setUnicId(metas.getImageUniqueID());
+
+			metaDataObject.setCameraMake(metas.getCameraMake());
+			metaDataObject.setCameraModel(metas.getCameraModel());
+
+			if (metas.getIsoEquivalent() != null)
+				metaDataObject.setIso(metas.getIsoEquivalent());
+			if (metas.getExposureTime() != null)
+				metaDataObject.setExposureTime(metas.getExposureTime());
+			if (metas.getApetureFNumber() != null)
+				metaDataObject.setAperture(metas.getApetureFNumber());
+			//metas.getDistance()
+			if (metas.getTime() != null)
+				metaDataObject.setDateOriginal(metas.getTime());
+			if (metas.getTime() != null)
+				metaDataObject.setDateCreated(metas.getTime());
+			if ( metas.getFocalLength() != null )
+				metaDataObject.setFocalLength(metas.getFocalLength());
+			if ((metas.getFlashUsed() != null) && (metas.getFlashUsed())) {
+				metaDataObject.setFlash(1);
+			} else {
+				metaDataObject.setFlash(0x10);
+			}
+
 		}
 
 		Point geoPoint = getPhotoEntry().getGeoLocation();

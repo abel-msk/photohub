@@ -1,21 +1,23 @@
 package home.abel.photohub.connector.google;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.api.client.util.Key;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.api.client.json.GenericJson;
-import com.google.api.client.util.Key;
 
 //extends GenericJson
 
 public class GoogleAPIKeys {
-	
+	final Logger logger = LoggerFactory.getLogger(GoogleAPIKeys.class);
+
+
 	public final static String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
-	
+
+
 	@Key("client_id")
     private String clientId;
     @Key("auth_uri")
@@ -45,6 +47,8 @@ public class GoogleAPIKeys {
     
     @JsonIgnore
     private String structureStartLabel;
+
+    private URI defaultRedirectUri= null;
    
     
     
@@ -53,6 +57,7 @@ public class GoogleAPIKeys {
 //    	list.add(REDIRECT_URI);
 //    	this.setRedirectUris(list);
     	listenerUri = new URI(REDIRECT_URI);
+		defaultRedirectUri = listenerUri;
     }
     
     public static URI getDefaultUri() throws URISyntaxException  {
@@ -126,9 +131,7 @@ public class GoogleAPIKeys {
 		this.structureStartLabel = structureStartLabel;
 	}
 	
-    public URI getListenerUri() {
-		return listenerUri;
-	}
+    public URI getListenerUri() { return listenerUri; }
 
     /**
      *   Сохраняет URI на которое надо пересести возварат кода авторизации.
@@ -138,29 +141,38 @@ public class GoogleAPIKeys {
      */
 	public void setListenerUri(URI listenerUri) {
 		this.listenerUri = listenerUri;
-		
-		if ( listenerUri.toString().startsWith(REDIRECT_URI) ) {
-			canUseCallback = false;
+
+
+		if (listenerUri.toString().equalsIgnoreCase(defaultRedirectUri.toString())) {
+			logger.trace("[Google.setListenerUri] Listener URI set to default uri for app - " + listenerUri);
+			setCanUseCallback(false);
 			return;
 		}
-		
-		for ( String uriStr : getRedirectUris()) { 
-			try {
-				URI uri = new URI(uriStr);
 
-				if (uri.getHost().equals(listenerUri.getHost()) &&
-						uri.getHost().equals("localhost") &&
-						structureStartLabel.equals("installed")
+		for ( String redirURIStr : getRedirectUris()) {
+			try {
+
+				URI redirURI = new URI(redirURIStr);
+
+				logger.trace("[Google.setListenerUri] Check redirect uri in list " + redirURI + ", is equal with " + listenerUri +
+						" - " + redirURI.getHost() + "=" + listenerUri.getHost());
+
+				if (redirURIStr.equalsIgnoreCase(listenerUri.toString())
+						|| (
+							redirURI.getHost().equalsIgnoreCase(listenerUri.getHost())
+						    && (redirURI.getScheme().equalsIgnoreCase(listenerUri.getScheme()))
+							)
 						) {
 					setCanUseCallback(true);
 					return;
 				}
-				
-				if (uri.equals(listenerUri)) {
-					setCanUseCallback(true);
-					return;
-				}			
-			} catch (Exception e) {}
+			}
+			catch (URISyntaxException synErr) {
+				logger.warn("Cannot parse URI", synErr);
+			}
+			catch (NullPointerException npe) {
+				// skip
+			}
 		}
 		setCanUseCallback(false);
 	}

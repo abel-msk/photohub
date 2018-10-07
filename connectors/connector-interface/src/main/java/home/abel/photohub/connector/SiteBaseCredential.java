@@ -1,14 +1,14 @@
 package home.abel.photohub.connector;
 
-import java.io.Serializable;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
 import home.abel.photohub.connector.prototype.SiteCredentialInt;
 import home.abel.photohub.connector.prototype.SitePropertyInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
+
+import java.io.Serializable;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SiteBaseCredential implements SiteCredentialInt, Serializable  {
 	protected static final long serialVersionUID = 1L;
@@ -20,6 +20,7 @@ public class SiteBaseCredential implements SiteCredentialInt, Serializable  {
 	protected Map<String, SitePropertyInt>properties = new HashMap<String, SitePropertyInt>();
 	protected SiteStatusEnum state;
 	protected AuthReceiveType authReceiveType = AuthReceiveType.AUTH_TYPE_NET;
+	public SiteBaseCredential(){}
 
 	public SiteBaseCredential(SiteConnectorInt connector) {
 		this.connector = connector;

@@ -119,7 +119,7 @@
 	<logger name="org.flywaydb" level="WARN"/>
 
 	<logger name="home.abel.photohub.utils" level="WARN"/>
-  	<logger name="home.abel.photohub" level="DEBUG"/>
+  	<logger name="home.abel.photohub" level="TRACE"/>
 
 	<logger name="home.abel.photohub.tasks" level="TRACE">
 		<appender-ref ref="TASKS" />

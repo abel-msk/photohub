@@ -4,19 +4,15 @@ import home.abel.photohub.connector.ConnectorsFactory;
 import home.abel.photohub.connector.SiteBaseProperty;
 import home.abel.photohub.connector.SiteMediaPipe;
 import home.abel.photohub.connector.prototype.*;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
-
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.AbstractResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -53,45 +49,50 @@ public class GoogleConnectorTest {
 					"abel",
 					connectorId,
 					"/tmp",
+					SiteStatusEnum.CONNECT.toString(),
 					sitePropertiesMap   //Propertyes Map
 			);
 
 			//  Эмулируем что токен уже загружен
-			connector.setState(SiteStatusEnum.CONNECT);
+			//connector.setState(SiteStatusEnum.CONNECT);
+			System.out.println("+++ Connector loaded with state = " + connector.getState());
 
 
-//			SiteCredentialInt exchangeCred = connector.doConnect(new URL("http://localhost:6443/api"));
-			SiteCredentialInt exchangeCred = connector.doConnect(null);
-			if (exchangeCred.getState() == SiteStatusEnum.CONNECT) {
-				System.out.println("+++ Connected successfuly.");
-			} else {
-				String code = "";
-				System.out.println("+++" + exchangeCred.getUserMessage() + "+++");
-				System.out.println(exchangeCred.getUserLoginFormUrl());
-				System.out.println("->");
-				connector = factory.getConnector(connectorId);
+			if (connector.getState() != SiteStatusEnum.CONNECT ) {
 
-				//Scanner s = new Scanner(System.in);
-				//code = s.nextLine();
-				//s.close();
+//				SiteCredentialInt exchangeCred = connector.doConnect(new URL("http://localhost:6443/api"));
+				SiteCredentialInt exchangeCred = connector.doConnect(null);
+				if (exchangeCred.getState() == SiteStatusEnum.CONNECT) {
+					System.out.println("+++ Connected successfuly.");
+				} else {
+					String code = "";
+					System.out.println("+++" + exchangeCred.getUserMessage() + "+++");
+					System.out.println(exchangeCred.getUserLoginFormUrl());
+					System.out.println("->");
+					connector = factory.getConnector(connectorId);
 
-				String result = IN.readLine();
-				code = result.trim();
+					//Scanner s = new Scanner(System.in);
+					//code = s.nextLine();
+					//s.close();
 
-
-//				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-//		    	String code = br.readLine();
-//		    	br.close();
+					String result = IN.readLine();
+					code = result.trim();
 
 
-				//System.out.println("Got code:" + code);
-				logger.debug("The code = " + code);
-				System.out.println("+++ GO +++");
+	//				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+	//		    	String code = br.readLine();
+	//		    	br.close();
 
-				exchangeCred.setAccessToken(code);
-				connector.doAuth(exchangeCred);
 
-				System.out.println("+++ AUTH OK +++");
+					//System.out.println("Got code:" + code);
+					logger.debug("The code = " + code);
+					System.out.println("+++ GO +++");
+
+					exchangeCred.setAccessToken(code);
+					connector.doAuth(exchangeCred);
+
+					System.out.println("+++ AUTH OK +++");
+				}
 			}
 
 			List<String> rootList = connector.getRootObjects();

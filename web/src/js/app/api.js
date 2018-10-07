@@ -76,7 +76,9 @@ define( ["jquery","const"], function($, Const) {
             "delSite": ["DELETE","","/site/"],
             "updateSite":["PUT","json","/site/"],
             "connectSite":["GET","","/site/"],
+            //"authSite":["GET","json","/site/"],
             "authSite":["PUT","json","/site/"],
+
             "disconnectSite":["GET","","/site/"],
             "cleanSite":["GET","","/site/"],
 

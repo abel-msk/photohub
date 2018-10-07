@@ -1,13 +1,12 @@
 package home.abel.photohub.connector;
 
+import home.abel.photohub.connector.prototype.*;
+
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.sql.DataSource;
-
-import home.abel.photohub.connector.prototype.*;
 
 /**
  *  Collect available  classes for generate class connector.
@@ -165,14 +164,13 @@ public class ConnectorsFactory {
 			String siteUser,
 			String connectorId,
 			String localStore,
+			String savedState,
 			Map<String, SitePropertyInt> inputPropertiesMap
 			) throws ConnectorLoadException {	
 
-		//TODO:   check for empty parameters
-		
 		SiteConnectorInt connector = null;
 		if (activeConectors.get(connectorId) == null) {
-			connector = createConnector(type,siteUser,connectorId,localStore,inputPropertiesMap);
+			connector = createConnector(type,siteUser,connectorId,localStore,savedState,inputPropertiesMap);
 		}		
 		else {
 			connector =  activeConectors.get(connectorId);
@@ -200,40 +198,44 @@ public class ConnectorsFactory {
 			String siteUser, 
 			String connectorId,
 			String localStore,
+			String savedState,
 			Map<String, SitePropertyInt> inputPropertiesMap
 			) throws ConnectorLoadException {
-		
-		SiteConnectorInt connector = null;		
-		
+
+		SiteConnectorInt connector = null;
+
 		Class<?> ConnectorImplClass = connectorsClassesMap.get(siteType);
-		if ( ConnectorImplClass == null ) {
-			throw new ConnectorLoadException("Connector class for type " +siteType+ " not found");
+		if (ConnectorImplClass == null) {
+			throw new ConnectorLoadException("Connector class for type " + siteType + " not found");
 		}
-		
-		try { 			
-			connector = (SiteConnectorInt)ConnectorImplClass.newInstance();
+
+		try {
+			connector = (SiteConnectorInt) ConnectorImplClass.newInstance();
 			connector.setUser(siteUser);
 			connector.setId(connectorId);
 			connector.setLocalStore(localStore);
 			connector.setProperties(inputPropertiesMap);
+			connector.setState(SiteStatusEnum.valueOf(savedState));
 			if (keyStoreFactory != null) {
 				connector.setKeyStore(keyStoreFactory.getKeyStore(connectorId));
 			}
-			activeConectors.put(connectorId,connector);
-			
+			activeConectors.put(connectorId, connector);
+
 		} catch (InstantiationException e) {
-			throw new ConnectorLoadException("Cannot instantiate connector class "+ ConnectorImplClass.getClass().getName(), e);
+			throw new ConnectorLoadException("Cannot instantiate connector class " + ConnectorImplClass.getClass().getName(), e);
 		} catch (IllegalAccessException e) {
-			throw new ConnectorLoadException("Cannot access to instance of connector class "+ ConnectorImplClass.getClass().getName(), e);
+			throw new ConnectorLoadException("Cannot access to instance of connector class " + ConnectorImplClass.getClass().getName(), e);
 		}
-		
+
 		//----------------------------------
 		//  Try to connect the connector
-		
-		try {
-			connector.doConnect(null);
-		} catch (Throwable e) {
-			connector.setState(SiteStatusEnum.DISCONNECT);
+		if (SiteStatusEnum.valueOf(savedState) == SiteStatusEnum.CONNECT) {
+			try {
+				//connector.doConnect(null);
+				connector.doReconnect();
+			} catch (Throwable e) {
+				connector.setState(SiteStatusEnum.DISCONNECT);
+			}
 		}
 
 		return connector;

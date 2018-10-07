@@ -1,9 +1,6 @@
 package home.abel.photohub.connector.google;
 
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
 import home.abel.photohub.connector.ConnectorsFactory;
 import home.abel.photohub.connector.SiteBaseProperty;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
@@ -12,6 +9,10 @@ import home.abel.photohub.connector.prototype.SitePropertyInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
 
 /**
@@ -53,11 +54,12 @@ public class GoogleActivator {
                     "abel",
                     connectorId,
                     "/tmp",
+                    SiteStatusEnum.CONNECT.toString(),
                     sitePropertiesMap   //Propertyes Map
             );
 
             //  Эмулируем что токен уже загружен
-            connector.setState(SiteStatusEnum.CONNECT);
+           // connector.setState(SiteStatusEnum.CONNECT);
 
 
             SiteCredentialInt exchangeCred = connector.doConnect(null);

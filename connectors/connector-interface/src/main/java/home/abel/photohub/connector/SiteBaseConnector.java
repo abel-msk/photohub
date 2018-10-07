@@ -76,7 +76,14 @@ public class SiteBaseConnector implements SiteConnectorInt{
 		cred.setState(state);
 		return cred;
 	}
-	
+
+    @Override
+	public void doReconnect() {
+		setState(SiteStatusEnum.CONNECT);
+		SiteBaseCredential cred = new SiteBaseCredential(this);
+	}
+
+
 	@Override
 	public SiteCredentialInt doAuth(SiteCredentialInt cred) throws Exception {
 		state = SiteStatusEnum.CONNECT;	

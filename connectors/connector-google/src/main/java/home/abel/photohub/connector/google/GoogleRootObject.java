@@ -1,22 +1,18 @@
 package home.abel.photohub.connector.google;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.google.gdata.data.photos.PhotoEntry;
-import com.google.gdata.util.ServiceException;
-import home.abel.photohub.connector.BasePhotoObj;
-import home.abel.photohub.connector.prototype.PhotoObjectInt;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.gdata.client.photos.PicasawebService;
 import com.google.gdata.data.photos.AlbumEntry;
 import com.google.gdata.data.photos.GphotoEntry;
 import com.google.gdata.data.photos.UserFeed;
+import com.google.gdata.util.ServiceException;
+import home.abel.photohub.connector.BasePhotoObj;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GoogleRootObject extends BasePhotoObj {
     final Logger logger = LoggerFactory.getLogger(GoogleAlbumObject.class);
@@ -73,7 +69,8 @@ public class GoogleRootObject extends BasePhotoObj {
 		} catch (ServiceException fe) {
 			logger.warn("[Google.loadObject] Get entry error. "+ fe.getMessage());
 			try { //   Try to reconnect
-				this.connector.doConnect(null);
+				//this.connector.doConnect(null);
+				this.connector.doRefresh();
 				service = this.connector.getPicasaService();
 				userFeed = service.getFeed(feedUrl, UserFeed.class);
 			} catch (Exception e) {

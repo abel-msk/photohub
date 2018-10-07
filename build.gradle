@@ -24,20 +24,18 @@ ext {
 
     rootDir          = "/Users/abel/Developing/photohub-root"
 
-    //distsDirStr    = distsDir.getAbsolutePath()
-    distribDirStr    = distsDir.getAbsolutePath()
+    distribDirStr    = distsDir.getAbsolutePath()   //...pkg-root.../build/distributions
+    localDistribRoot = distribDirStr + "/local"   //...pkg-root.../build/distributions/local    used for accomulate package sources
+
     //projectRootStr =   project.rootDir.getAbsolutePath(); //new File(projectRootStr + '/install')
 
     userHome         = System.getProperty('user.home').toString()
     tmpDir           = System.getProperty('java.io.tmpdir')
     appClass         = "home.abel.photohub.webconfig.standalone.AppInit"
-
     appConfigFile    = "photohub-standalone.properties"
     appLogConfFile       = "logback.xml"
     defFolderImg     = "folder.png"
     //apiUrl         = "api"
-
-
     dbDriver         = 'org.hsqldb.jdbc.JDBCDriver'
     dbVendorPlatform = 'org.eclipse.persistence.platform.database.HSQLPlatform'
     dbVendorName     = 'HSQL'
@@ -49,10 +47,10 @@ ext {
     dbUserPasswd     =  'photohub'
     dbType           =  'hsqldb'   //  Нужно проверить
 
-    localDistribRoot = distribDirStr + "/local"
 
-    //   the path where to place all fronend js inside final jar
-    //jsApiSrc       = "../photohub2-client2/build"
+    //
+    //   The path where to place all frontend js code in the final jar
+    //
     staticDir        = project.buildDir.toString() + "classes/main/static"
     interfaceDistrDir = "${project.rootDir}" + '/web/build'
 }
@@ -167,10 +165,11 @@ jar {
 //   LOCAL INSTALL
 //
 //----------------------------------------------------------
-def appHome          = rootDir.toString() + "/app"
-def dbName           = rootDir.toString() + "/db/hsqldb/photohub"
+//def appHome          = rootDir.toString() + "/app"
+def appHome          = "/Users/abel/Developing/photohub-root/app"
+def dbName           = appHome.toString() + "/../db/hsqldb/photohub"
 //def localDBDir = userHome + "/Developing/photohub-root/db/photo-root"
-def localThumbDir    = rootDir.toString() + "/db/photo-thumbnail"
+def localThumbDir    = appHome.toString() + "/../db/photo-thumbnail"
 def localConfigPath  = appHome.toString() + "/config"
 def localDefaultsDir = appHome.toString() + "/config/defaults"
 def localLogDir     = appHome.toString() + "/log"
@@ -183,11 +182,16 @@ task install {
     dependsOn 'prepareDistribution'
     dependsOn 'bootRepackage'
     doLast {
+        println "distribDirStr  = $distribDirStr"
+        println "localDistribRoot  = $localDistribRoot"
         println "Copy distribution package to $appHome"
+
+        //  Place  created jar file in the local distribution folder
         copy {
             from file(distribDirStr + "/" +  project.name + ".jar")
             into file(localDistribRoot+"/bin")
         }
+        //  Copy all distribution to local application home
         copy  {
             from localDistribRoot
             into appHome
@@ -685,15 +689,26 @@ dependencies {
 
 
 	//	Springframework
-    compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}", force:true
-    compile group: 'org.springframework', name: 'spring-context', version: "${props.springFrameworkVersion}", force:true
-    compile group: 'org.springframework', name: 'spring-webmvc', version: "${props.springFrameworkVersion}", force:true
-    compile group: 'org.springframework', name: 'spring-beans', version: "${props.springFrameworkVersion}", force:true
-    compile group: 'org.springframework', name: 'spring-aop', version: "${props.springFrameworkVersion}", force:true
-    compile group: 'org.springframework', name: 'spring-jdbc', version: "${props.springFrameworkVersion}", force:true
-    compile group: 'org.springframework', name: 'spring-orm', version: "${props.springFrameworkVersion}", force:true
-    compile group: 'org.springframework', name: 'spring-tx', version: "${props.springFrameworkVersion}", force:true
-    compile group: 'org.springframework', name: 'spring-web', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-context', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-webmvc', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-beans', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-aop', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-jdbc', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-orm', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-tx', version: "${props.springFrameworkVersion}", force:true
+//    compile group: 'org.springframework', name: 'spring-web', version: "${props.springFrameworkVersion}", force:true
+
+    compile group: 'org.springframework', name: 'spring-core', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-context', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-webmvc', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-beans', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-aop', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-jdbc', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-orm', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-tx', version: "${props.springFrameworkVersion}"
+    compile group: 'org.springframework', name: 'spring-web', version: "${props.springFrameworkVersion}"
+
 
     //	Spring  boot
     compile group: 'org.springframework.boot', name: 'spring-boot', version: props.springBootVersion, force:true
@@ -715,7 +730,7 @@ dependencies {
 
     //	JSON Processing
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${props.jacksonVersion}"
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${props.jacksonVersion}"
+    //compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${props.jacksonVersion}"
     //	Testing
     //compile group: 'com.jayway.jsonpath', name: 'json-path', version: '2.2.0'
     testCompile group:  'org.codehaus.jackson', name: 'jackson-mapper-asl',version: '1.9.13'

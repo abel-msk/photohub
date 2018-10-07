@@ -1,9 +1,8 @@
 package home.abel.photohub.web;
 
+import home.abel.photohub.connector.SiteBaseCredential;
 import home.abel.photohub.connector.prototype.SiteCredentialInt;
-import home.abel.photohub.connector.prototype.SitePropertyInt;
 import home.abel.photohub.connector.prototype.SiteStatusEnum;
-import home.abel.photohub.model.Node;
 import home.abel.photohub.model.Schedule;
 import home.abel.photohub.model.Site;
 import home.abel.photohub.service.SiteService;
@@ -14,21 +13,6 @@ import home.abel.photohub.tasks.TaskNamesEnum;
 import home.abel.photohub.web.model.AuthWaitSession;
 import home.abel.photohub.web.model.DefaultObjectResponse;
 import home.abel.photohub.web.model.DefaultResponse;
-import home.abel.photohub.web.model.ResponseConfigParamObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +21,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
 @CrossOrigin
 @RestController
@@ -161,7 +153,7 @@ public class SiteController {
 	        @RequestParam(value = "caller", required=false) URL callerUrl
 			) throws Throwable
 	{ 		
-		logger.debug(">>> Request GET for /site/"+siteId+"/connect [caller="+callerUrl+"]");
+		//logger.debug(">>> Request GET for /site/"+siteId+"/connect [caller="+callerUrl+"]");
 		
 		String accessMeStr = HTTPrequest.getScheme()+"://"+HTTPrequest.getServerName() + 
 		(HTTPrequest.getServerPort() == -1?"":(":"+Integer.toString(HTTPrequest.getServerPort())));
@@ -169,7 +161,7 @@ public class SiteController {
 				HTTPrequest.getRequestURI().lastIndexOf("connect")) + "redirector";
 		
 		URL accessMeUrl  = new URL(accessMeStr + redirectorUrl);  //authCode
-		logger.debug("Prepare access me url = " + accessMeUrl + " for callback waitung" );			
+		logger.debug("Prepare access me url = " + accessMeUrl + " for callback waiting" );
 
 		SiteCredentialInt cred = siteSvc.connectSite(siteId,accessMeUrl);
 		
@@ -255,14 +247,13 @@ public class SiteController {
 	 * @return
 	 * @throws Throwable
 	 */
-	@RequestMapping(value = "/site/{id}/auth", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE) 
+	@RequestMapping(value = "/site/{id}/auth", method = RequestMethod.PUT, produces=MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DefaultObjectResponse<SiteCredentialInt>> authtSite(  final HttpServletRequest HTTPrequest, final HttpServletResponse HTTPresponse,
 	        @PathVariable("id") String siteId,
-	        @RequestBody SiteCredentialInt theSiteCred
+	        @RequestBody SiteBaseCredential theSiteCred
 			) throws Throwable
 	{ 		
-		logger.debug(">>> Request GET for /site/"+siteId+"/auth");	
-		SiteCredentialInt cred = siteSvc.authSite(siteId, theSiteCred);	
+		SiteCredentialInt cred = siteSvc.authSite(siteId, theSiteCred);
 		WaitingCallbackRedirectURLs.remove(siteId);
 
 		return new ResponseEntity<DefaultObjectResponse<SiteCredentialInt>>(

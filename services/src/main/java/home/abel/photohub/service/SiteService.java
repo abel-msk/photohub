@@ -1,17 +1,12 @@
 package home.abel.photohub.service;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
 import com.querydsl.jpa.impl.JPAQuery;
+import home.abel.photohub.connector.ConnectorsFactory;
+import home.abel.photohub.connector.SiteBaseProperty;
+import home.abel.photohub.connector.prototype.SiteConnectorInt;
+import home.abel.photohub.connector.prototype.SiteCredentialInt;
+import home.abel.photohub.connector.prototype.SitePropertyInt;
+import home.abel.photohub.connector.prototype.SiteStatusEnum;
 import home.abel.photohub.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,12 +15,14 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import home.abel.photohub.connector.ConnectorsFactory;
-import home.abel.photohub.connector.SiteBaseProperty;
-import home.abel.photohub.connector.prototype.SiteConnectorInt;
-import home.abel.photohub.connector.prototype.SiteCredentialInt;
-import home.abel.photohub.connector.prototype.SitePropertyInt;
-import home.abel.photohub.connector.prototype.SiteStatusEnum;
+import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -215,6 +212,7 @@ public class SiteService {
 				theSite.getSiteUser(), //Это ключ  хранения сертификатов
 				theSite.getId(),
 				theSite.getRoot(),
+				theSite.getConnectorState(),
 				createPropertyMap(theSite)
 				);		
 			
@@ -224,7 +222,7 @@ public class SiteService {
 					logger.trace("[getOrLoadConnector] property name=" + key  + ", value=" +connector.getProperties().get(key).getValue());
 				}
 			}
-			connector.setState(SiteStatusEnum.valueOf(theSite.getConnectorState()));
+			//connector.setState(SiteStatusEnum.valueOf(theSite.getConnectorState()));
 		}
 		
 		
@@ -369,17 +367,25 @@ public class SiteService {
 	 */
 	@Transactional
 	public SiteCredentialInt connectSite(Site theSite, URL caller) throws Exception{
-		logger.info("[connectSite] Connect site." + theSite);
+		logger.info("[connectSite] Connect site. " + theSite);
 		SiteConnectorInt connector =  getOrLoadConnector(theSite);
-		SiteCredentialInt  authCred = connector.doConnect(caller);
-		
-		//logger.trace("DB State ="+ theSite.getConnectorState() + ",  connector state="+connector.getState().toString()); 
-		
+		logger.trace("[connectSite] Site connector loaded for site " + theSite + ", with state = " + connector.getState());
+
+		//
+		//   Saved in db connector state diff from real connector, change in db
+		//
 		if ( ! theSite.getConnectorState().equalsIgnoreCase(connector.getState().toString()))  {
 			theSite.setConnectorState(connector.getState().toString());
 			//logger.debug("Change connection state to='"+connector.getState().toString()+"' For site "+theSite);
 			siteRepo.save(theSite);
 		}
+
+
+
+		SiteCredentialInt  authCred = connector.doConnect(caller);
+		logger.trace("[connectSite] Conenctors doConnect called with caller URL = "+ caller);
+
+
 
 		logger.debug("[connectSite] "
 				+" Site = " + theSite
@@ -423,15 +429,8 @@ public class SiteService {
 	 * @throws Exception
 	 */
 	public SiteCredentialInt authSite(Site theSite, SiteCredentialInt auth) throws Exception {
-		
-		logger.debug("Auth site "+theSite);
+
 		SiteConnectorInt connector =  getOrLoadConnector(theSite);
-		//connector.doConnect();
-		auth = connector.doAuth(auth);
-		if ( ! theSite.getConnectorState().equalsIgnoreCase(connector.getState().toString()))  {
-			theSite.setConnectorState(connector.getState().toString());
-			siteRepo.save(theSite);
-		}
 		logger.debug("[authSite] "
 				+" Site = " + theSite
 				+", STATE='"+connector.getState().toString()
@@ -440,6 +439,15 @@ public class SiteService {
 				+", Cred message="+(auth.getUserMessage()==null?"null":auth.getUserMessage())
 				+", Cred user login="+(auth.getUserLoginFormUrl()==null?"null":auth.getUserLoginFormUrl())
 		);
+
+
+		//connector.doConnect();
+		auth = connector.doAuth(auth);
+		if ( ! theSite.getConnectorState().equalsIgnoreCase(connector.getState().toString()))  {
+			theSite.setConnectorState(connector.getState().toString());
+			siteRepo.save(theSite);
+		}
+
 		if (logger.isDebugEnabled() && (auth.getProperties() != null)) {
 			for (String pname: auth.getProperties().keySet()) {
 				SitePropertyInt propObj = auth.getProperties().get(pname);

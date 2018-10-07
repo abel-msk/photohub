@@ -1,21 +1,7 @@
 package home.abel.photohub.connector.google;
 
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
-
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
-import com.google.api.client.auth.oauth2.BearerToken;
-import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.auth.oauth2.TokenResponse;
+import com.google.api.client.auth.oauth2.*;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -23,6 +9,13 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.JsonParser;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 
 public class GoogleOAuth2 {
     final Logger logger = LoggerFactory.getLogger(GoogleOAuth2.class);
@@ -93,7 +86,7 @@ public class GoogleOAuth2 {
 
     /**
      * Set user id  fro store auth token
-     * @param userId
+     * @param theKey
      */
     public void setStoreKey(String theKey) {
     	this.storeKey = theKey;
@@ -145,6 +138,13 @@ public class GoogleOAuth2 {
 //	}
 	//public GoogleAPIKeys loadKeys (String resourceJsonPath, String keySrtuctureName) throws Exception {
 
+	/**
+	 *    Load keys data form file and create GoogleAPIKeys class instance
+	 *
+	 * @param inputKeys
+	 * @return
+	 * @throws Exception
+	 */
 	public GoogleAPIKeys loadKeys (GoogleAPIKeys inputKeys) throws Exception {
 		
 		if ( inputKeys.getStructureStartLabel() == null) {
@@ -158,6 +158,8 @@ public class GoogleOAuth2 {
 			logger.debug("Load key from :"+inputKeys.getResourceFile());
 			JsonParser parser =  jsonParserFactory.createJsonParser(this.getClass().getResourceAsStream(inputKeys.getResourceFile()));
 			parser.skipToKey(inputKeys.getStructureStartLabel());
+
+			//   Данные ключа загружаются из JSON файла
 			keysObj =  parser.parseAndClose(GoogleAPIKeys.class);
 			
 			keysObj.setResourceFile(inputKeys.getResourceFile());
@@ -174,7 +176,6 @@ public class GoogleOAuth2 {
 	        
     /**
      * Builds auth flow. And return Credential
-     * @param keysObj
      * @return
      * @throws Throwable
      */
@@ -187,10 +188,10 @@ public class GoogleOAuth2 {
     Credential initAuthFlow() throws Exception {
     	//   Set up authorization code flow
     	//extCallbackUrl = callback;
-    	logger.trace("Start auth flow with TokenUri: "+keysObj.getTokenUri());
-    	logger.trace("                     ClientId: "+keysObj.getClientId());
-    	logger.trace("                     AuthUri: "+keysObj.getAuthUri());
-    	logger.trace("                Redirect URI: "+ keysObj.getListenerUri().toString());
+    	logger.trace("Start auth flow with TokenUri: "+keysObj.getTokenUri()
+				+ ", ClientId: "+keysObj.getClientId()
+				+ ", AuthUri: "+keysObj.getAuthUri()
+		);
     	authFlow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
     			httpTransport,
     			jsonParserFactory,
@@ -207,16 +208,8 @@ public class GoogleOAuth2 {
     		throw new ExceptionBreakAuthFlow("[Google.initAuthFlow] User id or store key is not defined.");
     	}
 
-    	// Alternate way     can use VerificationCodeReceiver
-		//this.credential = new AuthorizationCodeInstalledApp(authFlow, new LocalServerReceiver()).authorize("user");
-
     	this.credential = authFlow.loadCredential(this.getUserId() +"."+ this.getStoreKey());
-//    	if (this.credential  != null) {
-//    		//  Has google user credential
-//    		//  try to connect for check actuality
-//    	}
 
-    	  	
     	return this.credential;
     }
     
@@ -226,11 +219,22 @@ public class GoogleOAuth2 {
      * @throws Throwable
      */
     public URL getAuthUrl() throws Exception {
+
+    	URL gAuthURL = null;
+
     	if (authFlow == null ) {
     		throw new ExceptionBreakAuthFlow("Auth flow not build yet.");
     	}
-    	logger.trace("[Gogole] Redirect URI: "+ keysObj.getListenerUri().toString());
-    	return new URL(authFlow.newAuthorizationUrl().setRedirectUri(keysObj.getListenerUri().toString()).build());
+
+    	if (keysObj.isCanUseCallback() ) {
+			gAuthURL =  new URL(authFlow.newAuthorizationUrl().setRedirectUri(keysObj.getListenerUri().toString()).build());
+		}
+		else {
+			gAuthURL =  new URL(authFlow.newAuthorizationUrl().setRedirectUri(GoogleAPIKeys.getDefaultUri().toString()).build());
+		}
+
+    	logger.trace("[google.getAuthUrl] Prepare redirect auth URL = : "+ gAuthURL);
+    	return gAuthURL;
     }
     
     /**
@@ -243,10 +247,14 @@ public class GoogleOAuth2 {
     	if (authFlow == null ) {
     		throw new ExceptionBreakAuthFlow("Auth flow not build yet.");
     	}
-    	logger.trace("[Gogole] Do Auth (Token Request): "+ keysObj.getListenerUri().toString());
-    	TokenResponse tokenResponse = authFlow.newTokenRequest(authCode).setRedirectUri(keysObj.getListenerUri().toString()).execute();   	
-    	
-    	//   Сохраняем токены доступа с ключем this.getUserId()   	
+    	String redirectURI = keysObj.getListenerUri().toString();
+		if ( ! keysObj.isCanUseCallback() ) {
+			redirectURI = GoogleAPIKeys.getDefaultUri().toString();
+		}
+		logger.trace("[google.doAuth] Do Auth with received token. Redirect URI = " + redirectURI);
+		TokenResponse tokenResponse = authFlow.newTokenRequest(authCode).setRedirectUri(redirectURI).execute();
+
+		//   Save auth credential with received token. User ID is a key.
     	this.credential = authFlow.createAndStoreCredential(tokenResponse, this.getUserId() +"."+ this.getStoreKey());
     	return this.credential;
     }

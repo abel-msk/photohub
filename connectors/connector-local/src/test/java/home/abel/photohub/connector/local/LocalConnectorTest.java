@@ -1,27 +1,27 @@
 package home.abel.photohub.connector.local;
 
-import java.awt.Dimension;
-import java.io.*;
-import java.net.URL;
-//import java.nio.file.Path;
-//import java.nio.file.Paths;
-import java.util.*;
-
-import home.abel.photohub.connector.BasePhotoMetadata;
 import home.abel.photohub.connector.ConnectorsFactory;
 import home.abel.photohub.connector.HeadersContainer;
 import home.abel.photohub.connector.SiteMediaPipe;
 import home.abel.photohub.connector.prototype.*;
-
 import home.abel.photohub.utils.image.Metadata;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.AbstractResource;
-import org.springframework.core.io.InputStreamResource;
+
+import java.awt.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
 
 public class LocalConnectorTest {
 	final Logger logger = LoggerFactory.getLogger(LocalConnectorTest.class);
@@ -82,6 +82,7 @@ public class LocalConnectorTest {
 					"abel",
 					connectorId,
 					rootFolder.getAbsolutePath(),  // set local store
+					SiteStatusEnum.CONNECT.toString(),
 					propMap
 			);
 			System.out.println("Create local site connector id="+connector.getId());

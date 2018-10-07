@@ -1,15 +1,12 @@
 package home.abel.photohub.connector.test;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
 
-import java.io.File;
-import java.sql.*;
-
-import home.abel.photohub.connector.*;
+import home.abel.photohub.connector.BaseConnKey;
+import home.abel.photohub.connector.ConnectorsFactory;
+import home.abel.photohub.connector.KeyStoreFactory;
 import home.abel.photohub.connector.prototype.ConnectionKeyInt;
 import home.abel.photohub.connector.prototype.KeyStoreInt;
 import home.abel.photohub.connector.prototype.SiteConnectorInt;
-
+import home.abel.photohub.connector.prototype.SiteStatusEnum;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -18,6 +15,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.io.File;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 
 public class InterfaceTest {
@@ -125,7 +129,12 @@ public class InterfaceTest {
 				System.out.println("Factory has type '"+type+"'");
 			}
 			String connctorId = "1";
-			SiteConnectorInt connector  = factory.getConnector(hasType, "abel", connctorId , "/tmp" , null);
+			SiteConnectorInt connector  = factory.getConnector(
+					hasType,
+					"abel", connctorId ,
+					"/tmp",
+					SiteStatusEnum.CONNECT.toString(),
+					null);
 
 			
 			//  Test scanning

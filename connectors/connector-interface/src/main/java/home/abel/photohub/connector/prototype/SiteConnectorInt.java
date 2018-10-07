@@ -113,12 +113,19 @@ public interface SiteConnectorInt {
 	
 	/**
 	 * 
-	 * Sute connec to for auth. For OAuth2 it is first phase  
+	 * Connect site. For OAuth2 it is first phase
 	 * @param callback
 	 * @throws Throwable 
 	 */
 	public SiteCredentialInt doConnect(URL callback) throws Exception;
-	
+
+	/**
+	 *
+	 *  Automatic site reconnect after connector loaded.
+	 *
+	 * @throws Exception
+	 */
+	public void doReconnect() throws Exception;
 	/**
 	 * 
 	 * Site Auth for OAuth2 it is second phase

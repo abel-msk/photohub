@@ -35,7 +35,7 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
                     '            <div class="modal-body">' +
                     '                <div id="contentBody"></div>' +
                     '                 <div id="user-message" class="row-block">'+cred.userMessage+'</div>'+
-                    '                <div id="auth-url" class="row-block"><a href="'+cred.userLoginFormUrl+'" target="_blank" >'+cred.userLoginFormUrl+'</a></div> '+
+                    '                <div id="auth-url" class="row-block" style="overflow-x: scroll"><a href="'+cred.userLoginFormUrl+'" target="_blank" >'+cred.userLoginFormUrl+'</a></div> '+
                     '		         <div class="form-group row-block">' +
                     '                    <label for="auth_code">Use аuthorization code you receive from site by url above</label>' +
                     '                    <input type="text" class="form-control" id="auth_code" placeholder="Enter authorization code here"> ' +
@@ -177,8 +177,8 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
                 //  on Success
                 function(response){
                     // set connection state to connect
-                    logger.debug("[connector.doAuth] success. State="+response.state );
-                    changeState(response.state,siteId);
+                    logger.debug("[connector.doAuth] success. State="+response.object.state );
+                    changeState(response.object.state,siteId);
                 },
                 //  on Error
                 function(response){
@@ -203,7 +203,7 @@ define(["jquery","logger","modalDialog","api"],function ($,logger,Dialog,Api) {
 
                 //  OnSuccess
                 function(response){
-                    var respState = response.object.connectorState;
+                    var respState = response.object.state;
                     logger.debug("[connector.doConnect] success. State="+respState );
 
                     changeState(respState);

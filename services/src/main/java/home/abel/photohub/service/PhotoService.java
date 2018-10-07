@@ -1,21 +1,10 @@
 package home.abel.photohub.service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import home.abel.photohub.connector.prototype.*;
 import home.abel.photohub.model.*;
+import home.abel.photohub.utils.FileUtils;
 import home.abel.photohub.utils.image.ImageData;
 import home.abel.photohub.utils.image.Metadata;
 import org.slf4j.Logger;
@@ -29,10 +18,17 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.querydsl.jpa.impl.JPAQuery;
-
-
-import home.abel.photohub.utils.FileUtils;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 
 /***
@@ -827,6 +823,7 @@ public class PhotoService {
 	 *    TRANSFORM photo object
 	 *
 	 =============================================================================================*/
+	@Transactional
 	public Photo rotate90(Photo thePhoto, PhotoObjectInt.rotateEnum rotateDirection) throws ExceptionInternalError, Exception{
 		PhotoObjectInt onSiteObj = getOnSiteObject(thePhoto);
 
